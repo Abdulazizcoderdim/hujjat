@@ -5,6 +5,7 @@ import { Category } from 'src/category/schemas/category.schema';
 import { StorageService } from 'src/storage/storage.service';
 import { User } from 'src/users/schema/user.schema';
 import { Repository } from 'typeorm';
+import { ApproveProductDto } from './dto/approve-product.dto';
 import { CreateProductDto } from './dto/create-product.dto';
 import { Product, ProductStatus } from './schemas/product.schema';
 
@@ -19,6 +20,31 @@ export class ProductsService {
     private readonly userRepo: Repository<User>,
     private readonly storageService: StorageService,
   ) {}
+
+  async approve(id: number, dto: ApproveProductDto) {
+    const product = await this.productRepo.findOne({
+      where: { id },
+    });
+
+    if (!product) {
+      throw new BadRequestException('Product not found');
+    }
+
+    product.status = dto.status;
+    return this.productRepo.save(product);
+  }
+
+  async findOneById(id: number) {
+    const product = await this.productRepo.findOne({
+      where: { id },
+    });
+
+    if (!product) {
+      throw new BadRequestException('Product not found');
+    }
+
+    return product;
+  }
 
   async getProductsAnalytics() {
     const result = await this.productRepo

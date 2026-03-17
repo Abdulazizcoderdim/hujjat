@@ -25,9 +25,10 @@ export const PurchaseModal = ({
   isOpen,
   onClose,
 }: PurchaseModalProps) => {
-  const productReturnUrl = typeof window !== "undefined"
-    ? `${window.location.origin}/product/${product.slug || product._id}?payment=success`
-    : `https://www.doclab.uz/product/${product.slug || product._id}?payment=success`;
+  const productReturnUrl =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/product/${product.slug || product.id}?payment=success`
+      : `https://www.doclab.uz/product/${product.slug || product.id}?payment=success`;
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("payme");
   const [loading, setLoading] = useState(false);
 
@@ -63,14 +64,14 @@ export const PurchaseModal = ({
     (async () => {
       try {
         const { data } = await $api.post("/orders/preview", {
-          productId: product._id,
+          productId: product.id,
         });
         setPreview(data);
       } catch (error) {
         console.error("Preview yuklashda xatolik", error);
       }
     })();
-  }, [isOpen, product._id]);
+  }, [isOpen, product.id]);
 
   if (!product) return null;
 
@@ -114,7 +115,7 @@ export const PurchaseModal = ({
       const cleanExpire = expire.replace(/\//g, "");
 
       const { data } = await $api.post("/payme/send-sms", {
-        productId: product._id,
+        productId: product.id,
         cardNumber: cleanCardNumber,
         expire: cleanExpire,
       });
@@ -166,7 +167,8 @@ export const PurchaseModal = ({
 
       toast({
         title: "Muvaffaqiyatli",
-        description: "To'lov muvaffaqiyatli amalga oshirildi! Profilingizdan yuklab olishingiz mumkin.",
+        description:
+          "To'lov muvaffaqiyatli amalga oshirildi! Profilingizdan yuklab olishingiz mumkin.",
       });
       onClose();
       router.push(`/profile?payment=success`);
@@ -188,7 +190,7 @@ export const PurchaseModal = ({
     setLoading(true);
     try {
       const { data } = await $api.post("/payments/checkout/payme", {
-        productId: product._id,
+        productId: product.id,
         returnUrl: productReturnUrl,
       });
 
@@ -212,7 +214,7 @@ export const PurchaseModal = ({
     setLoading(true);
     try {
       const { data } = await $api.post("/payments/checkout/click-card", {
-        productId: product._id,
+        productId: product.id,
       });
 
       if (!window.createPaymentRequest) {
@@ -237,7 +239,8 @@ export const PurchaseModal = ({
           if (result.status === 2) {
             toast({
               title: "Muvaffaqiyatli",
-              description: "To'lov muvaffaqiyatli amalga oshirildi! Profilingizdan yuklab olishingiz mumkin.",
+              description:
+                "To'lov muvaffaqiyatli amalga oshirildi! Profilingizdan yuklab olishingiz mumkin.",
             });
             router.push(`/profile?payment=success`);
           } else if (result.status < 0) {
@@ -264,7 +267,7 @@ export const PurchaseModal = ({
     setLoading(true);
     try {
       const { data } = await $api.post("/payments/checkout/click", {
-        productId: product._id,
+        productId: product.id,
         returnUrl: productReturnUrl,
       });
 

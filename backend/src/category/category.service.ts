@@ -147,6 +147,8 @@ export class CategoryService {
       select: ['id', 'name'],
     });
 
+    console.log('Casasdasd', categories);
+
     return categories.map((c) => ({
       id: c.id,
       name: c.name,

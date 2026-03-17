@@ -104,7 +104,7 @@ export class AuthService implements OnModuleInit {
       user = this.userModel.create({
         email,
         full_name: fullName,
-        avatar,
+        image: avatar,
         is_active: true,
         role: UserRole.STUDENT,
         googleId,
@@ -124,8 +124,8 @@ export class AuthService implements OnModuleInit {
       needSave = true;
     }
 
-    if (!user.avatar && avatar) {
-      user.avatar = avatar;
+    if (!user.image && avatar) {
+      user.image = avatar;
       needSave = true;
     }
 
@@ -153,7 +153,7 @@ export class AuthService implements OnModuleInit {
         full_name: user.full_name,
         email: user.email,
         is_active: user.is_active,
-        avatar: user.avatar,
+        image: user.image,
         role: user.role,
         login: user.login,
       },
@@ -194,7 +194,7 @@ export class AuthService implements OnModuleInit {
         full_name: newUser.full_name,
         email: newUser.email,
         is_active: newUser.is_active,
-        avatar: newUser.avatar,
+        image: newUser.image,
         role: newUser.role,
         login: newUser.login,
       },
@@ -253,7 +253,7 @@ export class AuthService implements OnModuleInit {
         full_name: user.full_name,
         email: user.email,
         is_active: user.is_active,
-        avatar: user.avatar,
+        image: user.image,
         role: user.role,
         login: user.login,
       },
@@ -322,7 +322,7 @@ export class AuthService implements OnModuleInit {
         full_name: user.full_name,
         email: user.email,
         is_active: user.is_active,
-        avatar: user.avatar,
+        image: user.image,
         role: user.role,
         login: user.login,
       },

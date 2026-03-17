@@ -60,12 +60,10 @@ const ProductClient = ({
           </Button>
           {categories.slice(0, 5).map((category) => (
             <Button
-              key={category._id}
-              onClick={() => updateParam("category", category._id)}
+              key={category.id}
+              onClick={() => updateParam("category", category.id)}
               className="whitespace-nowrap"
-              variant={
-                selectedCategory === category._id ? "default" : "outline"
-              }
+              variant={selectedCategory === category.id ? "default" : "outline"}
             >
               {category.name}
             </Button>

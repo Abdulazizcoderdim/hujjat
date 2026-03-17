@@ -10,22 +10,33 @@ export enum OrderRefundStatus {
 }
 
 export interface IUser {
-  id?: string;
+  id: number;
+  first_name?: string;
+  second_name?: string;
+  third_name?: string;
   full_name?: string;
-  products_count?: number;
+  short_name?: string;
   email?: string;
-  password?: string;
   login?: string;
-  is_blocked?: boolean;
+  password?: string;
+  student_id_number?: string;
+  university?: string;
+  faculty?: string;
+  group?: string;
+  specialty?: string;
+  semester?: string;
+  level?: string;
   role: UserRole;
-  avatar?: string;
-  balance: number;
-  is_active: boolean;
-  telegramId?: string;
   phone?: string;
-  bio?: string;
-  createdAt?: string;
-  updatedAt?: string;
+  image?: string;
+  birth_date?: number;
+  address?: string;
+  is_active: boolean;
+  is_blocked: boolean;
+  googleId?: string;
+  hash?: string;
+  createdAt: string | Date;
+  updatedAt: string | Date;
 }
 
 export enum OrderStatus {
@@ -81,7 +92,7 @@ export interface IProduct<C> {
 
   status: ProductStatus;
 
-  categoryId: C;
+  category: C;
   tags: string[];
 
   viewCount: number;

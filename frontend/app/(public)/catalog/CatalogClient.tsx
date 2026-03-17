@@ -106,10 +106,10 @@ export default function CatalogClient({ products, categories, page }: Props) {
                 </button>
                 {categories?.map((category) => (
                   <button
-                    key={category._id}
-                    onClick={() => updateParam("category", category._id)}
+                    key={category.id}
+                    onClick={() => updateParam("category", category.id)}
                     className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center justify-between ${
-                      selectedCategory === category._id
+                      selectedCategory === category.id
                         ? "bg-primary text-primary-foreground"
                         : "hover:bg-muted text-muted-foreground"
                     }`}
@@ -194,7 +194,7 @@ export default function CatalogClient({ products, categories, page }: Props) {
                 }
               >
                 {products.items.map((product) => (
-                  <ProductCard key={product._id} product={product} />
+                  <ProductCard key={product.id} product={product} />
                 ))}
               </div>
             ) : (

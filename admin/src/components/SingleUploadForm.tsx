@@ -214,7 +214,7 @@ export function SingleUploadForm({
                   <SelectValue placeholder="Tanlang" />
                 </SelectTrigger>
                 <SelectContent>
-                  {categories.map((cat) => (
+                  {categories?.map((cat) => (
                     <SelectItem key={cat.id} value={cat.id}>
                       {cat.name}
                     </SelectItem>

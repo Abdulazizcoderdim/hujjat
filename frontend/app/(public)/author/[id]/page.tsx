@@ -5,10 +5,9 @@ import { Metadata } from "next";
 import AuthorClient from "./AuthorClient";
 
 interface ProfileResponse {
-  _id: string;
+  id: string;
   full_name: string;
-  avatar?: string;
-  bio?: string;
+  image?: string;
   createdAt?: string;
   totalProducts: number;
   totalViews: number;
@@ -93,10 +92,6 @@ export async function generateMetadata({
 
   const title = Number(page) > 1 ? `${baseTitle} | Sahifa ${page}` : baseTitle;
 
-  const description = user.bio
-    ? `${user.full_name} – ${user.bio}. DocLab orqali ${user.full_name} tomonidan tayyorlangan professional hujjatlar, shablonlar va materiallarni yuklab oling.`
-    : `${user.full_name} – DocLab platformasidagi professional muallif. Uning barcha hujjatlari, shablonlari va ishlanmalari bilan tanishing.`;
-
   const BASE_URL = "https://www.doclab.uz";
   const pageNum = Number(page) || 1;
   const urlParams = new URLSearchParams();
@@ -106,23 +101,20 @@ export async function generateMetadata({
   const canonicalPath = `/author/${id}${qs ? `?${qs}` : ""}`;
   const canonicalUrl = `${BASE_URL}${canonicalPath}`;
 
-  const avatarUrl = user.avatar
-    ? user.avatar.startsWith("http")
-      ? user.avatar
-      : `${BASE_URL}${user.avatar.startsWith("/") ? "" : "/"}${user.avatar}`
+  const avatarUrl = user.image
+    ? user.image.startsWith("http")
+      ? user.image
+      : `${BASE_URL}${user.image.startsWith("/") ? "" : "/"}${user.image}`
     : `${BASE_URL}/logo.png`;
 
   return {
     title,
-    description,
-
     alternates: {
       canonical: canonicalUrl,
     },
 
     openGraph: {
       title,
-      description,
       type: "profile",
       locale: "uz_UZ",
       url: canonicalUrl,
@@ -140,7 +132,6 @@ export async function generateMetadata({
     twitter: {
       card: "summary_large_image",
       title,
-      description,
       images: [avatarUrl],
     },
 
@@ -188,10 +179,8 @@ export default async function AuthorPage({ params, searchParams }: Props) {
     "@context": "https://schema.org",
     "@type": "Person",
     name: data.full_name,
-    url: `${BASE_URL}/author/${data._id}`,
-    image: data.avatar || `${BASE_URL}/logo.png`,
-    description:
-      data.bio || `${data.full_name} – DocLab dagi professional muallif.`,
+    url: `${BASE_URL}/author/${data.id}`,
+    image: data.image || `${BASE_URL}/logo.png`,
     jobTitle: "Author",
     worksFor: {
       "@type": "Organization",

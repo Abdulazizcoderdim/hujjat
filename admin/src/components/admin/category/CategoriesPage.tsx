@@ -131,7 +131,7 @@ export function CategoriesPage() {
 
     if (selectedCategory) {
       updateMutation.mutate({
-        id: selectedCategory._id,
+        id: selectedCategory.id,
         payload: formData,
       });
     } else {
@@ -141,7 +141,7 @@ export function CategoriesPage() {
 
   const handleDelete = () => {
     if (!selectedCategory) return;
-    deleteMutation.mutate(selectedCategory._id);
+    deleteMutation.mutate(selectedCategory.id);
   };
 
   const columns = [
@@ -163,7 +163,7 @@ export function CategoriesPage() {
         new Date(c.createdAt).toLocaleDateString("uz-UZ"),
     },
     {
-      key: "_id" as keyof ICategory,
+      key: "id" as keyof ICategory,
       header: "Amallar",
       className: "w-28",
       render: (c: ICategory) => (
@@ -218,7 +218,7 @@ export function CategoriesPage() {
       <DataTable
         data={categories}
         columns={columns}
-        keyExtractor={(c) => c._id}
+        keyExtractor={(c) => c.id}
         emptyMessage="Kategoriyalar topilmadi"
       />
 

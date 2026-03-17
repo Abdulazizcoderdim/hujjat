@@ -21,6 +21,7 @@ import { UpdateCategoryDto } from './dto/update-category.dto';
 @Controller('categories')
 export class CategoryController {
   constructor(private readonly categoryService: CategoryService) {}
+
   @Get('findAll')
   findAllForAI() {
     return this.categoryService.findAllForAI();

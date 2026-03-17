@@ -179,7 +179,7 @@ export default function ProductClientPage({
             {/* Author Info */}
             {data?.authorId && (
               <Link
-                href={`/author/${data?.authorId?._id}`}
+                href={`/author/${data?.authorId?.id}`}
                 className="flex items-center gap-4 p-4 bg-secondary/50 rounded-xl border border-border/50 hover:border-primary/30 hover:bg-secondary/70 transition-all group mb-6"
               >
                 <Avatar className="w-12 h-12 border-2 border-primary/20">

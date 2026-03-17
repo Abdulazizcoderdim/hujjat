@@ -64,12 +64,12 @@ export function ProductsListPage({
 }: ProductsListPageProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProduct, setSelectedProduct] =
-    useState<IProduct<ICategory> | null>(null);
+    useState<IProduct<ICategory>>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [approveLoad, setApproveLoad] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [productToAction, setProductToAction] =
-    useState<IProduct<ICategory> | null>(null);
+    useState<IProduct<ICategory>>(null);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [confirmApproveOpen, setConfirmApproveOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -86,7 +86,6 @@ export function ProductsListPage({
   const [bulkModalOpen, setBulkModalOpen] = useState(false);
   const [bulkRejectReason, setBulkRejectReason] = useState("");
   const [bulkLoading, setBulkLoading] = useState(false);
-  const [selectedAuthor, setSelectedAuthor] = useState<string>("all");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [productToDelete, setProductToDelete] =
     useState<IProduct<ICategory> | null>(null);
@@ -128,7 +127,6 @@ export function ProductsListPage({
         page,
         limit,
         debouncedSearch,
-        selectedAuthor,
         sortBy,
         sortOrder,
       },
@@ -138,7 +136,6 @@ export function ProductsListPage({
         page,
         limit,
         search: debouncedSearch || undefined,
-        authorId: selectedAuthor !== "all" ? selectedAuthor : undefined,
       };
 
       if (sortBy) {
@@ -171,7 +168,7 @@ export function ProductsListPage({
   };
 
   const toggleAll = () => {
-    if (selectedIds.length === products.length) {
+    if (selectedIds.length === products?.length) {
       setSelectedIds([]);
     } else {
       setSelectedIds(products.map((p) => p.id));
@@ -215,6 +212,8 @@ export function ProductsListPage({
         status,
         rejectReason: reason,
       });
+
+      queryClient.invalidateQueries({ queryKey: ["products/status"] });
 
       toast({
         title:
@@ -283,10 +282,10 @@ export function ProductsListPage({
   };
 
   const allChecked =
-    products.length > 0 && selectedIds.length === products.length;
+    products?.length > 0 && selectedIds.length === products?.length;
 
   const someChecked =
-    selectedIds.length > 0 && selectedIds.length < products.length;
+    selectedIds.length > 0 && selectedIds.length < products?.length;
 
   return (
     <div className="space-y-6">
@@ -383,17 +382,22 @@ export function ProductsListPage({
               ),
               render: (product) => (
                 <div className="flex items-center gap-3">
-                  {product?.poster ? (
-                    <img
-                      src={product?.poster}
-                      alt={product?.name}
-                      className="h-10 w-10 rounded-lg object-cover"
-                    />
-                  ) : (
-                    <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center">
-                      <FileText className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                  )}
+                  <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-border/50 flex-shrink-0">
+                    {product.poster ? (
+                      <img
+                        src={product.poster}
+                        alt={product.name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = "none";
+                        }}
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-muted flex items-center justify-center">
+                        <FileText className="w-6 h-6 text-muted-foreground" />
+                      </div>
+                    )}
+                  </div>
                   <div>
                     <span className="font-medium text-foreground">
                       {product?.name}
@@ -568,7 +572,7 @@ export function ProductsListPage({
 
       {/* Mobile cards */}
       <div className="md:hidden space-y-3">
-        {products.length === 0 ? (
+        {products?.length === 0 ? (
           <p className="text-center text-muted-foreground py-8">
             Mahsulotlar topilmadi
           </p>
@@ -741,17 +745,6 @@ export function ProductsListPage({
                 </div>
               </div>
 
-              {selectedProduct.rejectionReason && (
-                <div className="stat-card">
-                  <p className="text-sm text-red-700 text-muted-foreground">
-                    Rad etilish sababi
-                  </p>
-                  <p className="text-lg font-semibold text-foreground">
-                    {selectedProduct.rejectionReason}
-                  </p>
-                </div>
-              )}
-
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="stat-card">
                   <p className="text-sm text-muted-foreground">Narxi</p>
@@ -771,14 +764,7 @@ export function ProductsListPage({
                     {formatFileSize(selectedProduct.fileSize || 0)}
                   </p>
                 </div>
-                <div className="stat-card">
-                  <p className="text-sm text-muted-foreground">
-                    Sahifalar soni
-                  </p>
-                  <p className="text-lg font-semibold text-foreground">
-                    {selectedProduct.pages || "—"}
-                  </p>
-                </div>
+
                 <div className="stat-card">
                   <p className="text-sm text-muted-foreground">Ko'rishlar</p>
                   <p className="text-lg font-semibold text-foreground">
@@ -787,7 +773,7 @@ export function ProductsListPage({
                 </div>
               </div>
 
-              {selectedProduct.tags.length > 0 && (
+              {selectedProduct?.tags && selectedProduct?.tags?.length > 0 && (
                 <div>
                   <p className="text-sm text-muted-foreground mb-2">Teglar</p>
                   <div className="flex flex-wrap gap-2">
@@ -825,24 +811,7 @@ export function ProductsListPage({
               Mahsulotni rad etish
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              "{productToAction?.name}" mahsulotini rad etish uchun sabab
-              kiriting.
-            </p>
-            <div className="space-y-2">
-              <Label htmlFor="reason" className="text-foreground">
-                Rad etish sababi *
-              </Label>
-              <Textarea
-                id="reason"
-                placeholder="Rad etish sababini yozing..."
-                value={rejectReason}
-                onChange={(e) => setRejectReason(e.target.value)}
-                className="bg-background border-border min-h-[100px]"
-              />
-            </div>
-          </div>
+
           <DialogFooter>
             <Button
               variant="outline"
@@ -851,7 +820,7 @@ export function ProductsListPage({
               Bekor qilish
             </Button>
             <Button
-              disabled={!rejectReason.trim() || approveLoad}
+              disabled={approveLoad}
               variant="destructive"
               onClick={() =>
                 approveProduct(ProductStatus.REJECTED, rejectReason)

@@ -84,7 +84,7 @@ export const ProductCard = ({
     setIsSubmitting(true);
 
     await $api.post("/refunds", {
-      orderId: selectedOrder._id,
+      orderId: selectedOrder.id,
       reason: refundReason,
     });
 

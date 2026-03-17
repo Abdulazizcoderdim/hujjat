@@ -135,14 +135,14 @@ export default function SearchClient({
               </Button>
               {categories.map((category) => (
                 <Button
-                  key={category._id}
+                  key={category.id}
                   variant={
-                    searchParams.category === category._id
+                    searchParams.category === category.id
                       ? "default"
                       : "outline"
                   }
                   size="sm"
-                  onClick={() => updateParams({ category: category._id })}
+                  onClick={() => updateParams({ category: category.id })}
                   className="whitespace-nowrap rounded-full"
                 >
                   {category.name}
@@ -205,8 +205,8 @@ export default function SearchClient({
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                 {categories.map((category) => (
                   <button
-                    key={category._id}
-                    onClick={() => handleCategoryFilter(category._id)}
+                    key={category.id}
+                    onClick={() => handleCategoryFilter(category.id)}
                     className="flex items-center gap-3 p-4 bg-card hover:bg-secondary/50 border border-border/50 rounded-xl text-left transition-all hover:shadow-md group"
                   >
                     <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
@@ -278,7 +278,7 @@ export default function SearchClient({
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {products.items.map((product, index) => (
                     <div
-                      key={product._id}
+                      key={product.id}
                       className="animate-fade-up"
                       style={{ animationDelay: `${index * 50}ms` }}
                     >

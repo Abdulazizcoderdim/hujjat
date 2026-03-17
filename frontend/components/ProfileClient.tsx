@@ -187,7 +187,8 @@ const ProfileClient = () => {
               To&apos;lov muvaffaqiyatli amalga oshirildi!
             </h3>
             <p className="text-emerald-700 text-sm mt-1">
-              Sotib olgan hujjatingiz quyida ko&apos;rsatilgan. &quot;Yuklab olish&quot; tugmasini bosib yuklab olishingiz mumkin.
+              Sotib olgan hujjatingiz quyida ko&apos;rsatilgan. &quot;Yuklab
+              olish&quot; tugmasini bosib yuklab olishingiz mumkin.
             </p>
           </div>
           <button
@@ -288,7 +289,7 @@ const ProfileClient = () => {
             {profileData.orders.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {profileData.orders.map((order, index) => (
-                  <div key={order._id ?? index} className="relative">
+                  <div key={order.id ?? index} className="relative">
                     <ProductCard
                       product={order.productId}
                       className={`animate-fade-up stagger-${(index % 5) + 1}`}
@@ -297,7 +298,7 @@ const ProfileClient = () => {
                     />
                     <div className="absolute top-3 left-3 z-10">
                       <Button
-                        onClick={() => handleDownload(order.productId._id)}
+                        onClick={() => handleDownload(order.productId.id)}
                         size="sm"
                         variant="accent"
                       >

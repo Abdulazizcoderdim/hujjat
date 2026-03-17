@@ -12,9 +12,9 @@ interface AuthorsResponse {
     totalDownloads: number;
   };
   topAuthors: {
-    _id: string;
+    id: string;
     full_name: string;
-    avatar?: string;
+    image?: string;
     bio?: string;
     totalProducts: number;
     totalViews: number;
@@ -107,7 +107,7 @@ const Authors = async () => {
                 <div className="flex items-start gap-4 mb-4">
                   <img
                     src={
-                      author.avatar ||
+                      author.image ||
                       "https://e7.pngegg.com/pngimages/84/165/png-clipart-united-states-avatar-organization-information-user-avatar-service-computer-wallpaper-thumbnail.png"
                     }
                     alt={author.full_name}
@@ -135,9 +135,7 @@ const Authors = async () => {
                 </div>
 
                 <Button asChild variant="outline" className="w-full mt-4">
-                  <Link href={`/author/${author._id}`}>
-                    Hujjatlarni ko'rish
-                  </Link>
+                  <Link href={`/author/${author.id}`}>Hujjatlarni ko'rish</Link>
                 </Button>
               </div>
             ))}

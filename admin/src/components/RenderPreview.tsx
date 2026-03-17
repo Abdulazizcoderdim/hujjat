@@ -1,4 +1,4 @@
-import { ICategory, IProduct, IUser } from "@/interface";
+import { ICategory, IProduct } from "@/interface";
 import { FileText } from "lucide-react";
 import { Button } from "./ui/button";
 
@@ -8,7 +8,7 @@ export const RenderPreview = ({
   fetchSignedUrl,
   loadingFile,
 }: {
-  product: IProduct<ICategory, IUser>;
+  product: IProduct<ICategory>;
   signedUrl: string;
   fetchSignedUrl: () => void;
   loadingFile: boolean;

@@ -7,7 +7,7 @@ export enum UserRole {
 }
 
 export interface IUser {
-  _id?: string;
+  id?: string;
   full_name?: string;
   email?: string;
   password?: string;
@@ -34,7 +34,7 @@ export enum OrderRefundStatus {
 }
 
 export interface IRefund {
-  _id: string;
+  id: string;
 
   orderId: string;
   buyerId: string;
@@ -56,7 +56,7 @@ export interface IRefund {
 }
 
 export interface IOrder<T> {
-  _id: string;
+  id: string;
 
   buyerId: string;
   sellerId: string;
@@ -93,7 +93,7 @@ export enum RefundStatus {
 }
 
 export interface IProduct<C, A> {
-  _id: string;
+  id: string;
 
   name: string;
   slug: string;
@@ -133,7 +133,7 @@ export interface IProduct<C, A> {
 }
 
 export interface ICategory {
-  _id: string;
+  id: string;
   name: string;
   slug: string;
   icon: string;

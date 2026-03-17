@@ -6,15 +6,18 @@ import {
   Param,
   ParseEnumPipe,
   ParseIntPipe,
+  Patch,
   Post,
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { CurrentUser } from 'src/auth/decorators/current-user.decorators';
 import { Roles } from 'src/auth/decorators/roles.decorator';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { StorageService } from 'src/storage/storage.service';
 import { UserRole } from 'src/users/schema/user.schema';
+import { ApproveProductDto } from './dto/approve-product.dto';
 import { CreateProductDto } from './dto/create-product.dto';
 import { ProductsService } from './products.service';
 import { ProductStatus } from './schemas/product.schema';
@@ -31,6 +34,28 @@ export class ProductsController {
     return this.productsService.getProductsAnalytics();
   }
 
+  @Get(':id/download')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async getDownloadUrl(
+    @CurrentUser('role') userRole: UserRole,
+    @Param('id') productId: number,
+  ) {
+    const product = await this.productsService.findOneById(productId);
+
+    if (userRole !== UserRole.ADMIN) {
+      throw new BadRequestException('Ruxsat yo‘q');
+    }
+
+    const url = await this.storageService.getDownloadUrl(
+      product.fileKey,
+      300,
+      true,
+    );
+
+    return { url };
+  }
+
   @Get('status/:status')
   async getProductsByStatus(
     @Param('status', new ParseEnumPipe(ProductStatus)) status: ProductStatus,
@@ -38,6 +63,13 @@ export class ProductsController {
     @Query('limit', new ParseIntPipe({ optional: true })) limit: number = 10,
   ) {
     return this.productsService.getProductsByStatus(status, page, limit);
+  }
+
+  @Patch(':id/approve')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  approve(@Param('id') id: number, @Body() dto: ApproveProductDto) {
+    return this.productsService.approve(id, dto);
   }
 
   @Post()

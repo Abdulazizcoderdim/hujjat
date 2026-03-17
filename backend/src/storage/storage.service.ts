@@ -136,9 +136,12 @@ export class StorageService {
     }
   }
 
-  async getDownloadUrl(key: string, expiresIn: number = 300) {
+  async getDownloadUrl(
+    key: string,
+    expiresIn: number = 300,
+    inline: boolean = false,
+  ) {
     try {
-      // Avval fayl mavjudligini tekshirish
       await this.s3.send(
         new HeadObjectCommand({
           Bucket: process.env.S3_BUCKET_PRIVATE!,
@@ -296,7 +299,7 @@ export class StorageService {
 
     const publicUrl = this.getPublicUrl(key);
 
-    await this.userModel.update(userId, { avatar: publicUrl });
+    await this.userModel.update(userId, { image: publicUrl });
 
     return { uploadUrl, publicUrl };
   }

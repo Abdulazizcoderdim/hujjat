@@ -20,7 +20,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import $api from "@/http/axios";
-import { ICategory, IProduct, IUser } from "@/interface";
+import { ICategory, IProduct } from "@/interface";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileText, Loader2, X } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -28,11 +28,11 @@ import { useEffect, useState } from "react";
 interface EditProductDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  product: IProduct<ICategory, IUser> | null;
+  product: IProduct<ICategory> | null;
 }
 
 interface CategoryResponse {
-  _id: string;
+  id: string;
   name: string;
 }
 
@@ -69,9 +69,11 @@ export function EditProductDialog({
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
   const [loadingFile, setLoadingFile] = useState(false);
 
+  console.log("asdasda", signedUrl);
+
   // Categories ni olish
   const { data: categories } = useQuery<CategoryResponse[]>({
-    queryKey: ["categories/all"],
+    queryKey: ["categories"],
     queryFn: async () => {
       const { data } = await $api.get("/categories/findAll");
       return data;
@@ -80,7 +82,7 @@ export function EditProductDialog({
 
   useEffect(() => {
     setSignedUrl(null);
-  }, [product?._id]);
+  }, [product?.id]);
 
   const fetchSignedUrl = async () => {
     if (!product) return;
@@ -88,8 +90,9 @@ export function EditProductDialog({
     try {
       setLoadingFile(true);
       const { data } = await $api.get<{ url: string }>(
-        `/products/${product?._id}/download`,
+        `/products/${product?.id}/download`,
       );
+
       setSignedUrl(data.url);
       return data.url;
     } finally {
@@ -104,7 +107,7 @@ export function EditProductDialog({
         name: product.name,
         description: product.description,
         price: product.price,
-        categoryId: product.categoryId._id,
+        categoryId: product.category.id,
         tags: product.tags?.join(", ") || "",
         pages: product.pages,
         images: product.images || [],
@@ -256,7 +259,7 @@ export function EditProductDialog({
         updatePayload.price = formData.price;
       }
 
-      if (formData.categoryId !== product.categoryId._id) {
+      if (formData.categoryId !== product.category.id) {
         updatePayload.categoryId = formData.categoryId;
       }
 
@@ -289,7 +292,7 @@ export function EditProductDialog({
         return;
       }
 
-      await $api.put(`/products/${product._id}/edit`, updatePayload);
+      await $api.put(`/products/${product.id}/edit`, updatePayload);
 
       toast({
         title: "Muvaffaqiyatli",
@@ -424,7 +427,7 @@ export function EditProductDialog({
                   </SelectTrigger>
                   <SelectContent>
                     {categories?.map((category) => (
-                      <SelectItem key={category._id} value={category._id}>
+                      <SelectItem key={category.id} value={category.id}>
                         {category.name}
                       </SelectItem>
                     ))}

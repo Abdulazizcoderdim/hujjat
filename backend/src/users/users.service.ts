@@ -60,7 +60,12 @@ export class UsersService {
       throw new Error('Admin emas bu foydalanuvchi');
     }
 
-    return this.userRepo.update(id, updateUserDto);
+    return this.userRepo.update(id, {
+      ...updateUserDto,
+      password: updateUserDto.password
+        ? await bcrypt.hash(updateUserDto.password, 10)
+        : undefined,
+    });
   }
 
   async deleteUser(id: number) {

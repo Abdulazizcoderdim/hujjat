@@ -9,86 +9,30 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { formatCurrency } from "@/hooks/format-currency";
 import { formatDateTime } from "@/hooks/formatDateTime";
 import { useDebounce } from "@/hooks/use-debounce";
 import $api from "@/http/axios";
 import { IUser, UserRole } from "@/interface";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowDown, ArrowUp, ArrowUpDown, Eye } from "lucide-react";
+import { Eye, GraduationCap, MapPin, School } from "lucide-react";
 import { useEffect, useState } from "react";
-
-type SortField =
-  | "full_name"
-  | "login"
-  | "productsCount"
-  | "telegramId"
-  | "createdAt"
-  | "is_active";
-type SortOrder = "asc" | "desc";
 
 export function StudentsTable() {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 500);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
-
-  const [sortField, setSortField] = useState<SortField | null>(null);
-  const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
-
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedSeller, setSelectedSeller] = useState<IUser | null>(null);
-  const [finance, setFinance] = useState({
-    debit: 0,
-    credit: 0,
-    balance: 0,
-  });
-  const [confirmDialog, setConfirmDialog] = useState<{
-    open: boolean;
-    type: "block" | "verify";
-    user: IUser | null;
-  }>({ open: false, type: "block", user: null });
-  const [editingUser, setEditingUser] = useState<IUser | null>(null);
-  const [editForm, setEditForm] = useState({
-    full_name: "",
-    email: "",
-    phone: "",
-    password: "",
-    login: "",
-    telegramId: "",
-  });
-
-  useEffect(() => {
-    if (editingUser) {
-      setEditForm({
-        full_name: editingUser.full_name || "",
-        email: editingUser.email || "",
-        phone: editingUser.phone || "",
-        password: "",
-        login: editingUser.login || "",
-        telegramId: editingUser.telegramId || "",
-      });
-    }
-  }, [editingUser]);
+  const [selectedStudent, setSelectedStudent] = useState<IUser | null>(null);
 
   const studentsQuery = useQuery({
-    queryKey: [
-      "students",
-      { debouncedSearch, page, limit, sortField, sortOrder },
-    ],
+    queryKey: ["students", { debouncedSearch, page, limit }],
     queryFn: async () => {
-      const params: any = {
+      const params = {
         role: UserRole.STUDENT,
         search: debouncedSearch,
         page,
         limit,
       };
-
-      if (sortField) {
-        params.sortBy = sortField;
-        params.sortOrder = sortOrder;
-      }
-
       const res = await $api.get(`/users/role/${UserRole.STUDENT}`, { params });
       return res.data;
     },
@@ -99,49 +43,24 @@ export function StudentsTable() {
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, sortField, sortOrder]);
-
-  // Sorting handler
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      // Agar bir xil field bo'lsa, order'ni o'zgartirish
-      setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
-    } else {
-      // Yangi field tanlansa, asc dan boshlash
-      setSortField(field);
-      setSortOrder("asc");
-    }
-  };
-
-  // Sort icon komponenti
-  const SortIcon = ({ field }: { field: SortField }) => {
-    if (sortField !== field) {
-      return <ArrowUpDown className="ml-2 h-4 w-4" />;
-    }
-    return sortOrder === "asc" ? (
-      <ArrowUp className="ml-2 h-4 w-4" />
-    ) : (
-      <ArrowDown className="ml-2 h-4 w-4" />
-    );
-  };
+  }, [debouncedSearch]);
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Sotuvchilar"
-        description="Tizimga ro'yxatdan o'tgan sotuvchilar ro'yxati"
+        title="Talabalar"
+        description="Tizimdagi barcha talabalar ro'yxati va ularning ma'lumotlari"
       />
 
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+      <div className="flex items-center justify-between gap-4">
         <Input
-          placeholder="Qidirish..."
+          placeholder="Ism, login yoki talaba ID bo'yicha qidirish..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="max-w-md"
         />
       </div>
 
-      {/* Main Sellers Table */}
       <div className="rounded-md border">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -149,112 +68,83 @@ export function StudentsTable() {
               <tr>
                 <th className="px-4 py-3 text-left text-sm font-semibold">№</th>
                 <th className="px-4 py-3 text-left text-sm font-semibold">
-                  <Button
-                    variant="ghost"
-                    onClick={() => handleSort("full_name")}
-                    className="hover:bg-transparent p-0 h-auto font-semibold"
-                  >
-                    Ism
-                    <SortIcon field="full_name" />
-                  </Button>
+                  F.I.SH
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold">
-                  <Button
-                    variant="ghost"
-                    onClick={() => handleSort("login")}
-                    className="hover:bg-transparent p-0 h-auto font-semibold"
-                  >
-                    Login
-                    <SortIcon field="login" />
-                  </Button>
+                  Talaba ID
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold">
-                  <Button
-                    variant="ghost"
-                    onClick={() => handleSort("productsCount")}
-                    className="hover:bg-transparent p-0 h-auto font-semibold"
-                  >
-                    Mahsulotlar soni
-                    <SortIcon field="productsCount" />
-                  </Button>
+                  Universitet / Fakultet
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold">
-                  <Button
-                    variant="ghost"
-                    onClick={() => handleSort("telegramId")}
-                    className="hover:bg-transparent p-0 h-auto font-semibold"
-                  >
-                    TelegramID
-                    <SortIcon field="telegramId" />
-                  </Button>
+                  Guruh
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold">
-                  <Button
-                    variant="ghost"
-                    onClick={() => handleSort("createdAt")}
-                    className="hover:bg-transparent p-0 h-auto font-semibold"
-                  >
-                    Sana
-                    <SortIcon field="createdAt" />
-                  </Button>
+                  Holati
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold">
-                  <Button
-                    variant="ghost"
-                    onClick={() => handleSort("is_active")}
-                    className="hover:bg-transparent p-0 h-auto font-semibold"
-                  >
-                    Holati
-                    <SortIcon field="is_active" />
-                  </Button>
+                  Sana
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold">
+                <th className="px-4 py-3 text-right text-sm font-semibold">
                   Amallar
                 </th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y">
               {students.map((user: IUser, index: number) => (
                 <tr
                   key={user.id}
-                  className="border-t hover:bg-muted/50 transition-colors"
+                  className="hover:bg-muted/50 transition-colors"
                 >
                   <td className="px-4 py-3 text-sm">
-                    {(pagination?.page - 1) * pagination?.limit + (index + 1)}
+                    {(page - 1) * limit + (index + 1)}
                   </td>
                   <td className="px-4 py-3 text-sm">
                     <div className="flex items-center gap-2">
-                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
-                        {user.full_name?.charAt(0) || "?"}
+                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
+                        {user.full_name?.charAt(0) ||
+                          user.first_name?.charAt(0) ||
+                          "?"}
                       </div>
-                      <span>{user.full_name || "Noma'lum"}</span>
+                      <div>
+                        <div className="font-medium">
+                          {user.full_name ||
+                            `${user.first_name} ${user.second_name}`}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {user.email || user.login}
+                        </div>
+                      </div>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-sm">{user.login || "—"}</td>
-                  <td className="px-4 py-3 text-sm">
-                    {user.products_count || "—"}
+                  <td className="px-4 py-3 text-sm font-mono">
+                    {user.student_id_number || "—"}
                   </td>
                   <td className="px-4 py-3 text-sm">
-                    {user.telegramId || "—"}
+                    <div className="max-w-[200px] truncate">
+                      {user.university}
+                      <div className="text-xs text-muted-foreground truncate">
+                        {user.faculty}
+                      </div>
+                    </div>
                   </td>
-                  <td className="px-4 py-3 text-sm">
-                    {formatDateTime(user.createdAt)}
-                  </td>
+                  <td className="px-4 py-3 text-sm">{user.group || "—"}</td>
                   <td className="px-4 py-3 text-sm">
                     <StatusBadge
                       status={user.is_active ? "active" : "blocked"}
                     />
                   </td>
-                  <td className="px-4 py-3 text-sm">
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setSelectedSeller(user)}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </div>
+                  <td className="px-4 py-3 text-sm text-muted-foreground">
+                    {formatDateTime(user.createdAt)}
+                  </td>
+                  <td className="px-4 py-3 text-right text-sm">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setSelectedStudent(user)}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
                   </td>
                 </tr>
               ))}
@@ -268,62 +158,96 @@ export function StudentsTable() {
         totalPages={pagination?.totalPages ?? 1}
         limit={limit}
         total={pagination?.total}
-        onPageChange={(p) => setPage(p)}
-        onLimitChange={(l) => setLimit(l)}
+        onPageChange={setPage}
+        onLimitChange={setLimit}
       />
 
-      {/* Studentn tafsilotlari dialog */}
+      {/* Talaba batafsil ma'lumotlari */}
       <Dialog
-        open={!!selectedSeller}
-        onOpenChange={() => setSelectedSeller(null)}
+        open={!!selectedStudent}
+        onOpenChange={() => setSelectedStudent(null)}
       >
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl">
           <DialogHeader>
-            <DialogTitle>Student ma'lumotlari</DialogTitle>
+            <DialogTitle>Talaba ma'lumotlari kartasi</DialogTitle>
           </DialogHeader>
-          {selectedSeller && (
-            <div className="space-y-6">
-              {/* Sotuvchi profili */}
-              <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
-                <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-2xl">
-                  {selectedSeller.full_name?.charAt(0) || "?"}
+          {selectedStudent && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
+              <div className="space-y-4">
+                <div className="flex items-center gap-4 p-3 bg-muted/50 rounded-lg">
+                  <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center text-xl font-bold text-primary">
+                    {selectedStudent.full_name?.charAt(0)}
+                  </div>
+                  <div>
+                    <h4 className="font-bold">{selectedStudent.full_name}</h4>
+                    <p className="text-sm text-muted-foreground">
+                      ID: {selectedStudent.student_id_number}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-lg">
-                    {selectedSeller.full_name || "Noma'lum"}
-                  </h3>
 
-                  <p className="text-xs text-muted-foreground">
-                    ID: {selectedSeller.id || "—"}
-                  </p>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <School className="h-4 w-4" /> {selectedStudent.university}
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <GraduationCap className="h-4 w-4" />{" "}
+                    {selectedStudent.faculty} ({selectedStudent.specialty})
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <MapPin className="h-4 w-4" />{" "}
+                    {selectedStudent.address || "Manzil kiritilmagan"}
+                  </div>
                 </div>
               </div>
 
-              {/* Statistika */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="p-4 border rounded-lg">
-                  <p className="text-sm text-muted-foreground">Balans</p>
-                  <p className="text-2xl font-bold text-green-600">
-                    {formatCurrency(finance.balance)}
-                  </p>
+              <div className="space-y-3 border-l pl-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-muted-foreground italic">
+                      Guruh
+                    </p>
+                    <p className="font-medium">{selectedStudent.group}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground italic">
+                      Bosqich/Semestr
+                    </p>
+                    <p className="font-medium">
+                      {selectedStudent.level}-kurs / {selectedStudent.semester}
+                      -semestr
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground italic">
+                      Telefon
+                    </p>
+                    <p className="font-medium">
+                      {selectedStudent.phone || "—"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground italic">
+                      Tug'ilgan sana
+                    </p>
+                    <p className="font-medium">
+                      {selectedStudent.birth_date
+                        ? new Date(
+                            Number(selectedStudent.birth_date),
+                          ).toLocaleDateString()
+                        : "—"}
+                    </p>
+                  </div>
                 </div>
-                <div className="p-4 border rounded-lg">
-                  <p className="text-sm text-muted-foreground">
-                    Mahsulotlar (Umumiy)
-                  </p>
-                  <p className="text-2xl font-bold">{21}</p>
-                </div>
-                <div className="p-4 border rounded-lg">
-                  <p className="text-sm text-muted-foreground">Holati</p>
-                  <StatusBadge
-                    status={selectedSeller.is_active ? "active" : "blocked"}
-                  />
-                </div>
-                <div className="p-4 border rounded-lg">
-                  <p className="text-sm text-muted-foreground">Jami daromadi</p>
-                  <p className="text-2xl font-bold text-blue-600">
-                    {formatCurrency(finance.credit)}
-                  </p>
+                <div className="pt-4 border-t">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">
+                      Tizimdagi holati:
+                    </span>
+                    <StatusBadge
+                      status={selectedStudent.is_active ? "active" : "blocked"}
+                    />
+                  </div>
                 </div>
               </div>
             </div>

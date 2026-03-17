@@ -17,41 +17,76 @@ export class User {
   id: number;
 
   @Column({ nullable: true })
-  full_name?: string;
+  first_name: string;
+
+  @Column({ nullable: true })
+  second_name: string;
+
+  @Column({ nullable: true })
+  third_name: string;
+
+  @Column({ nullable: true })
+  full_name: string;
+
+  @Column({ nullable: true })
+  short_name: string;
 
   @Column({ nullable: true, unique: true })
-  email?: string;
+  email: string;
 
   @Column({ nullable: true, unique: true })
-  login?: string;
+  login: string;
 
   @Column({ nullable: true })
   password?: string;
 
-  @Column({
-    type: 'enum',
-    enum: UserRole,
-    default: UserRole.STUDENT,
-  })
+  @Column({ nullable: true, unique: true })
+  student_id_number: string;
+
+  @Column({ nullable: true })
+  university: string;
+
+  @Column({ nullable: true })
+  faculty: string;
+
+  @Column({ nullable: true })
+  group: string;
+
+  @Column({ nullable: true })
+  specialty: string;
+
+  @Column({ nullable: true })
+  semester: string;
+
+  @Column({ nullable: true })
+  level: string;
+
+  @Column({ type: 'enum', enum: UserRole, default: UserRole.STUDENT })
   role: UserRole;
 
   @Column({ nullable: true })
-  phone?: string;
+  phone: string;
 
   @Column({ nullable: true })
-  avatar?: string;
+  image: string;
+
+  @Column({ nullable: true, type: 'bigint' })
+  birth_date: number;
 
   @Column({ nullable: true })
-  bio?: string;
+  address: string;
 
   @Column({ default: true })
   is_active: boolean;
 
-  @Column({ nullable: true, unique: true })
-  googleId?: string;
-
   @Column({ default: false })
-  is_blocked?: boolean;
+  is_blocked: boolean;
+
+  @Column({ nullable: true, unique: true })
+  googleId: string;
+
+  @Column({ nullable: true })
+  hash: string;
 
   @CreateDateColumn()
   createdAt: Date;

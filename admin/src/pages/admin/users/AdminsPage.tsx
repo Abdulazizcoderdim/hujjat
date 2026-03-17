@@ -78,9 +78,9 @@ export function AdminsPage() {
   const pagination = data?.pagination;
 
   const updateMutation = useMutation({
-    mutationFn: (data: any) => $api.post(`/users/${editingUser?.id}`, data),
+    mutationFn: (data: any) => $api.patch(`/users/${editingUser?.id}`, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["students"] });
+      queryClient.invalidateQueries({ queryKey: ["admins"] });
       toast({ title: "Ma'lumotlar muvaffaqiyatli yangilandi" });
       setEditingUser(null);
     },

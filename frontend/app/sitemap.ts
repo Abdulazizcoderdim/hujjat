@@ -118,7 +118,7 @@ export default async function sitemap(props: {
       }));
 
       const authorRoutes: MetadataRoute.Sitemap = authors.map((item) => ({
-        url: `${BASE_URL}/author/${item._id}`,
+        url: `${BASE_URL}/author/${item.id}`,
         lastModified: new Date(item.updatedAt || item.createdAt || new Date()),
         changeFrequency: "weekly",
         priority: 0.7,

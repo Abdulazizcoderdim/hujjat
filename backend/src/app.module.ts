@@ -2,13 +2,13 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { UsersModule } from './users/users.module';
-import { StorageModule } from './storage/storage.module';
 import { AuthModule } from './auth/auth.module';
-import { TokensModule } from './tokens/tokens.module';
+import { CategoryModule } from './category/category.module';
 import { OtpModule } from './otp/otp.module';
 import { ProductsModule } from './products/products.module';
-import { CategoryModule } from './category/category.module';
+import { StorageModule } from './storage/storage.module';
+import { TokensModule } from './tokens/tokens.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
