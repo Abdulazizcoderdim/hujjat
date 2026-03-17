@@ -37,6 +37,9 @@ export class User {
   @Column({ nullable: true, unique: true })
   login: string;
 
+  @Column({ nullable: true, unique: true })
+  hemis_id: string;
+
   @Column({ nullable: true })
   password?: string;
 

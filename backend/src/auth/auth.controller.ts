@@ -19,11 +19,12 @@ import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { UserRole } from 'src/users/schema/user.schema';
 import { CurrentUser } from './decorators/current-user.decorators';
+import { HemisLoginDto } from './dto/hemis-login.dto';
 
 @Controller('auth')
 export class AuthController {
   private readonly logger = new Logger(AuthController.name);
-  constructor(private authService: AuthService) {}
+  constructor(private readonly authService: AuthService) {}
 
   @Get('me')
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -127,6 +128,27 @@ export class AuthController {
     this.setRefreshCookie(res, refreshToken);
 
     return { user, accessToken, needsSetup };
+  }
+
+  @Post('hemis/login')
+  async hemistLogin(
+    @Body() hemisLoginDto: HemisLoginDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    try {
+      this.logger.log('Hemist login keldi', hemisLoginDto);
+
+      const { user, accessToken, refreshToken } =
+        await this.authService.hemistLogin(hemisLoginDto);
+
+      this.setRefreshCookie(res, refreshToken);
+
+      this.logger.log('Hemist login bo`ldi', user);
+      return { user, accessToken };
+    } catch (error) {
+      this.logger.error('Hemist login xatolik', error);
+      throw error;
+    }
   }
 
   private setRefreshCookie(res: Response, refreshToken: string) {

@@ -110,17 +110,6 @@ export const Navbar = () => {
                 </Button>
               )}
 
-              <Button
-                asChild
-                variant="hero"
-                size="sm"
-                className="hidden sm:flex"
-              >
-                <Link href="https://sotuvchi.doclab.uz" target="_blank">
-                  Sotuvchi bo&apos;ling
-                </Link>
-              </Button>
-
               {/* Mobile Menu Toggle */}
               <Button
                 variant="ghost"
@@ -173,46 +162,10 @@ export const Navbar = () => {
                     {link.label}
                   </Link>
                 ))}
-                <Button
-                  asChild
-                  variant="hero"
-                  size="sm"
-                  className="flex sm:hidden"
-                >
-                  <Link href="https://sotuvchi.doclab.uz" target="_blank">
-                    Sotuvchi bo&apos;ling
-                  </Link>
-                </Button>
               </nav>
             </div>
           )}
         </div>
-        <div className="flex sm:hidden items-center justify-between px-6 py-3 border-t border-border bg-card">
-          <div className="flex items-center gap-6">
-            <Link
-              href="https://sotuvchi.doclab.uz/#top-sotuvchilar"
-              target="_blank"
-              className="text-xs font-medium text-muted-foreground hover:text-primary transition-colors relative after:content-[''] after:absolute after:-bottom-1 after:left-0 after:w-0 after:h-0.5 after:bg-primary hover:after:w-full after:transition-all"
-            >
-              Top sotuvchilar
-            </Link>
-            <Link
-              href="/privacy-policy"
-              className="text-xs font-medium text-muted-foreground hover:text-primary transition-colors relative after:content-[''] after:absolute after:-bottom-1 after:left-0 after:w-0 after:h-0.5 after:bg-primary hover:after:w-full after:transition-all"
-            >
-              Oferta
-            </Link>
-          </div>
-
-          <Link
-            href="https://sotuvchi.doclab.uz"
-            target="_blank"
-            className="text-xs font-bold text-primary flex items-center gap-1"
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-            Sotuvchi bo&apos;ling
-          </Link>
-        </div>{" "}
       </header>
     </>
   );

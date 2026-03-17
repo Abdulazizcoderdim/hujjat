@@ -8,13 +8,16 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
+import axios from 'axios';
 import * as bcrypt from 'bcrypt';
 import { OAuth2Client } from 'google-auth-library';
 import { MailService } from 'src/mail/mail.service';
 import { OtpService } from 'src/otp/otp.service';
 import { TokensService } from 'src/tokens/tokens.service';
+import { StudentResponse } from 'src/types';
 import { User, UserRole } from 'src/users/schema/user.schema';
 import { Repository } from 'typeorm';
+import { HemisLoginDto } from './dto/hemis-login.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 
@@ -74,6 +77,76 @@ export class AuthService implements OnModuleInit {
     await this.userModel.save(admin);
 
     this.logger.log(`✅ Admin yaratildi: ${email}`);
+  }
+
+  async hemistLogin(hemisLoginDto: HemisLoginDto) {
+    const hemisAuth = await axios.post(
+      'https://student.qitu.uz/rest/v1/auth/login',
+      {
+        login: hemisLoginDto.login,
+        password: hemisLoginDto.password,
+      },
+    );
+
+    if (!hemisAuth.data.success) {
+      throw new UnauthorizedException('Hemis login xato');
+    }
+
+    const hemisToken = hemisAuth.data.data.token;
+
+    const studentInfo: { data: StudentResponse } = await axios.get(
+      'https://student.qitu.uz/rest/v1/account/me',
+      {
+        headers: { Authorization: `Bearer ${hemisToken}` },
+      },
+    );
+
+    const data = studentInfo.data.data;
+
+    let user = await this.userModel.findOne({
+      where: { hemis_id: data.id.toString() },
+    });
+
+    if (!user) {
+      user = this.userModel.create({
+        hemis_id: data.id.toString(),
+        first_name: data.first_name,
+        second_name: data.second_name,
+        full_name: data.full_name,
+        image: data.image,
+        student_id_number: data.student_id_number,
+        role: UserRole.STUDENT,
+        is_active: true,
+        login: hemisLoginDto.login,
+        password: hemisLoginDto.password,
+      });
+    } else {
+      user.full_name = data.full_name;
+      user.image = data.image;
+    }
+
+    await this.userModel.save(user);
+
+    const tokens = this.generateTokens(user);
+
+    await this.tokensService.saveRefreshToken({
+      userId: user.id,
+      refreshToken: tokens.refreshToken,
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    });
+
+    return {
+      user: {
+        id: user.id,
+        full_name: user.full_name,
+        email: user.email,
+        is_active: user.is_active,
+        image: user.image,
+        role: user.role,
+        login: user.login,
+      },
+      ...tokens,
+    };
   }
 
   async findById(id: number) {

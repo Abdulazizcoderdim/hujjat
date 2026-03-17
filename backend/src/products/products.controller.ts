@@ -61,8 +61,14 @@ export class ProductsController {
     @Param('status', new ParseEnumPipe(ProductStatus)) status: ProductStatus,
     @Query('page', new ParseIntPipe({ optional: true })) page: number = 1,
     @Query('limit', new ParseIntPipe({ optional: true })) limit: number = 10,
+    @Query('category', new ParseIntPipe({ optional: true })) category: number,
   ) {
-    return this.productsService.getProductsByStatus(status, page, limit);
+    return this.productsService.getProductsByStatus(
+      status,
+      page,
+      limit,
+      category,
+    );
   }
 
   @Patch(':id/approve')

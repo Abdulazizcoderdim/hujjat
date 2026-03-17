@@ -27,67 +27,7 @@ export enum OrderStatus {
   CANCELED = "canceled",
 }
 
-export enum OrderRefundStatus {
-  PENDING = "pending", // So'rov yuborilgan, admin kutyapti
-  APPROVED = "approved", // Pul qaytarilgan
-  REJECTED = "rejected", // Rad etilgan
-}
-
-export interface IRefund {
-  id: string;
-
-  orderId: string;
-  buyerId: string;
-  sellerId: string;
-
-  productPrice: number;
-  buyerCommission: number;
-  refundAmount: number;
-
-  reason: string;
-  status: RefundStatus;
-
-  moderatorId?: string;
-  adminId?: string;
-  adminNote?: string;
-
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface IOrder<T> {
-  id: string;
-
-  buyerId: string;
-  sellerId: string;
-  productId: T;
-
-  refundStatus: RefundStatus;
-
-  productPrice: number;
-
-  buyerCommissionRate: number;
-  sellerCommissionRate: number;
-
-  buyerCommission: number;
-  sellerCommission: number;
-
-  totalAmount: number;
-  sellerPayout: number;
-
-  status: OrderStatus;
-
-  createdAt: string;
-  updatedAt: string;
-}
-
 export enum ProductStatus {
-  APPROVED = "approved",
-  REJECTED = "rejected",
-}
-
-export enum RefundStatus {
-  PENDING = "pending",
   APPROVED = "approved",
   REJECTED = "rejected",
 }

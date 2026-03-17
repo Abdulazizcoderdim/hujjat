@@ -73,6 +73,7 @@ export class ProductsService {
     status: ProductStatus,
     page: number,
     limit: number,
+    category?: number,
   ) {
     const [items, total] = await this.productRepo.findAndCount({
       where: { status },

@@ -40,7 +40,7 @@ async function getProducts(params: {
   if (params.search) qs.set("search", params.search);
 
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/products/approved?${qs.toString()}`,
+    `${process.env.NEXT_PUBLIC_API_URL}/products/status/approved?${qs.toString()}`,
     { next: { revalidate: 300 } },
   );
 

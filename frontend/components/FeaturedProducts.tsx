@@ -11,17 +11,14 @@ interface FeaturedResponse {
 }
 
 async function getFeaturedProducts() {
-  const params = new URLSearchParams({
-    limit: "4",
-    sort: "popular",
-  });
-
   try {
-    const url = `${process.env.NEXT_PUBLIC_API_URL}/products/approved?${params.toString()}`;
+    const url = `${process.env.NEXT_PUBLIC_API_URL}/products/status/approved?limit=4`;
     const res = await fetch(url, { next: { revalidate: 300 } });
 
     if (!res.ok) {
-      console.error(`[FeaturedProducts] API ${res.status}: ${res.statusText}, URL: ${url}`);
+      console.error(
+        `[FeaturedProducts] API ${res.status}: ${res.statusText}, URL: ${url}`,
+      );
       return {
         items: [],
         pagination: { total: 0, page: 1, limit: 10, totalPages: 1 },

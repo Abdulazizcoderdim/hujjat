@@ -1,5 +1,4 @@
 import { CategoriesSection } from "@/components/category/CategoriesSection";
-import { CTASection } from "@/components/CTASection";
 import { FeaturedProducts } from "@/components/FeaturedProducts";
 import { Footer } from "@/components/Footer";
 import { HeroSection } from "@/components/HeroSection";
@@ -40,7 +39,7 @@ export default function Home() {
           <DiplomProducts />
           <MustaqilProducts />
           <TestlarProducts /> */}
-          <CTASection />
+          {/* <CTASection /> */}
         </main>
 
         <Footer />
