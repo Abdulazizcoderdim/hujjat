@@ -6,11 +6,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { DashboardPage } from "@/pages/admin/DashboardPage";
 import {
   ApprovedProductsPage,
-  PendingProductsPage,
   RejectedProductsPage,
 } from "@/pages/admin/products";
 import { SettingsPage } from "@/pages/admin/SettingsPage";
-import { AdminsPage } from "@/pages/admin/users/AdminsPage";
 import { LoginPage } from "@/pages/LoginPage";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Loader } from "lucide-react";
@@ -18,48 +16,43 @@ import { useEffect } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { CategoriesPage } from "./components/admin/category/CategoriesPage";
 import { ThemeProvider } from "./components/theme-provider";
-import { useToast } from "./hooks/use-toast";
 import $api from "./http/axios";
 import { UserRole } from "./interface";
-import { StudentsTable } from "./pages/admin/users/SellerTable";
+import { AdminsPage } from "./pages/admin/users/AdminsPage";
+import { StudentsTable } from "./pages/admin/users/StudentsTable";
 import NotFound from "./pages/NotFound";
+import UploadProductsPage from "./pages/UploadProductsPage";
 import { authStore } from "./store/auth.store";
 
 const queryClient = new QueryClient();
 
 const App = () => {
-  const { toast } = useToast();
   const { setIsAuth, setLoading, setUser, isLoading } = authStore();
 
   const checkAuth = async () => {
     try {
       setLoading(true);
-      const { data } = await $api.post("/auth/refresh");
-      if (
-        data.user.role !== UserRole.ADMIN &&
-        data.user.role !== UserRole.MODERATOR
-      ) {
-        localStorage.removeItem("ADMIN_ACCESS_TOKEN");
-        return;
+      const { data } = await $api.get("/auth/me");
+
+      if (data.user.role !== UserRole.ADMIN) {
+        throw new Error("Siz admin emassiz!");
       }
 
-      localStorage.setItem("ADMIN_ACCESS_TOKEN", data.accessToken);
       setIsAuth(true);
       setUser(data.user);
     } catch (error) {
-      toast({
-        title: error?.response?.data?.message || "Xatolik!",
-        description: "Iltimoms qaytadan urinib ko'ring!",
-      });
       localStorage.removeItem("ADMIN_ACCESS_TOKEN");
+      setIsAuth(false);
     } finally {
       setLoading(false);
     }
   };
-
   useEffect(() => {
-    if (localStorage.getItem("ADMIN_ACCESS_TOKEN")) {
+    const token = localStorage.getItem("ADMIN_ACCESS_TOKEN");
+    if (token) {
       checkAuth();
+    } else {
+      setLoading(false);
     }
   }, []);
 
@@ -90,11 +83,12 @@ const App = () => {
                 <Route path="/" element={<DashboardPage />} />
                 <Route path="/users/admins" element={<AdminsPage />} />
                 <Route path="/users/students" element={<StudentsTable />} />
-                <Route
-                  path="/products/pending"
-                  element={<PendingProductsPage />}
-                />
                 <Route path="/categories" element={<CategoriesPage />} />
+
+                <Route
+                  path="/products/upload"
+                  element={<UploadProductsPage />}
+                />
                 <Route
                   path="/products/approved"
                   element={<ApprovedProductsPage />}

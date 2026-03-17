@@ -11,7 +11,7 @@ type AuthStoreType = {
 };
 
 export const authStore = create<AuthStoreType>((set) => ({
-  isLoading: false,
+  isLoading: true,
   isAuth: false,
   user: {} as IUser,
   setUser: (user) => set({ user }),

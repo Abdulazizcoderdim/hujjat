@@ -1,9 +1,6 @@
 import {
-  BadRequestException,
   ConflictException,
-  ForbiddenException,
   Injectable,
-  InternalServerErrorException,
   Logger,
   OnModuleInit,
   UnauthorizedException,
@@ -12,7 +9,6 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
-import { randomInt } from 'crypto';
 import { OAuth2Client } from 'google-auth-library';
 import { MailService } from 'src/mail/mail.service';
 import { OtpService } from 'src/otp/otp.service';
@@ -44,19 +40,29 @@ export class AuthService implements OnModuleInit {
   private async seedAdmin() {
     const email = this.configService.get<string>('ADMIN_EMAIL');
     const password = this.configService.get<string>('ADMIN_PASSWORD');
+    this.logger.error('Parol::::', password);
     const fullName = this.configService.get<string>('ADMIN_FULL_NAME');
 
     if (!email || !password) return;
 
-    const exists = await this.userModel.findOne({
+    const exists = await this.userModel.find({
       where: {
         role: UserRole.ADMIN,
       },
     });
-    if (exists) return;
+    if (exists) {
+      this.logger.log(
+        `✅ Admin allaqachon mavjud: ${email} ${password}`,
+        exists,
+      );
+      return;
+    }
+
+    this.logger.log(exists);
 
     const hashedPassword = await this.hashPassword(password);
 
+    this.logger.error('Haed parol::::', hashedPassword);
     const admin = this.userModel.create({
       email,
       password: hashedPassword,
@@ -70,123 +76,8 @@ export class AuthService implements OnModuleInit {
     this.logger.log(`✅ Admin yaratildi: ${email}`);
   }
 
-  async sendEmailCode(email: string) {
-    try {
-      const code = randomInt(100000, 999999).toString();
-
-      const expiresAt = new Date();
-      expiresAt.setMinutes(expiresAt.getMinutes() + 5);
-
-      await this.otpService.createForEmail(email, code, expiresAt);
-
-      await this.mailService.sendOtpEmail(email, code);
-
-      return { message: 'Tasdiqlash kodi emailga yuborildi' };
-    } catch (error) {
-      throw new InternalServerErrorException('Kod yuborishda xatolik');
-    }
-  }
-
-  async verifyEmailCode(email: string, code: string) {
-    const validOtp = await this.otpService.validateEmailOtp(email, code);
-
-    if (!validOtp) {
-      throw new BadRequestException('Kod xato yoki muddati tugagan');
-    }
-
-    await this.otpService.markUsed(validOtp);
-
-    let user = await this.userModel.findOne({ where: { email } });
-
-    if (!user) {
-      user = this.userModel.create({
-        email,
-        role: UserRole.STUDENT,
-        is_active: true,
-      });
-
-      await this.userModel.save(user);
-    }
-
-    const token = this.generateTokens(user);
-
-    await this.tokensService.saveRefreshToken({
-      userId: user.id,
-      refreshToken: token.refreshToken,
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-    });
-
-    return {
-      ...token,
-      user,
-    };
-  }
-
-  async loginWithPhone(phone: string) {
-    let user = await this.userModel.findOne({ where: { phone } });
-
-    if (!user) {
-      user = this.userModel.create({
-        phone,
-        role: UserRole.STUDENT,
-        is_active: true,
-      });
-
-      await this.userModel.save(user);
-    }
-
-    const token = this.generateTokens(user);
-
-    await this.tokensService.saveRefreshToken({
-      userId: user.id,
-      refreshToken: token.refreshToken,
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-    });
-
-    return {
-      ...token,
-      user,
-    };
-  }
-
-  async sellerLoginByCredentials(dto: { login: string; password: string }) {
-    const user = await this.userModel.findOne({
-      where: { login: dto.login },
-      select: ['password'],
-    });
-
-    if (!user) throw new UnauthorizedException("Login yoki parol noto'g'ri");
-
-    if (user.role !== UserRole.STUDENT) {
-      throw new ForbiddenException('Faqat sotuvchi kira oladi');
-    }
-
-    const isValid = await this.verifyPassword(
-      dto.password,
-      user.password ?? '',
-    );
-    if (!isValid) throw new UnauthorizedException("Login yoki parol noto'g'ri");
-
-    const tokens = this.generateTokens(user);
-
-    await this.tokensService.saveRefreshToken({
-      userId: user.id,
-      refreshToken: tokens.refreshToken,
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-    });
-
-    return {
-      user: {
-        id: user.id,
-        full_name: user.full_name,
-        email: user.email,
-        is_active: user.is_active,
-        avatar: user.avatar,
-        role: user.role,
-        login: user.login,
-      },
-      ...tokens,
-    };
+  async findById(id: number) {
+    return this.userModel.findOne({ where: { id } });
   }
 
   async googleLogin(idToken: string) {
@@ -336,7 +227,6 @@ export class AuthService implements OnModuleInit {
   async login(loginDto: LoginDto) {
     const user = await this.userModel.findOne({
       where: { email: loginDto.email },
-      select: ['password'],
     });
 
     if (!user || !user.is_active)
@@ -442,19 +332,6 @@ export class AuthService implements OnModuleInit {
 
   async logout(refreshToken: string) {
     await this.tokensService.revokeToken(refreshToken);
-  }
-
-  async createFromTelegram(
-    fullName: string | undefined,
-    role: UserRole,
-    phone?: string,
-  ) {
-    return this.userModel.create({
-      full_name: fullName,
-      is_active: true,
-      role,
-      ...(phone && { phone }),
-    });
   }
 
   private async hashPassword(password: string): Promise<string> {

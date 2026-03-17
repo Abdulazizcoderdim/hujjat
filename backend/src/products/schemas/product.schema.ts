@@ -11,9 +11,8 @@ import {
 } from 'typeorm';
 
 export enum ProductStatus {
-  PENDING = 'pending',
   APPROVED = 'approved',
-  DISABLED = 'disabled',
+  REJECTED = 'rejected',
 }
 
 @Entity('products')
@@ -60,7 +59,7 @@ export class Product {
   @Column({
     type: 'enum',
     enum: ProductStatus,
-    default: ProductStatus.PENDING,
+    default: ProductStatus.APPROVED,
   })
   status: ProductStatus;
 
@@ -70,10 +69,6 @@ export class Product {
 
   @Column('text', { array: true, nullable: true })
   tags?: string[];
-
-  @ManyToOne(() => User)
-  @JoinColumn({ name: 'author_id' })
-  author: User;
 
   @Column({ default: 0 })
   viewCount: number;

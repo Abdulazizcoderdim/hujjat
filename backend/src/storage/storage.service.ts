@@ -109,13 +109,13 @@ export class StorageService {
     }
   }
 
-  async getUploadUrl(sellerId: string, filename: string, contentType: string) {
+  async getUploadUrl(filename: string, contentType: string) {
     if (!contentType) {
       throw new BadRequestException('contentType is required');
     }
 
     const ext = filename.split('.').pop();
-    const key = `products/sellers/${sellerId}/files/${randomUUID()}.${ext}`;
+    const key = `products/files/${randomUUID()}.${ext}`;
 
     try {
       const command = new PutObjectCommand({
@@ -301,17 +301,13 @@ export class StorageService {
     return { uploadUrl, publicUrl };
   }
 
-  async getProductImageUploadUrl(
-    sellerId: string,
-    filename: string,
-    contentType: string,
-  ) {
+  async getProductImageUploadUrl(filename: string, contentType: string) {
     if (!contentType || !contentType.startsWith('image/')) {
       throw new BadRequestException('Faqat rasm fayllari qabul qilinadi');
     }
 
     const ext = filename.split('.').pop();
-    const key = `products/sellers/${sellerId}/images/${randomUUID()}.${ext}`;
+    const key = `products/images/${randomUUID()}.${ext}`;
 
     try {
       const command = new PutObjectCommand({

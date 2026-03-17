@@ -23,13 +23,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { formatCurrency } from "@/hooks/format-currency";
 import { formatFileSize } from "@/hooks/format-size";
@@ -37,14 +30,7 @@ import { formatDateTime } from "@/hooks/formatDateTime";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useToast } from "@/hooks/use-toast";
 import $api from "@/http/axios";
-import {
-  ICategory,
-  IPagination,
-  IProduct,
-  IUser,
-  ProductStatus,
-} from "@/interface";
-import { safeText } from "@/utils/safe";
+import { ICategory, IPagination, IProduct, ProductStatus } from "@/interface";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowUpDown,
@@ -53,7 +39,6 @@ import {
   Eye,
   FileText,
   MoreHorizontal,
-  RefreshCw,
   Search,
   Trash,
   X,
@@ -68,7 +53,7 @@ interface ProductsListPageProps {
 }
 
 interface ProductResponse {
-  items: IProduct<ICategory, IUser>[];
+  items: IProduct<ICategory>[];
   pagination: IPagination;
 }
 
@@ -78,17 +63,13 @@ export function ProductsListPage({
   description,
 }: ProductsListPageProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedProduct, setSelectedProduct] = useState<IProduct<
-    ICategory,
-    IUser
-  > | null>(null);
+  const [selectedProduct, setSelectedProduct] =
+    useState<IProduct<ICategory> | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [approveLoad, setApproveLoad] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
-  const [productToAction, setProductToAction] = useState<IProduct<
-    ICategory,
-    IUser
-  > | null>(null);
+  const [productToAction, setProductToAction] =
+    useState<IProduct<ICategory> | null>(null);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [confirmApproveOpen, setConfirmApproveOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -99,7 +80,7 @@ export function ProductsListPage({
   const [loadingFile, setLoadingFile] = useState(false);
   const debouncedSearch = useDebounce(searchQuery, 500);
   const [bulkAction, setBulkAction] = useState<
-    "approve" | "reject" | "delete" | "preview" | null
+    "approve" | "reject" | "delete" | null
   >(null);
   const queryClient = useQueryClient();
   const [bulkModalOpen, setBulkModalOpen] = useState(false);
@@ -107,23 +88,18 @@ export function ProductsListPage({
   const [bulkLoading, setBulkLoading] = useState(false);
   const [selectedAuthor, setSelectedAuthor] = useState<string>("all");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [productToDelete, setProductToDelete] = useState<IProduct<
-    ICategory,
-    IUser
-  > | null>(null);
+  const [productToDelete, setProductToDelete] =
+    useState<IProduct<ICategory> | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [sortBy, setSortBy] = useState<string | null>(null);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
-  const [regenerateLoading, setRegenerateLoading] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [productToEdit, setProductToEdit] = useState<IProduct<
-    ICategory,
-    IUser
-  > | null>(null);
+  const [productToEdit, setProductToEdit] =
+    useState<IProduct<ICategory> | null>(null);
 
   useEffect(() => {
     setSignedUrl(null);
-  }, [selectedProduct?._id]);
+  }, [selectedProduct?.id]);
 
   const fetchSignedUrl = async () => {
     if (!selectedProduct) return;
@@ -131,7 +107,7 @@ export function ProductsListPage({
     try {
       setLoadingFile(true);
       const { data } = await $api.get<{ url: string }>(
-        `/products/${selectedProduct?._id}/download`,
+        `/products/${selectedProduct?.id}/download`,
       );
       setSignedUrl(data.url);
       return data.url;
@@ -144,17 +120,9 @@ export function ProductsListPage({
     setSelectedIds([]);
   }, [page, status, debouncedSearch]);
 
-  const { data: authorsData } = useQuery<IUser[]>({
-    queryKey: ["authors/list"],
-    queryFn: async () => {
-      const { data } = await $api.get("/users/authors/list");
-      return data;
-    },
-  });
-
   const { data } = useQuery<ProductResponse>({
     queryKey: [
-      "products/all",
+      "products/status",
       {
         status,
         page,
@@ -178,7 +146,7 @@ export function ProductsListPage({
         params.sortOrder = sortOrder;
       }
 
-      const response = await $api.get(`/products/all/${status}`, { params });
+      const response = await $api.get(`/products/status/${status}`, { params });
       return response.data;
     },
     placeholderData: (prev) =>
@@ -191,7 +159,7 @@ export function ProductsListPage({
   const products = data?.items || [];
   const pagination = data?.pagination;
 
-  const openDetail = (product: IProduct<ICategory, IUser>) => {
+  const openDetail = (product: IProduct<ICategory>) => {
     setSelectedProduct(product);
     setDetailOpen(true);
   };
@@ -206,7 +174,7 @@ export function ProductsListPage({
     if (selectedIds.length === products.length) {
       setSelectedIds([]);
     } else {
-      setSelectedIds(products.map((p) => p._id));
+      setSelectedIds(products.map((p) => p.id));
     }
   };
 
@@ -215,7 +183,7 @@ export function ProductsListPage({
 
     try {
       setDeleteLoading(true);
-      await $api.delete(`/products/${productToDelete._id}`);
+      await $api.delete(`/products/${productToDelete.id}`);
 
       toast({
         title: "O'chirildi",
@@ -237,80 +205,13 @@ export function ProductsListPage({
     }
   };
 
-  const handleRegeneratePreview = async (id: string) => {
-    try {
-      setRegenerateLoading(true);
-      await $api.post(`/products/${id}/regenerate-preview`);
-
-      toast({
-        title: "Navbatga qo'shildi",
-        description: "Preview qayta generatsiya qilish uchun navbatga olindi.",
-      });
-    } catch (error) {
-      toast({
-        title: "Xatolik",
-        description: "Preview generatsiyasini boshlashda xatolik",
-        variant: "destructive",
-      });
-    } finally {
-      setRegenerateLoading(false);
-    }
-  };
-
-  const handleRegenerateProduct = async (id: string) => {
-    try {
-      setRegenerateLoading(true);
-      await $api.post(`/products/${id}/regenerate-product`);
-
-      toast({
-        title: "Navbatga qo'shildi",
-        description:
-          "Mahsulot ma'lumotlarini qayta generatsiya qilish boshlandi.",
-      });
-    } catch (error) {
-      toast({
-        title: "Xatolik",
-        description: "Qayta ishlashni boshlashda xatolik yuz berdi",
-        variant: "destructive",
-      });
-    } finally {
-      setRegenerateLoading(false);
-    }
-  };
-
-  const handleBulkRegenerate = async (type: "preview" | "product") => {
-    try {
-      setRegenerateLoading(true);
-      const endpoint =
-        type === "preview"
-          ? "/products/bulk-regenerate-preview"
-          : "/products/bulk-regenerate-product";
-
-      await $api.post(endpoint, { productIds: selectedIds });
-
-      toast({
-        title: "Jarayon boshlandi",
-        description: `${selectedIds.length} ta mahsulot navbatga qo'shildi.`,
-      });
-
-      setSelectedIds([]);
-    } catch (error) {
-      toast({
-        title: "Xatolik",
-        variant: "destructive",
-      });
-    } finally {
-      setRegenerateLoading(false);
-    }
-  };
-
   const approveProduct = async (status: ProductStatus, reason?: string) => {
     if (!productToAction) return;
 
     try {
       setApproveLoad(true);
 
-      await $api.patch(`/products/${productToAction._id}/approve`, {
+      await $api.patch(`/products/${productToAction.id}/approve`, {
         status,
         rejectReason: reason,
       });
@@ -345,10 +246,6 @@ export function ProductsListPage({
       if (bulkAction === "delete") {
         await $api.delete("/products/bulk/delete", {
           data: { ids: selectedIds },
-        });
-      } else if (bulkAction === "preview") {
-        await $api.patch("/products/bulk/preview", {
-          productIds: selectedIds,
         });
       } else {
         await $api.patch("/products/bulk/approve", {
@@ -405,36 +302,10 @@ export function ProductsListPage({
             className="pl-10 bg-card border-border"
           />
         </div>
-
-        <div className="w-full sm:w-64">
-          <Select value={selectedAuthor} onValueChange={setSelectedAuthor}>
-            <SelectTrigger className="bg-card">
-              <SelectValue placeholder="Muallif bo'yicha saralash" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Barcha mualliflar</SelectItem>
-              {authorsData?.map((author) => (
-                <SelectItem key={author._id} value={author._id}>
-                  {author.full_name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
       </div>
 
       {selectedIds.length > 0 && (
         <div className="flex gap-2 flex-wrap">
-          <Button
-            className="bg-success"
-            onClick={() => {
-              setBulkAction("approve");
-              setBulkModalOpen(true);
-            }}
-          >
-            {selectedIds.length} ta tasdiqlash
-          </Button>
-
           <Button
             variant="destructive"
             onClick={() => {
@@ -443,38 +314,6 @@ export function ProductsListPage({
             }}
           >
             {selectedIds.length} ta rad etish
-          </Button>
-
-          <Button
-            variant="outline"
-            onClick={() => {
-              setBulkAction("preview");
-              setBulkModalOpen(true);
-            }}
-          >
-            {selectedIds.length} ta qayta preview qilish
-          </Button>
-
-          <Button
-            variant="secondary"
-            disabled={regenerateLoading}
-            onClick={() => handleBulkRegenerate("preview")}
-          >
-            <RefreshCw
-              className={`mr-2 h-4 w-4 ${regenerateLoading ? "animate-spin" : ""}`}
-            />
-            Qayta preview ({selectedIds.length})
-          </Button>
-
-          <Button
-            variant="secondary"
-            disabled={regenerateLoading}
-            onClick={() => handleBulkRegenerate("product")}
-          >
-            <RefreshCw
-              className={`mr-2 h-4 w-4 ${regenerateLoading ? "animate-spin" : ""}`}
-            />
-            Qayta generatsiya ({selectedIds.length})
           </Button>
 
           <Button
@@ -508,8 +347,8 @@ export function ProductsListPage({
               ),
               render: (product) => (
                 <Checkbox
-                  checked={selectedIds.includes(product._id)}
-                  onCheckedChange={() => toggleOne(product._id)}
+                  checked={selectedIds.includes(product.id)}
+                  onCheckedChange={() => toggleOne(product.id)}
                   onClick={(e) => e.stopPropagation()}
                   aria-label="Select row"
                 />
@@ -522,30 +361,7 @@ export function ProductsListPage({
                 (data?.pagination?.page - 1) * data?.pagination?.limit +
                 (index + 1),
             },
-            {
-              key: "isLegal",
-              header: "Holati",
-              render: (product) =>
-                product.isLegal === false ? (
-                  <div className="flex flex-col gap-2">
-                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200">
-                      Noqonuniy
-                    </span>
-                    <div className="p-1 rounded-md border border-red-200 bg-red-50">
-                      <p className="text-sm text-red-500 font-medium">
-                        Sababi:
-                      </p>
-                      <p className="text-sm text-red-700 mt-1">
-                        {product.illegalReason || "Sabab ko'rsatilmagan"}
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700 border border-green-200">
-                    Qonuniy
-                  </span>
-                ),
-            },
+
             {
               key: "name",
               header: (
@@ -589,11 +405,7 @@ export function ProductsListPage({
                 </div>
               ),
             },
-            {
-              key: "author",
-              header: "Muallif",
-              render: (product) => safeText(product.authorId?.full_name),
-            },
+
             {
               key: "price",
               header: (
@@ -615,27 +427,7 @@ export function ProductsListPage({
               ),
               render: (product) => formatCurrency(product.price),
             },
-            status === ProductStatus.APPROVED && {
-              key: "sotuv",
-              header: (
-                <Button
-                  variant="ghost"
-                  className="p-0 hover:bg-transparent font-bold"
-                  onClick={() => {
-                    if (sortBy === "soldCount") {
-                      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-                    } else {
-                      setSortBy("soldCount");
-                      setSortOrder("asc");
-                    }
-                  }}
-                >
-                  Sotuv
-                  <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-              ),
-              render: (product) => safeText(product.soldCount),
-            },
+
             {
               key: "fileSize",
               header: (
@@ -660,7 +452,9 @@ export function ProductsListPage({
             {
               key: "status",
               header: "Holati",
-              render: (product) => <ProductStatusBadge status={product.status} />,
+              render: (product) => (
+                <ProductStatusBadge status={product.status} />
+              ),
             },
             {
               key: "createdAt",
@@ -706,28 +500,6 @@ export function ProductsListPage({
                     >
                       <Eye className="mr-2 h-4 w-4" />
                       Ko'rish
-                    </DropdownMenuItem>
-
-                    <DropdownMenuItem
-                      disabled={regenerateLoading}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleRegeneratePreview(product._id);
-                      }}
-                    >
-                      <RefreshCw className="mr-2 h-4 w-4" />
-                      Qayta preview
-                    </DropdownMenuItem>
-
-                    <DropdownMenuItem
-                      disabled={regenerateLoading}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleRegenerateProduct(product._id);
-                      }}
-                    >
-                      <RefreshCw className="mr-2 h-4 w-4" />
-                      Qayta generatsiya
                     </DropdownMenuItem>
 
                     <DropdownMenuSeparator />
@@ -789,7 +561,7 @@ export function ProductsListPage({
             },
           ]}
           data={products}
-          keyExtractor={(product) => product._id}
+          keyExtractor={(product) => product.id}
           emptyMessage="Mahsulotlar topilmadi"
         />
       </div>
@@ -797,18 +569,20 @@ export function ProductsListPage({
       {/* Mobile cards */}
       <div className="md:hidden space-y-3">
         {products.length === 0 ? (
-          <p className="text-center text-muted-foreground py-8">Mahsulotlar topilmadi</p>
+          <p className="text-center text-muted-foreground py-8">
+            Mahsulotlar topilmadi
+          </p>
         ) : (
           products.map((product) => (
             <div
-              key={product._id}
+              key={product.id}
               className="stat-card space-y-3 cursor-pointer"
               onClick={() => openDetail(product)}
             >
               <div className="flex items-start gap-3">
                 <Checkbox
-                  checked={selectedIds.includes(product._id)}
-                  onCheckedChange={() => toggleOne(product._id)}
+                  checked={selectedIds.includes(product.id)}
+                  onCheckedChange={() => toggleOne(product.id)}
                   onClick={(e) => e.stopPropagation()}
                   className="mt-1"
                 />
@@ -824,12 +598,12 @@ export function ProductsListPage({
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-foreground truncate">{product.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {product.fileExt.toUpperCase()} · {formatFileSize(product.fileSize || 0)}
+                  <p className="font-medium text-foreground truncate">
+                    {product.name}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {safeText(product.authorId?.full_name)}
+                    {product.fileExt.toUpperCase()} ·{" "}
+                    {formatFileSize(product.fileSize || 0)}
                   </p>
                 </div>
                 <div className="shrink-0">
@@ -837,42 +611,80 @@ export function ProductsListPage({
                 </div>
               </div>
 
-              {product.isLegal === false && (
-                <div className="p-2 rounded-md border border-red-200 bg-red-50">
-                  <p className="text-xs text-red-700 font-medium">Noqonuniy: {product.illegalReason || "Sabab ko'rsatilmagan"}</p>
-                </div>
-              )}
-
               <div className="flex items-center justify-between text-sm">
-                <span className="font-semibold text-foreground">{formatCurrency(product.price)}</span>
-                <span className="text-muted-foreground">{formatDateTime(product.createdAt)}</span>
+                <span className="font-semibold text-foreground">
+                  {formatCurrency(product.price)}
+                </span>
+                <span className="text-muted-foreground">
+                  {formatDateTime(product.createdAt)}
+                </span>
               </div>
 
               <div className="flex items-center gap-1 pt-2 border-t border-border/50 flex-wrap">
-                <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); openDetail(product); }}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openDetail(product);
+                  }}
+                >
                   <Eye className="h-4 w-4 mr-1" /> Ko'rish
                 </Button>
-                <Button variant="ghost" size="sm" className="text-green-600" onClick={(e) => { e.stopPropagation(); setProductToAction(product); setConfirmApproveOpen(true); }}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-green-600"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setProductToAction(product);
+                    setConfirmApproveOpen(true);
+                  }}
+                >
                   <Check className="h-4 w-4 mr-1" /> Tasdiq
                 </Button>
-                <Button variant="ghost" size="sm" className="text-destructive" onClick={(e) => { e.stopPropagation(); setProductToAction(product); setRejectDialogOpen(true); }}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-destructive"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setProductToAction(product);
+                    setRejectDialogOpen(true);
+                  }}
+                >
                   <X className="h-4 w-4 mr-1" /> Rad
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" onClick={(e) => e.stopPropagation()}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setProductToEdit(product); setEditDialogOpen(true); }}>
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setProductToEdit(product);
+                        setEditDialogOpen(true);
+                      }}
+                    >
                       <Edit className="mr-2 h-4 w-4" /> Tahrirlash
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleRegeneratePreview(product._id); }}>
-                      <RefreshCw className="mr-2 h-4 w-4" /> Qayta preview
-                    </DropdownMenuItem>
+
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-destructive" onClick={(e) => { e.stopPropagation(); setProductToDelete(product); setDeleteDialogOpen(true); }}>
+                    <DropdownMenuItem
+                      className="text-destructive"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setProductToDelete(product);
+                        setDeleteDialogOpen(true);
+                      }}
+                    >
                       <Trash className="mr-2 h-4 w-4" /> O'chirish
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -942,12 +754,6 @@ export function ProductsListPage({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="stat-card">
-                  <p className="text-sm text-muted-foreground">Muallif</p>
-                  <p className="text-lg font-semibold text-foreground">
-                    {selectedProduct.authorId.full_name}
-                  </p>
-                </div>
-                <div className="stat-card">
                   <p className="text-sm text-muted-foreground">Narxi</p>
                   <p className="text-lg font-semibold text-foreground">
                     {formatCurrency(selectedProduct.price)}
@@ -994,37 +800,6 @@ export function ProductsListPage({
                       </span>
                     ))}
                   </div>
-                </div>
-              )}
-
-              {status === ProductStatus.PENDING && (
-                <div className="flex justify-end gap-3 pt-4 border-t border-border">
-                  <Button
-                    type="button"
-                    disabled={approveLoad}
-                    variant="outline"
-                    onClick={() => {
-                      setDetailOpen(false);
-                      setProductToAction(selectedProduct);
-                      setRejectDialogOpen(true);
-                    }}
-                    className="border-destructive text-destructive hover:bg-destructive/10"
-                  >
-                    <X className="mr-2 h-4 w-4" />
-                    Rad etish
-                  </Button>
-                  <Button
-                    disabled={approveLoad}
-                    onClick={() => {
-                      setDetailOpen(false);
-                      setProductToAction(selectedProduct);
-                      setConfirmApproveOpen(true);
-                    }}
-                    className="bg-success text-success-foreground hover:bg-success/90"
-                  >
-                    <Check className="mr-2 h-4 w-4" />
-                    Tasdiqlash
-                  </Button>
                 </div>
               )}
             </div>
@@ -1140,11 +915,9 @@ export function ProductsListPage({
             >
               {bulkAction === "delete"
                 ? "O'chirish"
-                : bulkAction === "preview"
-                  ? "Qayta preview qilish"
-                  : bulkAction === "reject"
-                    ? "Rad etish"
-                    : "Tasdiqlash"}
+                : bulkAction === "reject"
+                  ? "Rad etish"
+                  : "Tasdiqlash"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -5,31 +5,21 @@ import { cn } from "@/lib/utils";
 import { authStore } from "@/store/auth.store";
 import { useMutation } from "@tanstack/react-query";
 import {
-  ArrowRightLeft,
   ChevronLeft,
   ChevronRight,
-  CreditCard,
   FileText,
   FolderOpen,
-  Layers,
   LayoutDashboard,
   LogOut,
-  Logs,
-  MessageSquare,
-  Newspaper,
   Package,
-  Receipt,
   Settings,
-  Shield,
-  ShoppingCart,
   Store,
   Users,
-  Wallet,
+  X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Menu, X } from "lucide-react";
 
 interface NavChild {
   title: string;
@@ -59,9 +49,8 @@ const navItems: NavItem[] = [
     icon: Users,
     roles: [UserRole.ADMIN],
     children: [
-      { title: "Xaridorlar", href: "/users/buyers", icon: Users },
-      { title: "Sotuvchilar", href: "/users/sellers", icon: Store },
-      { title: "Moderatorlar", href: "/users/moderators", icon: Shield },
+      { title: "Studentlar", href: "/users/students", icon: Users },
+      { title: "Adminlar", href: "/users/admins", icon: Store },
     ],
   },
   {
@@ -74,13 +63,13 @@ const navItems: NavItem[] = [
     title: "Mahsulotlar",
     href: "/products",
     icon: Package,
-    roles: [UserRole.ADMIN, UserRole.MODERATOR],
+    roles: [UserRole.ADMIN],
     children: [
       {
-        title: "Kutilmoqda",
-        href: "/products/pending",
+        title: "Yuklash",
+        href: "/products/upload",
         icon: FileText,
-        roles: [UserRole.ADMIN, UserRole.MODERATOR],
+        roles: [UserRole.ADMIN],
       },
       {
         title: "Tasdiqlangan",
@@ -94,64 +83,9 @@ const navItems: NavItem[] = [
         icon: FileText,
         roles: [UserRole.ADMIN],
       },
-      {
-        title: "Qayta generatsiya",
-        href: "/products/regenerate",
-        icon: FileText,
-        roles: [UserRole.ADMIN],
-      },
-      {
-        title: "Qayta preview qilish",
-        href: "/products/preview",
-        icon: FileText,
-        roles: [UserRole.ADMIN],
-      },
     ],
   },
-  {
-    title: "Moliya",
-    href: "/finance",
-    icon: CreditCard,
-    roles: [UserRole.ADMIN],
-    children: [
-      { title: "Buyurtmalar", href: "/finance/orders", icon: ShoppingCart },
-      {
-        title: "To'lovlar tahlili",
-        href: "/finance/orders-breakdown",
-        icon: Receipt,
-      },
-      {
-        title: "Tranzaksiyalar",
-        href: "/finance/transactions",
-        icon: ArrowRightLeft,
-      },
-      { title: "Pul yechish", href: "/finance/withdrawals", icon: Wallet },
-      {
-        title: "Qaytarish so'rovlari",
-        href: "/finance/refunds",
-        icon: ArrowRightLeft,
-      },
-    ],
-  },
-  {
-    title: "Takliflar",
-    href: "/offers",
-    icon: MessageSquare,
-    roles: [UserRole.ADMIN],
-  },
-  {
-    title: "Yangiliklar",
-    href: "/promos",
-    icon: Newspaper,
-    roles: [UserRole.ADMIN],
-  },
-  {
-    title: "Logs",
-    href: "/security-logs",
-    icon: Logs,
-    roles: [UserRole.ADMIN],
-  },
-  { title: "Navbat statistikasi", href: "/queue-stats", icon: Layers, roles: [UserRole.ADMIN] },
+
   {
     title: "Sozlamalar",
     href: "/settings",
@@ -172,7 +106,6 @@ export function AdminSidebar({ mobileOpen, onMobileClose }: AdminSidebarProps) {
   const navigate = useNavigate();
   const { user } = authStore();
 
-  // Mobileda sahifa o'zgarganda menyu yopilsin
   useEffect(() => {
     onMobileClose?.();
   }, [location.pathname]);
@@ -213,11 +146,9 @@ export function AdminSidebar({ mobileOpen, onMobileClose }: AdminSidebarProps) {
       className={cn(
         "fixed left-0 top-0 z-50 h-screen transition-all duration-300 ease-in-out",
         "bg-blue-700 dark:bg-slate-950 border-r border-blue-900/50 shadow-[0_0_20px_rgba(30,58,138,0.2)]",
-        // Desktop
         "hidden lg:block",
         collapsed ? "lg:w-20" : "lg:w-64",
 
-        
         mobileOpen && "!block w-72",
       )}
     >
@@ -235,7 +166,6 @@ export function AdminSidebar({ mobileOpen, onMobileClose }: AdminSidebarProps) {
             </div>
           )}
 
-          {/* Mobile: X tugmasi */}
           <Button
             variant="ghost"
             size="icon"

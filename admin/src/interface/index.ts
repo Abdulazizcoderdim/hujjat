@@ -1,9 +1,6 @@
 export enum UserRole {
-  BUYER = "buyer",
-  SELLER = "seller",
   ADMIN = "admin",
-  GHOST = "ghost",
-  MODERATOR = "moderator",
+  STUDENT = "student",
 }
 
 export enum OrderRefundStatus {
@@ -13,7 +10,7 @@ export enum OrderRefundStatus {
 }
 
 export interface IUser {
-  _id?: string;
+  id?: string;
   full_name?: string;
   products_count?: number;
   email?: string;
@@ -38,7 +35,7 @@ export enum OrderStatus {
 }
 
 export interface IOrder<T, U> {
-  _id: string;
+  id: string;
 
   buyerId: U;
   sellerId: U;
@@ -62,16 +59,12 @@ export interface IOrder<T, U> {
 }
 
 export enum ProductStatus {
-  PENDING = "pending",
   APPROVED = "approved",
   REJECTED = "rejected",
-  DISABLED = "disabled",
-  REGENERATE = "regenerate",
-  PREVIEW = "preview",
 }
 
-export interface IProduct<C, A> {
-  _id: string;
+export interface IProduct<C> {
+  id: string;
 
   name: string;
   slug: string;
@@ -91,8 +84,6 @@ export interface IProduct<C, A> {
   categoryId: C;
   tags: string[];
 
-  authorId: A;
-
   viewCount: number;
   soldCount: number;
   isLegal?: boolean;
@@ -111,7 +102,7 @@ export interface IProduct<C, A> {
 }
 
 export interface ICategory {
-  _id: string;
+  id: string;
   name: string;
   slug: string;
   icon: string;
@@ -138,7 +129,7 @@ export enum TransactionStatus {
 }
 
 export interface Transaction<U> {
-  _id: string;
+  id: string;
   userId: U;
   orderId?: string;
   amount: number;
@@ -156,7 +147,7 @@ export enum WithdrawalStatus {
 }
 
 export interface Withdrawal<U> {
-  _id: string;
+  id: string;
   sellerId: U;
   amount: number;
   paymentProofKey: string;
@@ -168,7 +159,7 @@ export interface Withdrawal<U> {
 }
 
 export interface IOffer<U> {
-  _id: string;
+  id: string;
   userId: U;
   text: string;
   response: string | null;

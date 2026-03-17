@@ -10,10 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import $api from "@/http/axios";
-import { UserRole } from "@/interface";
 import { authStore } from "@/store/auth.store";
 import { AlertCircle, Lock, User } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 export function LoginPage() {
@@ -22,18 +21,8 @@ export function LoginPage() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { setIsAuth, setUser, isAuth, user } = authStore();
+  const { setIsAuth, setUser } = authStore();
   const { toast } = useToast();
-
-  useEffect(() => {
-    if (isAuth) {
-      if (user.role === UserRole.MODERATOR) {
-        navigate("/products/pending");
-        return;
-      }
-      navigate("/");
-    }
-  }, [isAuth]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

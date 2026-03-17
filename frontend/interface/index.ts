@@ -82,10 +82,8 @@ export interface IOrder<T> {
 }
 
 export enum ProductStatus {
-  PENDING = "pending",
   APPROVED = "approved",
   REJECTED = "rejected",
-  DISABLED = "disabled",
 }
 
 export enum RefundStatus {

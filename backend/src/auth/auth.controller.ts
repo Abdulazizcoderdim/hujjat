@@ -1,8 +1,9 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
-  HttpStatus,
+  Logger,
   Post,
   Req,
   Res,
@@ -11,39 +12,26 @@ import {
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { AuthService } from 'src/auth/auth.service';
-import { CurrentUser } from 'src/auth/decorators/current-user.decorators';
 import { Roles } from 'src/auth/decorators/roles.decorator';
-import {
-  PhoneAuthDto,
-  SendEmailCodeDto,
-  VerifyEmailCodeDto,
-} from 'src/auth/dto/email.dto';
 import { LoginDto } from 'src/auth/dto/login.dto';
 import { RegisterDto } from 'src/auth/dto/register.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { UserRole } from 'src/users/schema/user.schema';
+import { CurrentUser } from './decorators/current-user.decorators';
 
 @Controller('auth')
 export class AuthController {
+  private readonly logger = new Logger(AuthController.name);
   constructor(private authService: AuthService) {}
 
-  @Post('email/send-code')
-  @HttpCode(HttpStatus.OK)
-  async sendEmailCode(@Body() dto: SendEmailCodeDto) {
-    return this.authService.sendEmailCode(dto.email.toLowerCase());
-  }
-
-  @Post('email/verify')
-  @HttpCode(HttpStatus.OK)
-  async verifyEmailCode(@Body() dto: VerifyEmailCodeDto) {
-    return this.authService.verifyEmailCode(dto.email.toLowerCase(), dto.code);
-  }
-
-  @Post('phone')
-  @HttpCode(HttpStatus.OK)
-  async loginWithPhone(@Body() dto: PhoneAuthDto) {
-    return this.authService.loginWithPhone(dto.phone);
+  @Get('me')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.STUDENT)
+  @HttpCode(200)
+  async me(@CurrentUser('sub') userId: number) {
+    const user = await this.authService.findById(userId);
+    return { user };
   }
 
   @Post('register')
@@ -66,22 +54,14 @@ export class AuthController {
     @Body() loginDto: LoginDto,
     @Res({ passthrough: true }) res: Response,
   ) {
+    this.logger.log('Login keldi', loginDto);
     const { user, accessToken, refreshToken } =
       await this.authService.login(loginDto);
 
     this.setRefreshCookie(res, refreshToken);
 
+    this.logger.log('Login bo`ldi', user);
     return { user, accessToken };
-  }
-
-  @Post('set-credentials')
-  @UseGuards(JwtAuthGuard)
-  @HttpCode(200)
-  async setCredentials(
-    @CurrentUser('sub') userId: number,
-    @Body() body: { login: string; password: string },
-  ) {
-    return this.authService.setCredentials(userId, body);
   }
 
   @Post('refresh')
@@ -127,21 +107,6 @@ export class AuthController {
     return { success: true };
   }
 
-  // @Post('telegram')
-  // @HttpCode(200)
-  // async telegramLogin(
-  //   @Body('code') code: string,
-  //   @Res({ passthrough: true }) res: Response,
-  //   @Req() req: Request,
-  // ) {
-  //   const { user, accessToken, refreshToken, needsSetup } =
-  //     await this.authService.telegramLogin(code, req.authContext);
-
-  //   this.setRefreshCookie(res, refreshToken);
-
-  //   return { user, accessToken, needsSetup };
-  // }
-
   @Post('create-admin')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
@@ -162,20 +127,6 @@ export class AuthController {
     this.setRefreshCookie(res, refreshToken);
 
     return { user, accessToken, needsSetup };
-  }
-
-  @Post('seller-login')
-  @HttpCode(200)
-  async sellerLoginByCredentials(
-    @Body() body: { login: string; password: string },
-    @Res({ passthrough: true }) res: Response,
-  ) {
-    const { user, accessToken, refreshToken } =
-      await this.authService.sellerLoginByCredentials(body);
-
-    this.setRefreshCookie(res, refreshToken);
-
-    return { user, accessToken };
   }
 
   private setRefreshCookie(res: Response, refreshToken: string) {
