@@ -47,6 +47,7 @@ const App = () => {
       setLoading(false);
     }
   };
+
   useEffect(() => {
     const token = localStorage.getItem("ADMIN_ACCESS_TOKEN");
     if (token) {
