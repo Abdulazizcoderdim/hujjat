@@ -1,11 +1,12 @@
 import BookCard from "@/components/BookCard";
+import ProfileAvatar from "@/components/ProfileAvatar";
 import SidebarNav from "@/components/SidebarNav";
 import useDebounce from "@/hooks/useDebounce";
 import $api from "@/http/axios";
 import { ICategory, IProduct } from "@/interface";
 import { useQuery } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, Loader, Loader2, Search, User, X } from "lucide-react";
+import { ArrowLeft, Loader, Loader2, Search, X } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -85,20 +86,8 @@ const Products = () => {
               Barcha kitoblar
             </span>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground hidden sm:block">
-              Talaba
-            </span>
-            <div
-              className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center cursor-pointer"
-              onClick={() => navigate("/profile")}
-            >
-              <User
-                className="w-4 h-4 text-muted-foreground"
-                strokeWidth={1.5}
-              />
-            </div>
-          </div>
+
+          <ProfileAvatar />
         </header>
 
         <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-4 sm:py-6">
