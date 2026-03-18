@@ -1,37 +1,38 @@
 import $api from "@/http/axios";
-import { uploadToSignedUrl } from "@/utils/uploadToSignedUrl";
 
-export type UploadProvider = "web_single" | "web";
-
-export async function singleUploadDocument(params: {
+export const createProduct = async (payload: {
   file: File;
+  poster: File | null;
   name: string;
   description: string;
   categoryId: string;
-  price: number;
-  tags?: string[];
-  onProgress?: (percent: number) => void;
-}) {
-  const { file, name, description, categoryId, price, tags, onProgress } =
-    params;
+  tags: string;
+  onProgress: (percent: number) => void;
+}) => {
+  const formData = new FormData();
+  formData.append("file", payload.file);
 
-  const prepareRes = await $api.post("/products/single/prepare", {
-    filename: file.name,
-    contentType: file.type || "application/octet-stream",
+  if (payload.poster) {
+    formData.append("poster", payload.poster);
+  }
+
+  formData.append("name", payload.name);
+  formData.append("description", payload.description);
+  formData.append("categoryId", payload.categoryId);
+  formData.append("tags", payload.tags);
+
+  const res = await $api.post("/products", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+
+    onUploadProgress: (progressEvent) => {
+      const percentCompleted = Math.round(
+        (progressEvent.loaded * 100) / (progressEvent.total || 1),
+      );
+      payload.onProgress(percentCompleted);
+    },
   });
 
-  const { uploadUrl, fileKey } = prepareRes.data;
-
-  await uploadToSignedUrl(uploadUrl, file, onProgress);
-
-  const completeRes = await $api.post("/products", {
-    fileKey,
-    price,
-    name,
-    description,
-    categoryId,
-    tags: tags || [],
-  });
-
-  return completeRes.data;
-}
+  return res.data;
+};

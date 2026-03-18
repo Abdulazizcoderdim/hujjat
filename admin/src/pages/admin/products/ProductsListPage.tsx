@@ -33,7 +33,6 @@ import $api from "@/http/axios";
 import { ICategory, IPagination, IProduct, ProductStatus } from "@/interface";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  ArrowUpDown,
   Check,
   Edit,
   Eye,
@@ -363,23 +362,7 @@ export function ProductsListPage({
 
             {
               key: "name",
-              header: (
-                <Button
-                  variant="ghost"
-                  className="p-0 hover:bg-transparent font-bold"
-                  onClick={() => {
-                    if (sortBy === "name") {
-                      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-                    } else {
-                      setSortBy("name");
-                      setSortOrder("asc");
-                    }
-                  }}
-                >
-                  Mahsulot
-                  <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-              ),
+              header: <p>Mahsulot</p>,
               render: (product) => (
                 <div className="flex items-center gap-3">
                   <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-border/50 flex-shrink-0">
@@ -409,48 +392,9 @@ export function ProductsListPage({
                 </div>
               ),
             },
-
-            {
-              key: "price",
-              header: (
-                <Button
-                  variant="ghost"
-                  className="p-0 hover:bg-transparent font-bold"
-                  onClick={() => {
-                    if (sortBy === "price") {
-                      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-                    } else {
-                      setSortBy("price");
-                      setSortOrder("asc");
-                    }
-                  }}
-                >
-                  Narxi
-                  <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-              ),
-              render: (product) => formatCurrency(product.price),
-            },
-
             {
               key: "fileSize",
-              header: (
-                <Button
-                  variant="ghost"
-                  className="p-0 hover:bg-transparent font-bold"
-                  onClick={() => {
-                    if (sortBy === "fileSize") {
-                      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-                    } else {
-                      setSortBy("fileSize");
-                      setSortOrder("asc");
-                    }
-                  }}
-                >
-                  Hajmi
-                  <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-              ),
+              header: <p>Hajmi</p>,
               render: (product) => formatFileSize(product.fileSize || 0),
             },
             {
@@ -462,23 +406,7 @@ export function ProductsListPage({
             },
             {
               key: "createdAt",
-              header: (
-                <Button
-                  variant="ghost"
-                  className="p-0 hover:bg-transparent font-bold"
-                  onClick={() => {
-                    if (sortBy === "createdAt") {
-                      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-                    } else {
-                      setSortBy("createdAt");
-                      setSortOrder("asc");
-                    }
-                  }}
-                >
-                  Yuklangan
-                  <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-              ),
+              header: <p>Yuklangan</p>,
               render: (product) => formatDateTime(product.createdAt),
             },
             {

@@ -1,8 +1,8 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import * as path from 'path';
 import slugify from 'slugify';
 import { Category } from 'src/category/schemas/category.schema';
-import { StorageService } from 'src/storage/storage.service';
 import { User } from 'src/users/schema/user.schema';
 import { Repository } from 'typeorm';
 import { ApproveProductDto } from './dto/approve-product.dto';
@@ -18,7 +18,6 @@ export class ProductsService {
     private readonly categoryRepo: Repository<Category>,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
-    private readonly storageService: StorageService,
   ) {}
 
   async approve(id: number, dto: ApproveProductDto) {
@@ -116,13 +115,52 @@ export class ProductsService {
       name: dto.name,
       slug,
       description: dto.description,
-      price: dto.price,
-      fileKey: dto.fileKey,
+      poster: dto.poster,
       fileExt: dto.fileKey.split('.').pop(),
       category: category,
       status: ProductStatus.APPROVED,
     });
 
     return this.productRepo.save(product);
+  }
+
+  async create(
+    dto: any,
+    file: Express.Multer.File,
+    poster: Express.Multer.File | null,
+  ) {
+    const slug = slugify(dto.name, { lower: true, strict: true });
+
+    const exists = await this.productRepo.findOne({
+      where: [{ name: dto.name }, { slug }],
+    });
+
+    if (exists) {
+      throw new BadRequestException('Product already exists');
+    }
+
+    const product = this.productRepo.create({
+      name: dto.name,
+      description: dto.description,
+      slug,
+      category: { id: dto.categoryId } as any,
+      tags: dto.tags ? dto.tags.split(',') : [],
+      fileExt: path.extname(file.filename),
+      fileSize: file.size,
+      poster: poster
+        ? this.getPublicUrl(`/uploads/${poster.filename}`)
+        : undefined,
+      status: ProductStatus.APPROVED,
+      fileUrl: this.getPublicUrl(`/uploads/${file.filename}`),
+    });
+
+    console.log(product);
+
+    return await this.productRepo.save(product);
+  }
+
+  getPublicUrl(path: string) {
+    const baseUrl = process.env.SERVER_BASE_URL;
+    return `${baseUrl}${path}`;
   }
 }

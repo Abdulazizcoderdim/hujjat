@@ -174,9 +174,13 @@ export function StudentsTable() {
           {selectedStudent && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
               <div className="space-y-4">
-                <div className="flex items-center gap-4 p-3 bg-muted/50 rounded-lg">
-                  <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center text-xl font-bold text-primary">
-                    {selectedStudent.full_name?.charAt(0)}
+                <div className="flex flex-col items-center gap-4 p-3 bg-muted/50 rounded-lg">
+                  <div className="h-20 w-auto bg-primary/10 flex items-center justify-center text-xl font-bold text-primary">
+                    <img
+                      src={selectedStudent.image}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                   <div>
                     <h4 className="font-bold">{selectedStudent.full_name}</h4>

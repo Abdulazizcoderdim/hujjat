@@ -101,6 +101,8 @@ export class AuthService implements OnModuleInit {
       },
     );
 
+    console.log('SUTEND IFOOOOOOOOOOO::>>>>>', studentInfo);
+
     const data = studentInfo.data.data;
 
     let user = await this.userModel.findOne({
@@ -119,10 +121,20 @@ export class AuthService implements OnModuleInit {
         is_active: true,
         login: hemisLoginDto.login,
         password: hemisLoginDto.password,
+        group: data?.group?.name!,
+        faculty: data?.faculty?.name!,
+        specialty: data?.specialty?.name!,
+        level: data?.level?.name!,
+        university: data.university,
       });
     } else {
       user.full_name = data.full_name;
       user.image = data.image;
+      user.group = data?.group?.name!;
+      user.faculty = data?.faculty?.name!;
+      user.specialty = data?.specialty?.name!;
+      user.level = data?.level?.name!;
+      user.university = data.university;
     }
 
     await this.userModel.save(user);

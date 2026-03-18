@@ -1,5 +1,4 @@
 import { Category } from 'src/category/schemas/category.schema';
-import { User } from 'src/users/schema/user.schema';
 import {
   Column,
   CreateDateColumn,
@@ -26,11 +25,11 @@ export class Product {
   @Column({ unique: true })
   slug: string;
 
+  @Column()
+  fileUrl: string;
+
   @Column('text')
   description: string;
-
-  @Column({ type: 'int' })
-  price: number;
 
   @Column({ nullable: true })
   pages?: number;
@@ -43,18 +42,6 @@ export class Product {
 
   @Column({ nullable: true })
   poster?: string;
-
-  @Column('text', { array: true, nullable: true })
-  images?: string[];
-
-  @Column()
-  fileKey: string;
-
-  @Column({ unique: true, nullable: true })
-  fileHash?: string;
-
-  @Column({ nullable: true })
-  previewPdf?: string;
 
   @Column({
     type: 'enum',
@@ -72,31 +59,6 @@ export class Product {
 
   @Column({ default: 0 })
   viewCount: number;
-
-  @Column({ default: 0 })
-  soldCount: number;
-
-  @Column({ nullable: true })
-  rejectionReason?: string;
-
-  @Column({ nullable: true })
-  approvedAt?: Date;
-
-  @Column({ nullable: true })
-  rejectedAt?: Date;
-
-  @ManyToOne(() => User, { nullable: true })
-  @JoinColumn({ name: 'moderated_by' })
-  moderatedBy?: User;
-
-  @Column({ nullable: true })
-  moderatorNote?: string;
-
-  @Column({ default: true })
-  isLegal?: boolean;
-
-  @Column({ nullable: true })
-  illegalReason?: string;
 
   @CreateDateColumn()
   createdAt: Date;

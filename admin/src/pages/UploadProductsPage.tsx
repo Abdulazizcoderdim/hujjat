@@ -1,7 +1,7 @@
 import { SingleUploadForm } from "@/components/SingleUploadForm";
 import $api from "@/http/axios";
 import { ICategory, IPagination } from "@/interface";
-import { singleUploadDocument } from "@/service/uploadProduct";
+import { createProduct } from "@/service/uploadProduct";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -29,27 +29,24 @@ const UploadProductsPage = () => {
     onProgress: (percent: number) => void,
   ) => {
     try {
-      const file = data.get("file") as File | null;
+      const file = data.get("file") as File;
+      const poster = data.get("poster") as File;
       const name = String(data.get("name") || "");
       const description = String(data.get("description") || "");
       const categoryId = String(data.get("categoryId") || "");
-      const price = Number(data.get("price") || 0);
+      const tags = String(data.get("tags") || "");
 
-      if (!file) {
-        toast.error("Fayl tanlanmagan");
-        return;
-      }
-
-      await singleUploadDocument({
+      await createProduct({
         file,
+        poster,
         name,
         description,
         categoryId,
-        price,
+        tags,
         onProgress,
       });
 
-      toast.success("Hujjat yuklandi ✅");
+      toast.success("Mahsulot va hujjat muvaffaqiyatli saqlandi ✅");
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Upload xatolik");
     }

@@ -6,9 +6,9 @@ import { AuthModule } from './auth/auth.module';
 import { CategoryModule } from './category/category.module';
 import { OtpModule } from './otp/otp.module';
 import { ProductsModule } from './products/products.module';
-import { StorageModule } from './storage/storage.module';
 import { TokensModule } from './tokens/tokens.module';
 import { UsersModule } from './users/users.module';
+import { UploadModule } from './upload/upload.module';
 
 @Module({
   imports: [
@@ -39,12 +39,12 @@ import { UsersModule } from './users/users.module';
       autoLoadEntities: true,
       synchronize: true,
     }),
-    StorageModule,
     AuthModule,
     TokensModule,
     OtpModule,
     ProductsModule,
     CategoryModule,
+    UploadModule,
   ],
   controllers: [],
   providers: [],

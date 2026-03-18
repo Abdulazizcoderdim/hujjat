@@ -26,6 +26,9 @@ export class CreateProductDto {
   @IsString()
   fileKey: string;
 
+  @IsString()
+  poster: string;
+
   @IsOptional()
   @IsArray()
   @IsMongoId({ each: true })

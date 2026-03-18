@@ -27,13 +27,14 @@ export function SingleUploadForm({
   categories,
   onSubmit,
 }: SingleUploadFormProps) {
+  const [poster, setPoster] = useState<File | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     categoryId: "",
-    price: "",
     tags: "",
+    poster: "",
   });
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -59,8 +60,8 @@ export function SingleUploadForm({
       data.append("name", formData.name);
       data.append("description", formData.description);
       data.append("categoryId", formData.categoryId);
-      data.append("price", formData.price);
       data.append("tags", formData.tags);
+      data.append("poster", poster as File);
 
       await onSubmit(data, (p) => setProgress(p));
 
@@ -71,8 +72,8 @@ export function SingleUploadForm({
         name: "",
         description: "",
         categoryId: "",
-        price: "",
         tags: "",
+        poster: "",
       });
     } finally {
       setTimeout(() => {
@@ -82,11 +83,7 @@ export function SingleUploadForm({
   };
 
   const isValid =
-    file &&
-    formData.name &&
-    formData.description &&
-    formData.categoryId &&
-    formData.price;
+    file && formData.name && formData.description && formData.categoryId;
 
   return (
     <Card className="animate-fade-in">
@@ -95,7 +92,6 @@ export function SingleUploadForm({
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* File Upload Zone */}
           <div
             className={`
               border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer
@@ -170,6 +166,21 @@ export function SingleUploadForm({
             </div>
           )}
 
+          <div className="space-y-2">
+            <Label>Poster (rasm)</Label>
+
+            <Input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setPoster(e.target.files?.[0] || null)}
+              disabled={isUploading}
+            />
+
+            {poster && (
+              <p className="text-sm text-muted-foreground">{poster.name}</p>
+            )}
+          </div>
+
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="name">Hujjat nomi *</Label>
@@ -221,22 +232,6 @@ export function SingleUploadForm({
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="price">Narxi (so'm) *</Label>
-              <Input
-                id="price"
-                type="number"
-                min="1000"
-                value={formData.price}
-                disabled={isUploading}
-                onChange={(e) =>
-                  setFormData({ ...formData, price: e.target.value })
-                }
-                placeholder="10000"
-                required
-              />
             </div>
 
             <div className="space-y-2 sm:col-span-2">
