@@ -27,10 +27,6 @@ const AuthClient = () => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleLoginSuccess = () => {
-    router.refresh();
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthLoading(true);
@@ -43,7 +39,7 @@ const AuthClient = () => {
       setUser(data.user);
       setIsAuth(true);
       setLoading(true);
-      handleLoginSuccess();
+      router.push("/profile");
     } catch (error) {
       console.log(error);
     } finally {

@@ -1,24 +1,37 @@
 export enum UserRole {
-  BUYER = "buyer",
-  SELLER = "seller",
   ADMIN = "admin",
-  GHOST = "ghost",
-  MODERATOR = "moderator",
+  STUDENT = "student",
 }
 
 export interface IUser {
-  id?: string;
+  id: number;
+  first_name?: string;
+  second_name?: string;
+  third_name?: string;
   full_name?: string;
+  short_name?: string;
   email?: string;
+  login?: string;
+  hemis_id?: string;
   password?: string;
+  student_id_number?: string;
+  university?: string;
+  faculty?: string;
+  group?: string;
+  specialty?: string;
+  semester?: string;
+  level?: string;
   role: UserRole;
-  avatar?: string;
-  balance: number;
+  phone?: string;
+  image?: string;
+  birth_date?: number;
+  address?: string;
   is_active: boolean;
-  telegramId?: number;
-  bio?: string;
-  createdAt?: string;
-  updatedAt?: string;
+  is_blocked: boolean;
+  googleId?: string;
+  hash?: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export enum OrderStatus {

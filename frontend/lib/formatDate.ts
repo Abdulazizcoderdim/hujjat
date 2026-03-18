@@ -1,4 +1,4 @@
-export const formatUzDate = (value?: string) => {
+export const formatUzDate = (value?: Date) => {
   if (!value) {
     return "Noma'lum";
   }
