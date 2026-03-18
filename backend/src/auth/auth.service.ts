@@ -43,7 +43,7 @@ export class AuthService implements OnModuleInit {
   private async seedAdmin() {
     const email = this.configService.get<string>('ADMIN_EMAIL');
     const password = this.configService.get<string>('ADMIN_PASSWORD');
-    this.logger.error('Parol::::', password);
+    this.logger.log('Parol::::', password);
     const fullName = this.configService.get<string>('ADMIN_FULL_NAME');
 
     if (!email || !password) return;

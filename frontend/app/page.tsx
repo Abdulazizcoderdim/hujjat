@@ -26,20 +26,9 @@ export default function Home() {
 
         <main className="flex-1">
           <HeroSection />
-          {/* <PromoSlider /> */}
           <CategoriesSection />
-          {/* <VideoSection /> */}
 
           <FeaturedProducts />
-          {/* <PopularProducts />
-          <BestNewProducts />
-          <TaqdimotlarProducts />
-          <KursIshlariProducts />
-          <ReferatProducts />
-          <DiplomProducts />
-          <MustaqilProducts />
-          <TestlarProducts /> */}
-          {/* <CTASection /> */}
         </main>
 
         <Footer />
