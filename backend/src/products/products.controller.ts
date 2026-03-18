@@ -24,6 +24,7 @@ import { editFileName, fileFilter } from 'src/helper/file-upload.utils';
 import { UserRole } from 'src/users/schema/user.schema';
 import { ApproveProductDto } from './dto/approve-product.dto';
 import { CreateProductDto } from './dto/create-product.dto';
+import { UpdateProductDto } from './dto/update-product.dto';
 import { ProductsService } from './products.service';
 import { ProductStatus } from './schemas/product.schema';
 
@@ -36,14 +37,24 @@ export class ProductsController {
     return this.productsService.getProductsAnalytics();
   }
 
+  @Get('books/search')
+  search(@Query('q') query: string) {
+    return this.productsService.search(query);
+  }
+
   @Get('books')
-  async getBooks() {
-    return this.productsService.getBooks();
+  async getBooks(@Query('ids') ids?: string) {
+    return this.productsService.getBooks(ids);
   }
 
   @Get('books/:id')
   async getBookById(@Param('id') id: number) {
     return this.productsService.findOneById(id);
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: number) {
+    return this.productsService.findOne(id);
   }
 
   @Get(':id/download')
@@ -64,9 +75,9 @@ export class ProductsController {
     return { url };
   }
 
-  @Get('status/:status')
+  @Get()
   async getProductsByStatus(
-    @Param('status', new ParseEnumPipe(ProductStatus)) status: ProductStatus,
+    @Query('status', new ParseEnumPipe(ProductStatus)) status: ProductStatus,
     @Query('page', new ParseIntPipe({ optional: true })) page: number = 1,
     @Query('limit', new ParseIntPipe({ optional: true })) limit: number = 10,
     @Query('category', new ParseIntPipe({ optional: true })) category: number,
@@ -124,5 +135,36 @@ export class ProductsController {
   @Roles(UserRole.ADMIN)
   async delete(@Param('id') id: number) {
     return this.productsService.delete(id);
+  }
+
+  @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @UseInterceptors(
+    FileFieldsInterceptor(
+      [
+        { name: 'file', maxCount: 1 },
+        { name: 'poster', maxCount: 1 },
+      ],
+      {
+        storage: diskStorage({
+          destination: './uploads',
+          filename: editFileName,
+        }),
+      },
+    ),
+  )
+  update(
+    @Param('id') id: number,
+    @Body() dto: UpdateProductDto,
+    @UploadedFiles()
+    files: { file?: Express.Multer.File[]; poster?: Express.Multer.File[] },
+  ) {
+    return this.productsService.update(
+      id,
+      dto,
+      files.file?.[0],
+      files.poster?.[0],
+    );
   }
 }

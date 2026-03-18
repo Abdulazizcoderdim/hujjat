@@ -1,11 +1,15 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as fs from 'fs';
 import * as path from 'path';
 import slugify from 'slugify';
 import { Category } from 'src/category/schemas/category.schema';
 import { User } from 'src/users/schema/user.schema';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { ApproveProductDto } from './dto/approve-product.dto';
 import { CreateProductDto } from './dto/create-product.dto';
 import { Product, ProductStatus } from './schemas/product.schema';
@@ -38,6 +42,80 @@ export class ProductsService {
     }
   }
 
+  async search(query: string): Promise<Product[]> {
+    if (!query?.trim()) return [];
+
+    const q = `%${query.trim().toLowerCase()}%`;
+
+    return this.productRepo
+      .createQueryBuilder('product')
+      .leftJoinAndSelect('product.category', 'category')
+      .where('product.status = :status', { status: ProductStatus.APPROVED })
+      .andWhere(
+        '(LOWER(product.name) LIKE :q OR LOWER(product.author) LIKE :q)',
+        { q },
+      )
+      .orderBy('product.viewCount', 'DESC')
+      .take(20)
+      .getMany();
+  }
+
+  async findOne(id: number) {
+    const product = await this.productRepo.findOne({
+      where: { id },
+      relations: ['category'],
+    });
+
+    if (!product) throw new NotFoundException('Product not found');
+    return product;
+  }
+
+  async update(
+    id: number,
+    dto: any,
+    file?: Express.Multer.File,
+    poster?: Express.Multer.File,
+  ) {
+    const product = await this.productRepo.findOne({
+      where: { id },
+      relations: ['category'],
+    });
+
+    if (!product) throw new NotFoundException('Mahsulot topilmadi');
+
+    if (file) {
+      this.removeFileFromDisk(product.fileUrl);
+      product.fileUrl = this.getPublicUrl(`/uploads/${file.filename}`);
+      product.fileExt = path.extname(file.filename);
+      product.fileSize = file.size;
+    }
+
+    if (poster) {
+      if (product.poster) this.removeFileFromDisk(product.poster);
+      product.poster = this.getPublicUrl(`/uploads/${poster.filename}`);
+    }
+
+    if (dto.name) {
+      product.name = dto.name;
+      product.slug = slugify(dto.name, { lower: true });
+    }
+
+    product.description = dto.description ?? product.description;
+    product.pages = dto.pages ? Number(dto.pages) : product.pages;
+    product.author = dto.author ?? product.author;
+    product.year = dto.year ? Number(dto.year) : product.year;
+    product.language = dto.language ?? product.language;
+    product.tags = dto.tags
+      ? dto.tags.split(',').map((t: string) => t.trim())
+      : product.tags;
+
+    if (dto.categoryId) {
+      product.category = { id: Number(dto.categoryId) } as any;
+    }
+
+    return this.productRepo.save(product);
+  }
+
   async delete(id: number) {
     const product = await this.productRepo.findOne({
       where: { id },
@@ -55,7 +133,15 @@ export class ProductsService {
     return this.productRepo.remove(product);
   }
 
-  async getBooks() {
+  async getBooks(ids?: string) {
+    if (ids) {
+      const idArray = ids.split(',').map((id) => Number(id.trim()));
+      return this.productRepo.find({
+        where: { id: In(idArray) },
+        relations: ['category'],
+      });
+    }
+
     return this.productRepo.find({
       where: { status: ProductStatus.APPROVED },
       relations: ['category'],

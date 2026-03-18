@@ -1,13 +1,27 @@
+import ProfileAvatar from "@/components/ProfileAvatar";
 import SidebarNav from "@/components/SidebarNav";
-import { allBooks } from "@/data/books";
+import $api from "@/http/axios";
+import { ICategory, IProduct } from "@/interface";
+import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Star, User } from "lucide-react";
+import { Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
-const savedBooks = [allBooks[2], allBooks[3]];
 
 const Saved = () => {
   const navigate = useNavigate();
+  const savedBooks = JSON.parse(localStorage.getItem("savedBooks") || "[]");
+
+  const { data, isLoading } = useQuery<IProduct<ICategory>[]>({
+    queryKey: ["savedBooks"],
+    queryFn: async () => {
+      const { data } = await $api.get("/products/books", {
+        params: {
+          ids: savedBooks.join(","),
+        },
+      });
+      return data;
+    },
+  });
 
   return (
     <div className="h-svh w-full flex bg-background text-foreground antialiased overflow-hidden">
@@ -17,12 +31,8 @@ const Saved = () => {
           <div className="text-xs text-muted-foreground pl-12 md:pl-0">
             Saqlanganlar
           </div>
-          <div
-            className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center cursor-pointer"
-            onClick={() => navigate("/profile")}
-          >
-            <User className="w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
-          </div>
+
+          <ProfileAvatar />
         </header>
 
         <div className="flex-1 p-4 sm:p-8 min-h-0 overflow-y-auto">
@@ -35,7 +45,7 @@ const Saved = () => {
           </motion.h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
-            {savedBooks.map((book, i) => (
+            {data?.map((book, i) => (
               <motion.div
                 key={book.id}
                 initial={{ opacity: 0, scale: 0.95 }}
@@ -45,13 +55,13 @@ const Saved = () => {
                 className="bg-card rounded-xl border border-border p-4 flex gap-4 items-start cursor-pointer hover:shadow-card transition-shadow"
               >
                 <img
-                  src={book.cover}
-                  alt={book.title}
+                  src={book.poster}
+                  alt={book.name}
                   className="w-14 sm:w-16 h-20 sm:h-24 rounded-lg object-cover flex-shrink-0"
                 />
                 <div className="flex-1 min-w-0">
                   <h4 className="text-sm font-semibold truncate">
-                    {book.title}
+                    {book.name}
                   </h4>
                   <p className="text-xs text-muted-foreground mb-2">
                     {book.author}

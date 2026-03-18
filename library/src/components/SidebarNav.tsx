@@ -1,6 +1,6 @@
 import { BookOpen, Home, LogOut, Menu, Star, X } from "lucide-react";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 interface NavItemProps {
   icon?: React.ReactNode;
@@ -41,7 +41,9 @@ interface SidebarNavProps {
 
 const SidebarNav = ({ activePage = "home" }: SidebarNavProps) => {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
+  const isRead = pathname.includes("/book");
 
   const close = () => setOpen(false);
 
@@ -151,7 +153,7 @@ const SidebarNav = ({ activePage = "home" }: SidebarNavProps) => {
       {/* Mobile hamburger button */}
       <button
         onClick={() => setOpen(true)}
-        className="md:hidden fixed top-3 left-3 z-50 w-10 h-10 rounded-xl bg-card border border-border shadow-card flex items-center justify-center"
+        className={`md:hidden fixed ${isRead ? "top-12" : "top-3"} left-3 z-50 w-10 h-10 rounded-xl bg-card border border-border shadow-card flex items-center justify-center`}
         aria-label="Menyu"
       >
         <Menu className="w-5 h-5 text-foreground" strokeWidth={1.5} />
@@ -164,7 +166,7 @@ const SidebarNav = ({ activePage = "home" }: SidebarNavProps) => {
             className="absolute inset-0 bg-foreground/20 backdrop-blur-sm"
             onClick={close}
           />
-          <aside className="relative w-[280px] max-w-[85vw] flex flex-col bg-card  h-full shadow-search animate-in slide-in-from-left duration-200">
+          <aside className="relative w-[280px] max-w-[85vw] flex flex-col bg-card h-full shadow-search animate-in slide-in-from-left duration-200">
             <button
               onClick={close}
               className="absolute top-4 right-4 w-8 h-8 rounded-lg bg-secondary flex items-center justify-center"

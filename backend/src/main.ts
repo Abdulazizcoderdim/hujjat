@@ -11,8 +11,10 @@ async function bootstrap() {
   app.use(
     helmet({
       crossOriginResourcePolicy: { policy: 'cross-origin' },
+      contentSecurityPolicy: false,
     }),
   );
+
   app.setGlobalPrefix('api');
   app.use(cookieParser());
 
@@ -26,6 +28,7 @@ async function bootstrap() {
     setHeaders: (res) => {
       res.set('Access-Control-Allow-Origin', '*');
       res.set('Cross-Origin-Resource-Policy', 'cross-origin');
+      res.set('Content-Type', 'application/pdf');
     },
   });
 

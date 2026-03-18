@@ -9,6 +9,7 @@ import { ProductsModule } from './products/products.module';
 import { TokensModule } from './tokens/tokens.module';
 import { UsersModule } from './users/users.module';
 import { UploadModule } from './upload/upload.module';
+import { StudentBookModule } from './student-book/student-book.module';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { UploadModule } from './upload/upload.module';
     ProductsModule,
     CategoryModule,
     UploadModule,
+    StudentBookModule,
   ],
   controllers: [],
   providers: [],

@@ -53,7 +53,7 @@ export function DashboardPage() {
       queryKey: ["products-by-status", ProductStatus.APPROVED],
       queryFn: async () => {
         const res = await $api.get(
-          `/products/status/${ProductStatus.APPROVED}?page=1&limit=5`,
+          `/products?status=${ProductStatus.APPROVED}&page=1&limit=5`,
         );
         return res.data;
       },
@@ -179,7 +179,7 @@ export function DashboardPage() {
                       },
                     ]}
                     data={approvedProducts.items}
-                    keyExtractor={(p) => p.id}
+                    keyExtractor={(p) => p.id.toString()}
                     emptyMessage="Kutilayotgan mahsulot yo'q"
                   />
                 </div>

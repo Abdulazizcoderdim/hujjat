@@ -1,18 +1,22 @@
 import BookCard from "@/components/BookCard";
+import ProfileAvatar from "@/components/ProfileAvatar";
 import SidebarNav from "@/components/SidebarNav";
-import { allBooks } from "@/data/books";
+import useDebounce from "@/hooks/useDebounce";
 import $api from "@/http/axios";
 import { ICategory, IProduct } from "@/interface";
 import { useQuery } from "@tanstack/react-query";
-import { motion } from "framer-motion";
-import { Search, User } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Loader2, Search, X } from "lucide-react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-
-// const books = allBooks.slice(0, 6);
-const recentBooks = allBooks.slice(6, 10);
+import { ResMyBooks } from "./MyBooks";
 
 const Index = () => {
   const navigate = useNavigate();
+  const [searchValue, setSearchValue] = useState("");
+  const debouncedSearch = useDebounce(searchValue, 400);
+
+  const isSearching = debouncedSearch.trim().length > 0;
 
   const { data: books } = useQuery<IProduct<ICategory>[]>({
     queryKey: ["books"],
@@ -20,7 +24,31 @@ const Index = () => {
       const { data } = await $api.get("/products/books");
       return data;
     },
+    enabled: !isSearching,
   });
+
+  const { data: searchResults = [], isFetching: isSearchFetching } = useQuery<
+    IProduct<ICategory>[]
+  >({
+    queryKey: ["books-search", debouncedSearch],
+    queryFn: async () => {
+      const { data } = await $api.get("/products/books/search", {
+        params: { q: debouncedSearch },
+      });
+      return data;
+    },
+    enabled: isSearching,
+  });
+
+  const { data: recentBooks = [] } = useQuery<ResMyBooks[]>({
+    queryKey: ["my-books"],
+    queryFn: async () => {
+      const { data } = await $api.get("/student-book");
+      return data;
+    },
+  });
+
+  const displayedBooks = isSearching ? searchResults : books;
 
   return (
     <div className="h-svh w-full flex bg-background text-foreground antialiased overflow-hidden">
@@ -32,20 +60,8 @@ const Index = () => {
           <div className="text-xs text-muted-foreground pl-12 md:pl-0">
             Bosh sahifa
           </div>
-          <div
-            className="flex items-center cursor-pointer gap-3"
-            onClick={() => navigate("/profile")}
-          >
-            <span className="text-sm text-muted-foreground hidden sm:block">
-              Talaba
-            </span>
-            <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
-              <User
-                className="w-4 h-4 text-muted-foreground"
-                strokeWidth={1.5}
-              />
-            </div>
-          </div>
+
+          <ProfileAvatar />
         </header>
 
         {/* Content */}
@@ -63,20 +79,50 @@ const Index = () => {
             <h2 className="text-xl sm:text-3xl font-semibold tracking-tight font-display text-balance mb-4 sm:mb-5">
               Bilim chegarasiz. Bugun nima o'qiymiz?
             </h2>
+
             <div className="relative">
-              <Search
-                className="absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 w-4 sm:w-5 h-4 sm:h-5 text-muted-foreground"
-                strokeWidth={1.5}
-              />
+              {isSearchFetching ? (
+                <Loader2
+                  className="absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 w-4 sm:w-5 h-4 sm:h-5 text-primary animate-spin"
+                  strokeWidth={1.5}
+                />
+              ) : (
+                <Search
+                  className="absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 w-4 sm:w-5 h-4 sm:h-5 text-muted-foreground"
+                  strokeWidth={1.5}
+                />
+              )}
               <input
                 type="text"
+                value={searchValue}
+                onChange={(e) => setSearchValue(e.target.value)}
                 placeholder="Kitoblar, maqolalar yoki mualliflar..."
                 className="w-full h-12 sm:h-14 bg-card border-2 border-border rounded-2xl text-sm sm:text-base focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all outline-none shadow-search placeholder:text-muted-foreground/60"
-                style={{ paddingLeft: "2.75rem" }}
+                style={{ paddingLeft: "2.75rem", paddingRight: "3rem" }}
               />
-              <kbd className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 h-6 sm:h-7 px-1.5 sm:px-2 bg-secondary border border-border rounded-md hidden sm:flex items-center text-[10px] text-muted-foreground font-mono-label">
-                ⌘ K
-              </kbd>
+              {/* Clear button */}
+              <AnimatePresence>
+                {searchValue && (
+                  <motion.button
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    transition={{ duration: 0.15 }}
+                    onClick={() => setSearchValue("")}
+                    className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded-full bg-secondary hover:bg-border transition-colors"
+                  >
+                    <X
+                      className="w-3.5 h-3.5 text-muted-foreground"
+                      strokeWidth={2}
+                    />
+                  </motion.button>
+                )}
+              </AnimatePresence>
+              {!searchValue && (
+                <kbd className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 h-6 sm:h-7 px-1.5 sm:px-2 bg-secondary border border-border rounded-md hidden sm:flex items-center text-[10px] text-muted-foreground font-mono-label">
+                  ⌘ K
+                </kbd>
+              )}
             </div>
           </motion.div>
 
@@ -93,16 +139,41 @@ const Index = () => {
                 </button>
               </div>
               <div className="flex gap-3 sm:gap-5 overflow-x-auto no-scrollbar pb-2 flex-1 min-h-0 items-start">
-                {books?.map((book, i) => (
-                  <BookCard
-                    key={book.id}
-                    id={book.id}
-                    title={book.name}
-                    author={book.author}
-                    cover={book.poster}
-                    index={i}
-                  />
-                ))}
+                <AnimatePresence>
+                  {isSearching &&
+                    !isSearchFetching &&
+                    searchResults.length === 0 && (
+                      <motion.div
+                        key="empty"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="flex flex-col items-center justify-center h-48 gap-2 text-muted-foreground"
+                      >
+                        <Search
+                          className="w-8 h-8 opacity-30"
+                          strokeWidth={1.5}
+                        />
+                        <p className="text-sm">
+                          <span className="font-semibold text-foreground">
+                            "{debouncedSearch}"
+                          </span>{" "}
+                          bo'yicha natija topilmadi
+                        </p>
+                      </motion.div>
+                    )}
+
+                  {displayedBooks?.map((book, i) => (
+                    <BookCard
+                      key={book.id}
+                      id={book.id}
+                      title={book.name}
+                      author={book.author}
+                      cover={book.poster}
+                      index={i}
+                    />
+                  ))}
+                </AnimatePresence>
               </div>
             </div>
 
@@ -112,25 +183,28 @@ const Index = () => {
                 <h3 className="font-semibold text-sm font-display">
                   So'nggi o'qilganlar
                 </h3>
-                <button className="text-xs text-primary font-medium hover:underline">
+                <button
+                  onClick={() => navigate("/my-books")}
+                  className="text-xs text-primary font-medium hover:underline"
+                >
                   Hammasini ko'rish →
                 </button>
               </div>
               <div className="flex gap-3 sm:gap-4 overflow-x-auto no-scrollbar pb-2">
-                {recentBooks.map((book) => (
+                {recentBooks.slice(0, 4).map(({ product: book }) => (
                   <div
                     key={book.id}
                     onClick={() => navigate(`/book/${book.id}`)}
                     className="flex-shrink-0 flex items-center gap-3 bg-card rounded-xl p-3 pr-5 sm:pr-6 border border-border shadow-soft hover:shadow-card transition-shadow cursor-pointer"
                   >
                     <img
-                      src={book.cover}
-                      alt={book.title}
+                      src={book.poster}
+                      alt={book.name}
                       className="w-10 h-14 rounded-md object-cover"
                     />
                     <div className="min-w-0">
                       <p className="text-xs sm:text-sm font-semibold text-foreground truncate">
-                        {book.title}
+                        {book.name}
                       </p>
                       <p className="text-[10px] sm:text-[11px] text-muted-foreground">
                         {book.author}

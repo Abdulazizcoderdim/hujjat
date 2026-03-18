@@ -99,7 +99,7 @@ const Login = () => {
 
           <div className="text-center mb-8">
             <h2 className="text-2xl font-semibold font-display tracking-tight">
-              Tizimga kirish
+              Hemisga kirish
             </h2>
             <p className="text-sm text-muted-foreground mt-2">
               Talaba ID va parolingizni kiriting
@@ -159,27 +159,6 @@ const Login = () => {
               )}
             </button>
           </form>
-
-          {/* <div className="flex items-center gap-4 my-6">
-            <div className="flex-1 h-px bg-border" />
-            <span className="text-xs text-muted-foreground">yoki</span>
-            <div className="flex-1 h-px bg-border" />
-          </div>
-
-          <button
-            onClick={handleHemisLogin}
-            className="w-full h-12 bg-card border-2 border-border rounded-xl font-semibold text-sm text-foreground hover:bg-secondary active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-          >
-            <ExternalLink className="w-4 h-4" strokeWidth={1.5} />
-            Hemis orqali kirish
-          </button>
-
-          <p className="text-center text-xs text-muted-foreground mt-6">
-            Parolni unutdingizmi?{" "}
-            <button className="text-primary font-medium hover:underline">
-              Qayta tiklash
-            </button>
-          </p> */}
         </motion.div>
       </div>
     </div>
