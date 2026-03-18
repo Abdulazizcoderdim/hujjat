@@ -42,6 +42,21 @@ export class ProductsController {
     return this.productsService.search(query);
   }
 
+  @Get()
+  async getProductsByStatus(
+    @Query('status', new ParseEnumPipe(ProductStatus)) status: ProductStatus,
+    @Query('page', new ParseIntPipe({ optional: true })) page: number = 1,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit: number = 10,
+    @Query('category', new ParseIntPipe({ optional: true })) category: number,
+  ) {
+    return this.productsService.getProductsByStatus(
+      status,
+      page,
+      limit,
+      category,
+    );
+  }
+
   @Get('books')
   async getBooks(@Query('ids') ids?: string) {
     return this.productsService.getBooks(ids);
@@ -73,21 +88,6 @@ export class ProductsController {
     const url = '';
 
     return { url };
-  }
-
-  @Get()
-  async getProductsByStatus(
-    @Query('status', new ParseEnumPipe(ProductStatus)) status: ProductStatus,
-    @Query('page', new ParseIntPipe({ optional: true })) page: number = 1,
-    @Query('limit', new ParseIntPipe({ optional: true })) limit: number = 10,
-    @Query('category', new ParseIntPipe({ optional: true })) category: number,
-  ) {
-    return this.productsService.getProductsByStatus(
-      status,
-      page,
-      limit,
-      category,
-    );
   }
 
   @Patch(':id/approve')

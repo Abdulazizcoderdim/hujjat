@@ -18,7 +18,6 @@ interface PDFReaderProps {
 
 const PDFReader = ({ url, title, author, onClose }: PDFReaderProps) => {
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(0);
   const [zoom, setZoom] = useState(100);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [pageInput, setPageInput] = useState("1");
@@ -36,15 +35,6 @@ const PDFReader = ({ url, title, author, onClose }: PDFReaderProps) => {
     if (page < 1) return;
     setCurrentPage(page);
     setPageInput(String(page));
-  };
-
-  const handlePageInputBlur = () => {
-    const parsed = parseInt(pageInput);
-    if (!isNaN(parsed) && parsed >= 1) {
-      setCurrentPage(parsed);
-    } else {
-      setPageInput(String(currentPage));
-    }
   };
 
   const toggleFullscreen = useCallback(() => {

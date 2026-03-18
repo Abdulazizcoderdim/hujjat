@@ -134,7 +134,10 @@ const Index = () => {
                 <h3 className="font-semibold text-sm font-display">
                   Tavsiya etilgan
                 </h3>
-                <button className="text-xs text-primary font-medium hover:underline">
+                <button
+                  onClick={() => navigate("/products")}
+                  className="text-xs text-primary font-medium hover:underline"
+                >
                   Hammasini ko'rish →
                 </button>
               </div>

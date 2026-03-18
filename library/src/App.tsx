@@ -14,6 +14,7 @@ import Index from "./pages/Index.tsx";
 import Login from "./pages/Login.tsx";
 import MyBooks from "./pages/MyBooks.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import Products from "./pages/Products.tsx";
 import Profile from "./pages/Profile.tsx";
 import Saved from "./pages/Saved.tsx";
 import { authStore } from "./store/auth.store.ts";
@@ -84,10 +85,18 @@ const App = () => {
               }
             />
             <Route
-              path="/faculty/:slug"
+              path="/category/:slug"
               element={
                 <ProtectedRoute>
                   <Faculty />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/products"
+              element={
+                <ProtectedRoute>
+                  <Products />
                 </ProtectedRoute>
               }
             />

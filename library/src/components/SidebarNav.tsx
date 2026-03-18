@@ -1,3 +1,6 @@
+import $api from "@/http/axios";
+import { ICategory } from "@/interface";
+import { useQuery } from "@tanstack/react-query";
 import { BookOpen, Home, LogOut, Menu, Star, X } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -39,11 +42,23 @@ interface SidebarNavProps {
   activePage?: string;
 }
 
+interface Category {
+  items: ICategory[];
+}
+
 const SidebarNav = ({ activePage = "home" }: SidebarNavProps) => {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
   const isRead = pathname.includes("/book");
+
+  const { data: categories } = useQuery<Category>({
+    queryKey: ["categories"],
+    queryFn: async () => {
+      const res = await $api.get("/categories");
+      return res.data;
+    },
+  });
 
   const close = () => setOpen(false);
 
@@ -90,33 +105,18 @@ const SidebarNav = ({ activePage = "home" }: SidebarNavProps) => {
 
         <div className="pt-6 pb-2 px-4">
           <span className="text-[10px] font-mono-label text-muted-foreground">
-            Fakultetlar
+            Kategoriyalar
           </span>
         </div>
-        <NavItem
-          label="Axborot texnologiyalari"
-          active={activePage === "axborot-texnologiyalari"}
-          to="/faculty/axborot-texnologiyalari"
-          onClick={close}
-        />
-        <NavItem
-          label="Iqtisodiyot"
-          active={activePage === "iqtisodiyot"}
-          to="/faculty/iqtisodiyot"
-          onClick={close}
-        />
-        <NavItem
-          label="Gumanitar fanlar"
-          active={activePage === "gumanitar-fanlar"}
-          to="/faculty/gumanitar-fanlar"
-          onClick={close}
-        />
-        <NavItem
-          label="Muhandislik"
-          active={activePage === "muhandislik"}
-          to="/faculty/muhandislik"
-          onClick={close}
-        />
+        {categories?.items?.map((category) => (
+          <NavItem
+            key={category.id}
+            label={category.name}
+            active={activePage === `category/${category.slug}`}
+            to={`/category/${category.slug}`}
+            onClick={close}
+          />
+        ))}
       </nav>
 
       <div className="px-4 mb-2">

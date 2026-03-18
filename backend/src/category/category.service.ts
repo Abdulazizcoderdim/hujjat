@@ -22,6 +22,28 @@ export class CategoryService {
     private readonly productRepo: Repository<Product>,
   ) {}
 
+  async findRelatedProducts(slug: string) {
+    const category = await this.categoryRepo.findOne({
+      where: { slug },
+    });
+
+    if (!category) {
+      throw new NotFoundException('Category topilmadi!');
+    }
+
+    const products = await this.productRepo.find({
+      where: {
+        category: { id: category.id },
+        status: ProductStatus.APPROVED,
+      },
+      relations: ['category'],
+      order: { createdAt: 'DESC' },
+      take: 10,
+    });
+
+    return products;
+  }
+
   async getSitemapData() {
     return this.categoryRepo.find({
       select: ['slug', 'updatedAt', 'createdAt'],

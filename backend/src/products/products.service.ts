@@ -9,7 +9,7 @@ import * as path from 'path';
 import slugify from 'slugify';
 import { Category } from 'src/category/schemas/category.schema';
 import { User } from 'src/users/schema/user.schema';
-import { In, Repository } from 'typeorm';
+import { FindOptionsWhere, In, Repository } from 'typeorm';
 import { ApproveProductDto } from './dto/approve-product.dto';
 import { CreateProductDto } from './dto/create-product.dto';
 import { Product, ProductStatus } from './schemas/product.schema';
@@ -205,8 +205,14 @@ export class ProductsService {
     limit: number,
     category?: number,
   ) {
+    const where: FindOptionsWhere<Product> = { status };
+
+    if (category) {
+      where.category = { id: category };
+    }
+
     const [items, total] = await this.productRepo.findAndCount({
-      where: { status },
+      where,
       relations: ['category'],
       order: { createdAt: 'DESC' },
       take: limit,

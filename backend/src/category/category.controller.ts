@@ -27,6 +27,11 @@ export class CategoryController {
     return this.categoryService.findAllForAI();
   }
 
+  @Get('related-products/:slug')
+  findRelatedProducts(@Param('slug') slug: string) {
+    return this.categoryService.findRelatedProducts(slug);
+  }
+
   @Get('sitemap-data')
   async getSitemapData() {
     return this.categoryService.getSitemapData();

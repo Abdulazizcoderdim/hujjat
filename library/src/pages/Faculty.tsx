@@ -1,20 +1,24 @@
 import BookCard from "@/components/BookCard";
 import SidebarNav from "@/components/SidebarNav";
-import { allBooks } from "@/data/books";
+import $api from "@/http/axios";
+import { ICategory, IProduct } from "@/interface";
+import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { ArrowLeft, User } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
-const facultyMap: Record<string, string> = {
-  "axborot-texnologiyalari": "Axborot texnologiyalari",
-  iqtisodiyot: "Iqtisodiyot",
-  "gumanitar-fanlar": "Gumanitar fanlar",
-  muhandislik: "Muhandislik",
-};
+
 const Faculty = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
-  const facultyName = facultyMap[slug || ""] || "Fakultet";
-  const filteredBooks = allBooks.filter((b) => b.category === facultyName);
+
+  const { data } = useQuery<IProduct<ICategory>[]>({
+    queryKey: ["category", slug],
+    queryFn: async () => {
+      const res = await $api.get(`/categories/related-products/${slug}`);
+      return res.data;
+    },
+  });
+
   return (
     <div className="h-svh w-full flex bg-background text-foreground antialiased overflow-hidden">
       <SidebarNav activePage={slug || ""} />
@@ -30,7 +34,9 @@ const Faculty = () => {
                 strokeWidth={1.5}
               />
             </button>
-            <span className="text-xs text-muted-foreground">{facultyName}</span>
+            <span className="text-xs text-muted-foreground">
+              {data?.[0].category.name}
+            </span>
           </div>
           <div className="flex items-center gap-3">
             <div
@@ -51,20 +57,20 @@ const Faculty = () => {
             transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
           >
             <h2 className="text-xl sm:text-2xl font-semibold tracking-tight font-display mb-1">
-              {facultyName}
+              {data?.[0].category.name}
             </h2>
             <p className="text-sm text-muted-foreground mb-6">
-              {filteredBooks.length} ta kitob mavjud
+              {data?.length} ta kitob mavjud
             </p>
-            {filteredBooks.length > 0 ? (
+            {data?.length > 0 ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-5">
-                {filteredBooks.map((book, i) => (
+                {data?.map((book, i) => (
                   <BookCard
                     key={book.id}
                     id={book.id}
-                    title={book.title}
+                    title={book.name}
                     author={book.author}
-                    cover={book.cover}
+                    cover={book.poster}
                     index={i}
                   />
                 ))}
@@ -72,7 +78,7 @@ const Faculty = () => {
             ) : (
               <div className="text-center py-20">
                 <p className="text-muted-foreground text-sm">
-                  Bu fakultet uchun kitoblar hali qo'shilmagan
+                  Bu kategoriya uchun kitoblar hali qo'shilmagan
                 </p>
               </div>
             )}
