@@ -214,22 +214,28 @@ export function SingleUploadForm({
             <div className="space-y-2">
               <Label htmlFor="category">Kategoriya *</Label>
               <Select
-                value={formData.categoryId}
+                value={formData.categoryId || ""}
                 onValueChange={(value) =>
-                  setFormData({ ...formData, categoryId: value })
+                  setFormData((prev) => ({ ...prev, categoryId: value }))
                 }
                 disabled={isUploading}
                 required
               >
-                <SelectTrigger>
+                <SelectTrigger id="category">
                   <SelectValue placeholder="Tanlang" />
                 </SelectTrigger>
                 <SelectContent>
-                  {categories?.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id}>
-                      {cat.name}
+                  {categories && categories.length > 0 ? (
+                    categories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id.toString()}>
+                        {cat.name}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem disabled value="no-categories">
+                      Kategoriyalar mavjud emas
                     </SelectItem>
-                  ))}
+                  )}
                 </SelectContent>
               </Select>
             </div>

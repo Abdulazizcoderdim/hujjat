@@ -2,7 +2,9 @@ import { HttpException, HttpStatus } from '@nestjs/common';
 import { extname } from 'path';
 
 export const fileFilter = (req, file, callback) => {
-  if (!file.originalname.match(/\.(jpg|jpeg|png|gif|pdf|doc|docx|ppt|pptx)$/)) {
+  if (
+    !file.originalname.match(/\.(jpg|jpeg|png|gif|pdf|doc|docx|ppt|pptx|webp)$/)
+  ) {
     return callback(
       new HttpException(
         'Faqat rasm va hujjatlar yuklash mumkin!',
