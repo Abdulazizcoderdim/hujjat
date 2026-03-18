@@ -89,8 +89,6 @@ export function ProductsListPage({
   const [productToDelete, setProductToDelete] =
     useState<IProduct<ICategory> | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const [sortBy, setSortBy] = useState<string | null>(null);
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [productToEdit, setProductToEdit] =
     useState<IProduct<ICategory> | null>(null);
@@ -126,8 +124,6 @@ export function ProductsListPage({
         page,
         limit,
         debouncedSearch,
-        sortBy,
-        sortOrder,
       },
     ],
     queryFn: async () => {
@@ -136,11 +132,6 @@ export function ProductsListPage({
         limit,
         search: debouncedSearch || undefined,
       };
-
-      if (sortBy) {
-        params.sortBy = sortBy;
-        params.sortOrder = sortOrder;
-      }
 
       const response = await $api.get(`/products/status/${status}`, { params });
       return response.data;
@@ -186,8 +177,7 @@ export function ProductsListPage({
         description: "Mahsulot muvaffaqiyatli o'chirib tashlandi",
       });
 
-      // Ro'yxatni yangilash
-      queryClient.invalidateQueries({ queryKey: ["products/all"] });
+      queryClient.invalidateQueries({ queryKey: ["products/status"] });
     } catch (error) {
       toast({
         title: "Xatolik",

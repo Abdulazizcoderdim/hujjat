@@ -76,6 +76,11 @@ const BookDetail = () => {
     },
   ];
 
+  const handleRead = () => {
+    const url = book.fileUrl;
+    window.open(url, "_blank");
+  };
+
   return (
     <div className="h-svh w-full flex bg-background text-foreground antialiased overflow-hidden">
       <SidebarNav />
@@ -152,7 +157,10 @@ const BookDetail = () => {
 
               {/* Actions */}
               <div className="flex flex-col sm:flex-row gap-3 mt-auto">
-                <button className="flex-1 h-12 bg-primary text-primary-foreground rounded-xl font-semibold text-sm hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+                <button
+                  onClick={handleRead}
+                  className="flex-1 h-12 bg-primary text-primary-foreground rounded-xl font-semibold text-sm hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                >
                   <BookOpen className="w-4 h-4" strokeWidth={1.5} />
                   O'qishni boshlash
                 </button>

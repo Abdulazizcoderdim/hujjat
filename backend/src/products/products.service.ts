@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import * as fs from 'fs';
 import * as path from 'path';
 import slugify from 'slugify';
 import { Category } from 'src/category/schemas/category.schema';
@@ -20,6 +21,23 @@ export class ProductsService {
     private readonly userRepo: Repository<User>,
   ) {}
 
+  private removeFileFromDisk(fileUrl: string) {
+    try {
+      const fileName = fileUrl.split('/').pop();
+
+      if (!fileName) return;
+
+      const filePath = path.join(process.cwd(), 'uploads', fileName);
+
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+        console.log(`Fayl o'chirildi: ${filePath}`);
+      }
+    } catch (err) {
+      console.error(`Faylni o'chirishda xatolik: ${err.message}`);
+    }
+  }
+
   async delete(id: number) {
     const product = await this.productRepo.findOne({
       where: { id },
@@ -27,6 +45,11 @@ export class ProductsService {
 
     if (!product) {
       throw new BadRequestException('Product not found');
+    }
+
+    this.removeFileFromDisk(product.fileUrl);
+    if (product.poster) {
+      this.removeFileFromDisk(product.poster);
     }
 
     return this.productRepo.remove(product);
