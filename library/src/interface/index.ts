@@ -75,7 +75,7 @@ export enum ProductStatus {
 }
 
 export interface IProduct<C> {
-  id: string;
+  id: number;
 
   name: string;
   slug: string;
@@ -84,11 +84,10 @@ export interface IProduct<C> {
 
   pages?: number;
   fileSize?: number;
-  images?: string[];
 
   fileExt: string;
   poster?: string;
-  fileKey: string;
+  fileUrl: string;
 
   status: ProductStatus;
 
@@ -96,17 +95,10 @@ export interface IProduct<C> {
   tags: string[];
 
   viewCount: number;
-  soldCount: number;
-  isLegal?: boolean;
-  illegalReason?: string;
 
-  rejectionReason?: string;
-
-  approvedAt?: string;
-  rejectedAt?: string;
-
-  moderatedBy?: string;
-  moderatorNote?: string;
+  author?: string;
+  year?: number;
+  language?: string;
 
   createdAt: string;
   updatedAt: string;

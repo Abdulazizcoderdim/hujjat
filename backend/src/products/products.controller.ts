@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseEnumPipe,
@@ -33,6 +34,16 @@ export class ProductsController {
   @Get('analytics')
   async getProductsChartData() {
     return this.productsService.getProductsAnalytics();
+  }
+
+  @Get('books')
+  async getBooks() {
+    return this.productsService.getBooks();
+  }
+
+  @Get('books/:id')
+  async getBookById(@Param('id') id: number) {
+    return this.productsService.findOneById(id);
   }
 
   @Get(':id/download')
@@ -75,13 +86,6 @@ export class ProductsController {
     return this.productsService.approve(id, dto);
   }
 
-  // @Post()
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Roles(UserRole.ADMIN)
-  // async createProduct(@Body() dto: CreateProductDto) {
-  //   return this.productsService.createProduct(dto);
-  // }
-
   @Post()
   @UseInterceptors(
     FileFieldsInterceptor(
@@ -113,5 +117,12 @@ export class ProductsController {
     }
 
     return this.productsService.create(createProductDto, file, poster);
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  async delete(@Param('id') id: number) {
+    return this.productsService.delete(id);
   }
 }

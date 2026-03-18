@@ -1,15 +1,26 @@
 import BookCard from "@/components/BookCard";
 import SidebarNav from "@/components/SidebarNav";
 import { allBooks } from "@/data/books";
+import $api from "@/http/axios";
+import { ICategory, IProduct } from "@/interface";
+import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Search, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-const books = allBooks.slice(0, 6);
+// const books = allBooks.slice(0, 6);
 const recentBooks = allBooks.slice(6, 10);
 
 const Index = () => {
   const navigate = useNavigate();
+
+  const { data: books } = useQuery<IProduct<ICategory>[]>({
+    queryKey: ["books"],
+    queryFn: async () => {
+      const { data } = await $api.get("/products/books");
+      return data;
+    },
+  });
 
   return (
     <div className="h-svh w-full flex bg-background text-foreground antialiased overflow-hidden">
@@ -82,13 +93,13 @@ const Index = () => {
                 </button>
               </div>
               <div className="flex gap-3 sm:gap-5 overflow-x-auto no-scrollbar pb-2 flex-1 min-h-0 items-start">
-                {books.map((book, i) => (
+                {books?.map((book, i) => (
                   <BookCard
                     key={book.id}
                     id={book.id}
-                    title={book.title}
+                    title={book.name}
                     author={book.author}
-                    cover={book.cover}
+                    cover={book.poster}
                     index={i}
                   />
                 ))}

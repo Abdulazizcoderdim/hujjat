@@ -1,33 +1,79 @@
-import { useParams, useNavigate, Link } from "react-router-dom";
-import { motion } from "framer-motion";
-import { ArrowLeft, BookOpen, Calendar, FileText, Globe, Star, Tag, User } from "lucide-react";
-import SidebarNav from "@/components/SidebarNav";
 import BookCard from "@/components/BookCard";
-import { getBookById, getRelatedBooks } from "@/data/books";
+import SidebarNav from "@/components/SidebarNav";
+import $api from "@/http/axios";
+import { ICategory, IProduct } from "@/interface";
+import { useQuery } from "@tanstack/react-query";
+import { motion } from "framer-motion";
+import {
+  ArrowLeft,
+  BookOpen,
+  Calendar,
+  FileText,
+  Globe,
+  Star,
+  Tag,
+  User,
+} from "lucide-react";
+import { Link, useNavigate, useParams } from "react-router-dom";
 
 const BookDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const book = getBookById(Number(id));
+
+  const { data: book, isLoading } = useQuery<IProduct<ICategory>>({
+    queryKey: ["book", id],
+    queryFn: async () => {
+      const { data } = await $api.get(`/products/books/${id}`);
+      return data;
+    },
+  });
+
+  if (isLoading) {
+    return (
+      <div className="h-svh w-full flex bg-background text-foreground items-center justify-center">
+        <div className="text-center">
+          <p className="text-lg font-semibold mb-2">Kitob yuklanmoqda...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!book) {
     return (
       <div className="h-svh w-full flex bg-background text-foreground items-center justify-center">
         <div className="text-center">
           <p className="text-lg font-semibold mb-2">Kitob topilmadi</p>
-          <Link to="/" className="text-sm text-primary hover:underline">Bosh sahifaga qaytish</Link>
+          <Link to="/" className="text-sm text-primary hover:underline">
+            Bosh sahifaga qaytish
+          </Link>
         </div>
       </div>
     );
   }
 
-  const related = getRelatedBooks(book);
+  const related = [];
 
   const infoItems = [
-    { icon: <Calendar className="w-4 h-4" strokeWidth={1.5} />, label: "Yil", value: book.year },
-    { icon: <FileText className="w-4 h-4" strokeWidth={1.5} />, label: "Sahifalar", value: book.pages },
-    { icon: <Globe className="w-4 h-4" strokeWidth={1.5} />, label: "Til", value: book.language },
-    { icon: <Tag className="w-4 h-4" strokeWidth={1.5} />, label: "Kategoriya", value: book.category },
+    {
+      icon: <Calendar className="w-4 h-4" strokeWidth={1.5} />,
+      label: "Yil",
+      value: book.year,
+    },
+    {
+      icon: <FileText className="w-4 h-4" strokeWidth={1.5} />,
+      label: "Sahifalar",
+      value: book.pages,
+    },
+    {
+      icon: <Globe className="w-4 h-4" strokeWidth={1.5} />,
+      label: "Til",
+      value: book.language,
+    },
+    {
+      icon: <Tag className="w-4 h-4" strokeWidth={1.5} />,
+      label: "Kategoriya",
+      value: book.category,
+    },
   ];
 
   return (
@@ -60,28 +106,45 @@ const BookDetail = () => {
             {/* Cover */}
             <div className="flex-shrink-0 mx-auto sm:mx-0">
               <div className="w-48 h-72 sm:w-56 sm:h-80 rounded-2xl overflow-hidden shadow-search bg-secondary">
-                <img src={book.cover} alt={book.title} className="w-full h-full object-cover" />
+                <img
+                  src={book.poster}
+                  alt={book.name}
+                  className="w-full h-full object-cover"
+                />
               </div>
             </div>
 
             {/* Info */}
             <div className="flex-1 min-w-0 flex flex-col">
               <div className="text-center sm:text-left">
-                <p className="text-[10px] font-mono-label text-primary mb-1">{book.category}</p>
-                <h1 className="text-2xl sm:text-3xl font-bold font-display tracking-tight mb-2">{book.title}</h1>
-                <p className="text-base text-muted-foreground mb-6">{book.author}</p>
+                <p className="text-[10px] font-mono-label text-primary mb-1">
+                  {book.category.name}
+                </p>
+                <h1 className="text-2xl sm:text-3xl font-bold font-display tracking-tight mb-2">
+                  {book.name}
+                </h1>
+                <p className="text-base text-muted-foreground mb-6">
+                  {book.author}
+                </p>
               </div>
 
-              <p className="text-sm text-foreground/80 leading-relaxed mb-6">{book.description}</p>
+              <p className="text-sm text-foreground/80 leading-relaxed mb-6">
+                {book.description}
+              </p>
 
               {/* Meta grid */}
               <div className="grid grid-cols-2 gap-3 mb-6">
                 {infoItems.map((item) => (
-                  <div key={item.label} className="flex items-center gap-2.5 p-3 bg-secondary rounded-xl">
+                  <div
+                    key={item.label}
+                    className="flex items-center gap-2.5 p-3 bg-secondary rounded-xl"
+                  >
                     <span className="text-muted-foreground">{item.icon}</span>
                     <div>
-                      <p className="text-[10px] text-muted-foreground font-mono-label">{item.label}</p>
-                      <p className="text-sm font-semibold">{item.value}</p>
+                      <p className="text-[10px] text-muted-foreground font-mono-label">
+                        {item.label}
+                      </p>
+                      <p className="text-sm font-semibold">{item.label}</p>
                     </div>
                   </div>
                 ))}
@@ -104,10 +167,19 @@ const BookDetail = () => {
           {/* Related books */}
           {related.length > 0 && (
             <div>
-              <h3 className="font-semibold text-sm font-display mb-4">O'xshash kitoblar</h3>
+              <h3 className="font-semibold text-sm font-display mb-4">
+                O'xshash kitoblar
+              </h3>
               <div className="flex gap-4 sm:gap-5 overflow-x-auto no-scrollbar pb-4">
                 {related.map((b, i) => (
-                  <BookCard key={b.id} id={b.id} title={b.title} author={b.author} cover={b.cover} index={i} />
+                  <BookCard
+                    key={b.id}
+                    id={b.id}
+                    title={b.title}
+                    author={b.author}
+                    cover={b.cover}
+                    index={i}
+                  />
                 ))}
               </div>
             </div>

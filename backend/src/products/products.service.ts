@@ -20,6 +20,27 @@ export class ProductsService {
     private readonly userRepo: Repository<User>,
   ) {}
 
+  async delete(id: number) {
+    const product = await this.productRepo.findOne({
+      where: { id },
+    });
+
+    if (!product) {
+      throw new BadRequestException('Product not found');
+    }
+
+    return this.productRepo.remove(product);
+  }
+
+  async getBooks() {
+    return this.productRepo.find({
+      where: { status: ProductStatus.APPROVED },
+      relations: ['category'],
+      order: { createdAt: 'DESC' },
+      take: 10,
+    });
+  }
+
   async approve(id: number, dto: ApproveProductDto) {
     const product = await this.productRepo.findOne({
       where: { id },
@@ -36,6 +57,7 @@ export class ProductsService {
   async findOneById(id: number) {
     const product = await this.productRepo.findOne({
       where: { id },
+      relations: ['category'],
     });
 
     if (!product) {
