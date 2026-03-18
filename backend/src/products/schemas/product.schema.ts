@@ -35,6 +35,15 @@ export class Product {
   pages?: number;
 
   @Column({ nullable: true })
+  author?: string;
+
+  @Column({ nullable: true })
+  year?: number;
+
+  @Column({ nullable: true })
+  language?: string;
+
+  @Column({ nullable: true })
   fileSize?: number;
 
   @Column()

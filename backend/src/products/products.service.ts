@@ -93,39 +93,8 @@ export class ProductsService {
     };
   }
 
-  async createProduct(dto: CreateProductDto) {
-    const category = await this.categoryRepo.findOne({
-      where: { id: dto.categoryId },
-    });
-
-    if (!category) {
-      throw new BadRequestException('Category not found');
-    }
-
-    const slug = slugify(dto.name, { lower: true, strict: true });
-    const exists = await this.productRepo.findOne({
-      where: [{ name: dto.name }, { slug }],
-    });
-
-    if (exists) {
-      throw new BadRequestException('Product already exists');
-    }
-
-    const product = this.productRepo.create({
-      name: dto.name,
-      slug,
-      description: dto.description,
-      poster: dto.poster,
-      fileExt: dto.fileKey.split('.').pop(),
-      category: category,
-      status: ProductStatus.APPROVED,
-    });
-
-    return this.productRepo.save(product);
-  }
-
   async create(
-    dto: any,
+    dto: CreateProductDto,
     file: Express.Multer.File,
     poster: Express.Multer.File | null,
   ) {
@@ -152,6 +121,11 @@ export class ProductsService {
         : undefined,
       status: ProductStatus.APPROVED,
       fileUrl: this.getPublicUrl(`/uploads/${file.filename}`),
+
+      pages: dto.pages ? Number(dto.pages) : undefined,
+      author: dto.author || undefined,
+      year: dto.year ? Number(dto.year) : undefined,
+      language: dto.language || undefined,
     });
 
     console.log(product);

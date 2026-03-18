@@ -164,7 +164,7 @@ const SidebarNav = ({ activePage = "home" }: SidebarNavProps) => {
             className="absolute inset-0 bg-foreground/20 backdrop-blur-sm"
             onClick={close}
           />
-          <aside className="relative w-[280px] max-w-[85vw] flex flex-col bg-card h-full shadow-search animate-in slide-in-from-left duration-200">
+          <aside className="relative w-[280px] max-w-[85vw] flex flex-col bg-card  h-full shadow-search animate-in slide-in-from-left duration-200">
             <button
               onClick={close}
               className="absolute top-4 right-4 w-8 h-8 rounded-lg bg-secondary flex items-center justify-center"

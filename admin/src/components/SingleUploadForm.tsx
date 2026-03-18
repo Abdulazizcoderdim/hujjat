@@ -35,6 +35,10 @@ export function SingleUploadForm({
     categoryId: "",
     tags: "",
     poster: "",
+    pages: "",
+    author: "",
+    year: "",
+    language: "",
   });
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -63,6 +67,11 @@ export function SingleUploadForm({
       data.append("tags", formData.tags);
       data.append("poster", poster as File);
 
+      data.append("pages", formData.pages);
+      data.append("author", formData.author);
+      data.append("year", formData.year);
+      data.append("language", formData.language);
+
       await onSubmit(data, (p) => setProgress(p));
 
       setProgress(100);
@@ -74,6 +83,10 @@ export function SingleUploadForm({
         categoryId: "",
         tags: "",
         poster: "",
+        pages: "",
+        author: "",
+        year: "",
+        language: "",
       });
     } finally {
       setTimeout(() => {
@@ -209,6 +222,64 @@ export function SingleUploadForm({
                 disabled={isUploading}
                 required
               />
+            </div>
+
+            {/* Muallif va Til */}
+            <div className="grid gap-4 sm:grid-cols-2 sm:col-span-2">
+              <div className="space-y-2">
+                <Label htmlFor="author">Muallif</Label>
+                <Input
+                  id="author"
+                  value={formData.author}
+                  onChange={(e) =>
+                    setFormData({ ...formData, author: e.target.value })
+                  }
+                  placeholder="Masalan: Abdulla Qodiriy"
+                  disabled={isUploading}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="language">Til</Label>
+                <Input
+                  id="language"
+                  value={formData.language}
+                  onChange={(e) =>
+                    setFormData({ ...formData, language: e.target.value })
+                  }
+                  placeholder="Masalan: O'zbekcha"
+                  disabled={isUploading}
+                />
+              </div>
+            </div>
+
+            {/* Sahifalar soni va Yili */}
+            <div className="grid gap-4 sm:grid-cols-2 sm:col-span-2">
+              <div className="space-y-2">
+                <Label htmlFor="pages">Sahifalar soni</Label>
+                <Input
+                  id="pages"
+                  type="number"
+                  value={formData.pages}
+                  onChange={(e) =>
+                    setFormData({ ...formData, pages: e.target.value })
+                  }
+                  placeholder="0"
+                  disabled={isUploading}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="year">Nashr yili</Label>
+                <Input
+                  id="year"
+                  type="number"
+                  value={formData.year}
+                  onChange={(e) =>
+                    setFormData({ ...formData, year: e.target.value })
+                  }
+                  placeholder="2024"
+                  disabled={isUploading}
+                />
+              </div>
             </div>
 
             <div className="space-y-2">

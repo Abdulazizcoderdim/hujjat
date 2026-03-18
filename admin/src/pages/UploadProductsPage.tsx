@@ -35,6 +35,10 @@ const UploadProductsPage = () => {
       const description = String(data.get("description") || "");
       const categoryId = String(data.get("categoryId") || "");
       const tags = String(data.get("tags") || "");
+      const pages = String(data.get("pages") || "");
+      const author = String(data.get("author") || "");
+      const year = String(data.get("year") || "");
+      const language = String(data.get("language") || "");
 
       await createProduct({
         file,
@@ -43,6 +47,10 @@ const UploadProductsPage = () => {
         description,
         categoryId,
         tags,
+        pages,
+        author,
+        year,
+        language,
         onProgress,
       });
 

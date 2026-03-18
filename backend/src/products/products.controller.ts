@@ -22,6 +22,7 @@ import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { editFileName, fileFilter } from 'src/helper/file-upload.utils';
 import { UserRole } from 'src/users/schema/user.schema';
 import { ApproveProductDto } from './dto/approve-product.dto';
+import { CreateProductDto } from './dto/create-product.dto';
 import { ProductsService } from './products.service';
 import { ProductStatus } from './schemas/product.schema';
 
@@ -100,7 +101,7 @@ export class ProductsController {
   async create(
     @UploadedFiles()
     files: { file?: Express.Multer.File[]; poster?: Express.Multer.File[] },
-    @Body() createProductDto: any,
+    @Body() createProductDto: CreateProductDto,
   ) {
     console.log('CREATE PRODUCT DTO::::', createProductDto);
     console.log('FILES::::', files);

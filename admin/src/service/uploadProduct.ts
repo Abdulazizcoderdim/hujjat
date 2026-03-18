@@ -7,6 +7,10 @@ export const createProduct = async (payload: {
   description: string;
   categoryId: string;
   tags: string;
+  pages: string;
+  author: string;
+  year: string;
+  language: string;
   onProgress: (percent: number) => void;
 }) => {
   const formData = new FormData();
@@ -20,6 +24,19 @@ export const createProduct = async (payload: {
   formData.append("description", payload.description);
   formData.append("categoryId", payload.categoryId);
   formData.append("tags", payload.tags);
+
+  if (payload.pages) {
+    formData.append("pages", payload.pages);
+  }
+  if (payload.author) {
+    formData.append("author", payload.author);
+  }
+  if (payload.year) {
+    formData.append("year", payload.year);
+  }
+  if (payload.language) {
+    formData.append("language", payload.language);
+  }
 
   const res = await $api.post("/products", formData, {
     headers: {

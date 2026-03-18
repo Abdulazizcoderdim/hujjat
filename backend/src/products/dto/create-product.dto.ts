@@ -1,36 +1,40 @@
 import {
-  IsArray,
-  IsMongoId,
-  IsNumber,
+  IsNotEmpty,
+  IsNumberString,
   IsOptional,
   IsString,
-  Min,
-  MinLength,
 } from 'class-validator';
 
 export class CreateProductDto {
   @IsString()
-  @MinLength(3)
+  @IsNotEmpty()
   name: string;
 
   @IsString()
+  @IsNotEmpty()
   description: string;
 
-  @IsNumber()
-  @Min(0)
-  price: number;
+  @IsString()
+  @IsNotEmpty()
+  categoryId: string;
 
   @IsString()
-  categoryId: number;
-
-  @IsString()
-  fileKey: string;
-
-  @IsString()
-  poster: string;
+  @IsOptional()
+  tags?: string;
 
   @IsOptional()
-  @IsArray()
-  @IsMongoId({ each: true })
-  tags?: string[];
+  @IsNumberString()
+  pages?: string;
+
+  @IsString()
+  @IsOptional()
+  author?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  year?: string;
+
+  @IsString()
+  @IsOptional()
+  language?: string;
 }
