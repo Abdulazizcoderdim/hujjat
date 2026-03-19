@@ -17,14 +17,14 @@ async function bootstrap() {
 
   app.useStaticAssets(join(process.cwd(), 'uploads'), {
     prefix: '/uploads',
-    setHeaders: (res) => {
-      res.removeHeader('X-Frame-Options');
+    // setHeaders: (res) => {
+    //   res.removeHeader('X-Frame-Options');
 
-      res.set('Access-Control-Allow-Origin', '*');
-      res.set('Cross-Origin-Resource-Policy', 'cross-origin');
+    //   res.set('Access-Control-Allow-Origin', '*');
+    //   res.set('Cross-Origin-Resource-Policy', 'cross-origin');
 
-      res.set('Content-Security-Policy', "frame-ancestors 'self' *");
-    },
+    //   res.set('Content-Security-Policy', "frame-ancestors 'self' *");
+    // },
   });
 
   await app.listen(process.env.PORT || 3000);

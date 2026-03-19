@@ -203,6 +203,7 @@ const Index = () => {
                     <img
                       src={book.poster}
                       alt={book.name}
+                      crossOrigin="anonymous"
                       className="w-10 h-14 rounded-md object-cover"
                     />
                     <div className="min-w-0">
