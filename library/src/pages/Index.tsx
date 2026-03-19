@@ -109,7 +109,7 @@ const Index = () => {
                     exit={{ opacity: 0, scale: 0.8 }}
                     transition={{ duration: 0.15 }}
                     onClick={() => setSearchValue("")}
-                    className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded-full bg-secondary hover:bg-border transition-colors"
+                    className="absolute right-3 sm:right-4 top-4 -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded-full bg-secondary hover:bg-border transition-colors"
                   >
                     <X
                       className="w-3.5 h-3.5 text-muted-foreground"
