@@ -1,17 +1,9 @@
-version: '3.8'
 services:
-  db:
-    image: postgres
-    container_name: postgres_db
-    restart: always
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: root
-      POSTGRES_DB: hujjatDB
+  backend:
+    image: registry.gitlab.com/abdulaziz1999/hujjat/backend:latest
+    container_name: hujjat-backend
     ports:
-      - '5432:5432'
-    volumes:
-      - postgres_data:/var/lib/postgresql
-
-volumes:
-  postgres_data:
+      - '4000:4000'
+    env_file:
+      - .env
+    restart: always
