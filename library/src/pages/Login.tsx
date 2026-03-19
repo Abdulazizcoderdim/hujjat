@@ -36,7 +36,6 @@ const Login = () => {
 
   return (
     <div className="h-screen w-full flex bg-slate-50 overflow-hidden font-sans">
-      {/* Left Side - Visual & Branding */}
       <div className="hidden lg:flex w-1/2 relative bg-[#0052FF] items-center justify-center p-12 overflow-hidden">
         {/* Animated Background Ornaments */}
         <div className="absolute inset-0">
@@ -114,7 +113,6 @@ const Login = () => {
         </div>
       </div>
 
-      {/* Right Side - Login Form */}
       <div className="flex-1 flex items-center justify-center p-6 sm:p-12 bg-white">
         <motion.div
           initial={{ opacity: 0, x: 20 }}
