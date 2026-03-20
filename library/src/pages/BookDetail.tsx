@@ -75,22 +75,22 @@ const BookDetail = () => {
     {
       icon: <Calendar className="w-4 h-4" strokeWidth={1.5} />,
       label: "Yil",
-      value: book.year,
+      value: book?.year,
     },
     {
       icon: <FileText className="w-4 h-4" strokeWidth={1.5} />,
       label: "Sahifalar",
-      value: book.pages,
+      value: book?.pages,
     },
     {
       icon: <Globe className="w-4 h-4" strokeWidth={1.5} />,
       label: "Til",
-      value: book.language,
+      value: book?.language,
     },
     {
       icon: <Tag className="w-4 h-4" strokeWidth={1.5} />,
       label: "Kategoriya",
-      value: book.category,
+      value: book?.category?.name,
     },
   ];
 
@@ -109,7 +109,7 @@ const BookDetail = () => {
 
   const handleRead = () => {
     addReadmutation.mutate();
-    setIsReading(true);
+    navigate(`/book/${book.id}/read`);
   };
 
   return (
@@ -189,7 +189,7 @@ const BookDetail = () => {
                         <p className="text-[10px] text-muted-foreground font-mono-label">
                           {item.label}
                         </p>
-                        <p className="text-sm font-semibold">{item.label}</p>
+                        <p className="text-sm font-semibold">{item?.value!}</p>
                       </div>
                     </div>
                   ))}

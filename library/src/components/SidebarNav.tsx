@@ -3,7 +3,7 @@ import { ICategory } from "@/interface";
 import { useQuery } from "@tanstack/react-query";
 import { BookOpen, Home, LogOut, Menu, Star, X } from "lucide-react";
 import { useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 interface NavItemProps {
   icon?: React.ReactNode;
@@ -48,9 +48,7 @@ interface Category {
 
 const SidebarNav = ({ activePage = "home" }: SidebarNavProps) => {
   const navigate = useNavigate();
-  const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
-  const isRead = pathname.includes("/book");
 
   const { data: categories } = useQuery<Category>({
     queryKey: ["categories"],
@@ -153,7 +151,7 @@ const SidebarNav = ({ activePage = "home" }: SidebarNavProps) => {
       {/* Mobile hamburger button */}
       <button
         onClick={() => setOpen(true)}
-        className={`md:hidden fixed ${isRead ? "top-12" : "top-3"} left-3 z-50 w-10 h-10 rounded-xl bg-card border border-border shadow-card flex items-center justify-center`}
+        className={`md:hidden fixed top-4 left-4 z-50 w-10 h-10 rounded-xl bg-card border border-border shadow-card flex items-center justify-center`}
         aria-label="Menyu"
       >
         <Menu className="w-5 h-5 text-foreground" strokeWidth={1.5} />

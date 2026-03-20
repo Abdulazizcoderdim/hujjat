@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Loader } from "lucide-react";
 import { useEffect } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import BookReader from "./components/BookReader.tsx";
 import { ProtectedRoute } from "./components/ProtectedRoute.tsx";
 import $api from "./http/axios.ts";
 import { UserRole } from "./interface/index.ts";
@@ -81,6 +82,14 @@ const App = () => {
               element={
                 <ProtectedRoute>
                   <MyBooks />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/book/:id/read"
+              element={
+                <ProtectedRoute>
+                  <BookReader />
                 </ProtectedRoute>
               }
             />

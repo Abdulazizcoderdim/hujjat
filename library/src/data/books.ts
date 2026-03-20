@@ -1,9 +1,9 @@
 import bookAlgorithms from "@/assets/book-algorithms.jpg";
 import bookDatabase from "@/assets/book-database.jpg";
 import bookEconomics from "@/assets/book-economics.jpg";
+import bookMath from "@/assets/book-math.jpg";
 import bookPhysics from "@/assets/book-physics.jpg";
 import bookProgramming from "@/assets/book-programming.jpg";
-import bookMath from "@/assets/book-math.jpg";
 
 export interface Book {
   id: number;
@@ -14,6 +14,7 @@ export interface Book {
   pages?: number;
   language?: string;
   category?: string;
+  pdfUrl?: string;
   description?: string;
 }
 
@@ -144,4 +145,6 @@ export const getBookById = (id: number): Book | undefined =>
   allBooks.find((b) => b.id === id);
 
 export const getRelatedBooks = (book: Book, limit = 4): Book[] =>
-  allBooks.filter((b) => b.id !== book.id && b.category === book.category).slice(0, limit);
+  allBooks
+    .filter((b) => b.id !== book.id && b.category === book.category)
+    .slice(0, limit);

@@ -1,5 +1,4 @@
 import { authStore } from "@/store/auth.store";
-import { User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const ProfileAvatar = () => {
@@ -12,10 +11,10 @@ const ProfileAvatar = () => {
       onClick={() => navigate("/profile")}
     >
       <span className="text-sm text-muted-foreground">
-        {user?.first_name || ""}
+        {user?.first_name || localStorage.getItem("user_name")}
       </span>
       <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
-        <User className="w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
+        <img src={user?.image} className="object-cover rounded-full" alt="" />
       </div>
     </div>
   );
