@@ -223,7 +223,6 @@ const BookDetail = () => {
               </div>
             </motion.div>
 
-            {/* Related books */}
             {related.length > 0 && (
               <div>
                 <h3 className="font-semibold text-sm font-display mb-4">

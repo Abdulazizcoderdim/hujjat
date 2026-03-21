@@ -1,4 +1,4 @@
-import ProfileAvatar from "@/components/ProfileAvatar";
+import Header from "@/components/Header";
 import SidebarNav from "@/components/SidebarNav";
 import $api from "@/http/axios";
 import { ICategory, IProduct } from "@/interface";
@@ -32,12 +32,7 @@ const MyBooks = () => {
     <div className="h-svh w-full flex bg-background text-foreground antialiased overflow-hidden">
       <SidebarNav activePage="mybooks" />
       <main className="flex-1 flex flex-col min-w-0">
-        <header className="h-14 flex-shrink-0 flex items-center justify-between px-4 sm:px-8 border-b border-border bg-card/50 backdrop-blur-md">
-          <div className="text-xs text-muted-foreground pl-12 md:pl-0">
-            Mening kitoblarim
-          </div>
-          <ProfileAvatar />
-        </header>
+        <Header title="Mening kitoblarim" />
 
         <div className="flex-1 p-4 sm:p-8 min-h-0 overflow-y-auto">
           <motion.h2

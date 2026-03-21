@@ -174,17 +174,14 @@ function useBookDimensions() {
   return dims;
 }
 
-// ─── BookReader ───────────────────────────────────────────────────────────────
 const BookReader: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  // flipbook ref — using `any` because react-pageflip types are incomplete
   const flipBookRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const controlsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // State
   const [pages, setPages] = useState<(string | undefined)[]>([]);
   const [totalPages, setTotalPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(0);
@@ -204,7 +201,6 @@ const BookReader: React.FC = () => {
     isMobile,
   } = useBookDimensions();
 
-  // ── Book data ──────────────────────────────────────────────────────────────
   const { data: book, isError } = useQuery<IProduct<ICategory>>({
     queryKey: ["book", id],
     queryFn: async () => {
@@ -214,7 +210,6 @@ const BookReader: React.FC = () => {
     enabled: !!id,
   });
 
-  // ── PDF loading ────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!book?.fileUrl) return;
 
@@ -241,14 +236,13 @@ const BookReader: React.FC = () => {
         const numPages = pdf.numPages;
         setTotalPages(numPages);
 
-        // Pre-allocate array so indices are always correct
         const buffer: (string | undefined)[] = new Array(numPages).fill(
           undefined,
         );
         setPages([...buffer]);
 
         const SCALE = window.devicePixelRatio >= 2 ? 1.5 : 2;
-        const BATCH = 4; // render first N pages immediately
+        const BATCH = 4;
 
         for (let i = 1; i <= numPages; i++) {
           if (cancelled) return;
@@ -269,17 +263,14 @@ const BookReader: React.FC = () => {
 
           setLoadingProgress(Math.round((i / numPages) * 100));
 
-          // Update state in batches to avoid too many re-renders
           if (i <= BATCH || i % 8 === 0 || i === numPages) {
             setPages([...buffer]);
           }
 
-          // Flip book ready once we have first 2 pages
           if (i === Math.min(2, numPages)) {
             setRenderReady(true);
           }
 
-          // Free canvas memory
           canvas.width = 0;
           canvas.height = 0;
         }
@@ -300,7 +291,6 @@ const BookReader: React.FC = () => {
     };
   }, [book?.fileUrl]);
 
-  // ── Navigation ─────────────────────────────────────────────────────────────
   const goNext = useCallback(() => {
     flipBookRef.current?.pageFlip()?.flipNext();
   }, []);
@@ -313,7 +303,6 @@ const BookReader: React.FC = () => {
     setCurrentPage(e.data);
   }, []);
 
-  // ── Keyboard ───────────────────────────────────────────────────────────────
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "ArrowRight" || e.key === " ") {
@@ -336,7 +325,6 @@ const BookReader: React.FC = () => {
     return () => window.removeEventListener("keydown", handler);
   }, [goNext, goPrev, navigate]);
 
-  // ── Auto-hide controls ─────────────────────────────────────────────────────
   const resetControlsTimer = useCallback(() => {
     setShowControls(true);
     if (controlsTimerRef.current) clearTimeout(controlsTimerRef.current);
@@ -350,7 +338,6 @@ const BookReader: React.FC = () => {
     };
   }, [resetControlsTimer]);
 
-  // ── Fullscreen ─────────────────────────────────────────────────────────────
   const toggleFullscreen = useCallback(async () => {
     try {
       if (!document.fullscreenElement) {
@@ -358,9 +345,7 @@ const BookReader: React.FC = () => {
       } else {
         await document.exitFullscreen();
       }
-    } catch {
-      // Fullscreen not available in this context
-    }
+    } catch {}
   }, []);
 
   useEffect(() => {
@@ -369,14 +354,12 @@ const BookReader: React.FC = () => {
     return () => document.removeEventListener("fullscreenchange", handler);
   }, []);
 
-  // ── Computed ───────────────────────────────────────────────────────────────
   const cfg = THEMES[theme];
   const progressPct =
     totalPages > 0 ? Math.round(((currentPage + 1) / totalPages) * 100) : 0;
 
   const isBookReady = renderReady && pages.filter(Boolean).length >= 1;
 
-  // ── Error / not found ──────────────────────────────────────────────────────
   if (isError || book === null) {
     return (
       <div className="h-svh w-full flex flex-col items-center justify-center gap-4 bg-zinc-950 text-zinc-300">
@@ -392,7 +375,6 @@ const BookReader: React.FC = () => {
     );
   }
 
-  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div
       ref={containerRef}
@@ -492,9 +474,7 @@ const BookReader: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* ── Main area ── */}
       <div className="flex-1 flex items-center justify-center relative overflow-hidden">
-        {/* Loading state */}
         {!isBookReady && (
           <motion.div
             key="loader"
@@ -700,9 +680,7 @@ const BookReader: React.FC = () => {
               background: `linear-gradient(to top, ${cfg.overlay}, transparent)`,
             }}
           >
-            {/* Progress section — centred */}
             <div className="flex-1 flex flex-col items-center gap-1.5 max-w-xs sm:max-w-md mx-auto">
-              {/* Track */}
               <div
                 className="w-full h-1 rounded-full overflow-hidden"
                 style={{
@@ -719,7 +697,6 @@ const BookReader: React.FC = () => {
                 />
               </div>
 
-              {/* Label */}
               <p
                 className="text-[11px] font-mono tracking-widest"
                 style={{ color: cfg.fg, opacity: 0.45 }}
@@ -728,7 +705,6 @@ const BookReader: React.FC = () => {
               </p>
             </div>
 
-            {/* Zoom controls — pinned right */}
             <div className="absolute right-3 sm:right-5 bottom-3 sm:bottom-4 flex items-center gap-1">
               <button
                 onClick={() =>

@@ -71,7 +71,7 @@ const Products = () => {
       <SidebarNav />
 
       <main className="flex-1 flex flex-col min-w-0">
-        <header className="h-14 flex-shrink-0 flex items-center justify-between px-4 sm:px-8 border-b border-border bg-card/50 backdrop-blur-md">
+        <header className="h-16 flex-shrink-0 flex items-center justify-between px-4 sm:px-8 border-b border-border bg-card/50 backdrop-blur-md">
           <div className="flex items-center gap-2 pl-12 md:pl-0">
             <button
               onClick={() => navigate("/")}

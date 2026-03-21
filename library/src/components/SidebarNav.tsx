@@ -60,6 +60,11 @@ const SidebarNav = ({ activePage = "home" }: SidebarNavProps) => {
 
   const close = () => setOpen(false);
 
+  const handleLogout = () => {
+    localStorage.removeItem("access_token");
+    navigate("/login");
+  };
+
   const sidebarContent = (
     <>
       <div className="p-6 pb-2">
@@ -119,10 +124,7 @@ const SidebarNav = ({ activePage = "home" }: SidebarNavProps) => {
 
       <div className="px-4 mb-2">
         <button
-          onClick={() => {
-            close();
-            navigate("/login");
-          }}
+          onClick={handleLogout}
           className="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
         >
           <LogOut className="w-5 h-5" strokeWidth={1.5} />

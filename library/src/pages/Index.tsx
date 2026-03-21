@@ -1,5 +1,5 @@
 import BookCard from "@/components/BookCard";
-import ProfileAvatar from "@/components/ProfileAvatar";
+import Header from "@/components/Header";
 import SidebarNav from "@/components/SidebarNav";
 import useDebounce from "@/hooks/useDebounce";
 import $api from "@/http/axios";
@@ -56,13 +56,7 @@ const Index = () => {
 
       <main className="flex-1 flex flex-col min-w-0">
         {/* Header */}
-        <header className="h-14 flex-shrink-0 flex items-center justify-between px-4 sm:px-8 border-b border-border bg-card/50 backdrop-blur-md">
-          <div className="text-xs text-muted-foreground pl-12 md:pl-0">
-            Bosh sahifa
-          </div>
-
-          <ProfileAvatar />
-        </header>
+        <Header title="Bosh sahifa" />
 
         {/* Content */}
         <div className="flex-1 flex flex-col px-4 sm:px-8 py-4 sm:py-6 min-h-0">

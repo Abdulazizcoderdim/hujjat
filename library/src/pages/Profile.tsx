@@ -68,7 +68,7 @@ const Profile = () => {
     <div className="h-svh w-full flex bg-background text-foreground antialiased overflow-hidden">
       <SidebarNav activePage="profile" />
       <main className="flex-1 flex flex-col min-w-0">
-        <header className="h-14 flex-shrink-0 flex items-center justify-between px-4 sm:px-8 border-b border-border bg-card/50 backdrop-blur-md">
+        <header className="h-16 flex-shrink-0 flex items-center justify-between px-4 sm:px-8 border-b border-border bg-card/50 backdrop-blur-md">
           <div className="flex items-center gap-3 pl-12 md:pl-0">
             <button
               onClick={() => navigate(-1)}
@@ -82,6 +82,7 @@ const Profile = () => {
             <span className="text-xs text-muted-foreground">Profil</span>
           </div>
         </header>
+
         <div className="flex-1 px-4 sm:px-8 py-6 overflow-y-auto">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
@@ -89,7 +90,6 @@ const Profile = () => {
             transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
             className="max-w-2xl mx-auto"
           >
-            {/* Profile Header */}
             <div className="bg-card border border-border rounded-2xl p-6 sm:p-8 mb-4">
               <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5">
                 <Avatar className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl border-2 border-border">

@@ -1,10 +1,11 @@
 import BookCard from "@/components/BookCard";
+import ProfileAvatar from "@/components/ProfileAvatar";
 import SidebarNav from "@/components/SidebarNav";
 import $api from "@/http/axios";
 import { ICategory, IProduct } from "@/interface";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { ArrowLeft, User } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 
 const Faculty = () => {
@@ -23,7 +24,7 @@ const Faculty = () => {
     <div className="h-svh w-full flex bg-background text-foreground antialiased overflow-hidden">
       <SidebarNav activePage={slug || ""} />
       <main className="flex-1 flex flex-col min-w-0">
-        <header className="h-14 flex-shrink-0 flex items-center justify-between px-4 sm:px-8 border-b border-border bg-card/50 backdrop-blur-md">
+        <header className="h-16 flex-shrink-0 flex items-center justify-between px-4 sm:px-8 border-b border-border bg-card/50 backdrop-blur-md">
           <div className="flex items-center gap-3 pl-12 md:pl-0">
             <button
               onClick={() => navigate(-1)}
@@ -39,17 +40,10 @@ const Faculty = () => {
             </span>
           </div>
           <div className="flex items-center gap-3">
-            <div
-              className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center cursor-pointer"
-              onClick={() => navigate("/profile")}
-            >
-              <User
-                className="w-4 h-4 text-muted-foreground"
-                strokeWidth={1.5}
-              />
-            </div>
+            <ProfileAvatar />
           </div>
         </header>
+
         <div className="flex-1 px-4 sm:px-8 py-4 sm:py-6 overflow-y-auto">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
