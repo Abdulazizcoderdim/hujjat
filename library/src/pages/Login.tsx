@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, Lock, User } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -28,6 +29,9 @@ const Login = () => {
       navigate("/");
     } catch (error) {
       console.log(error);
+      toast.error(
+        "Login yoki parol noto'g'ri. Iltimos, qaytadan urinib ko'ring.",
+      );
     } finally {
       setAuthLoading(false);
       setLoading(false);
