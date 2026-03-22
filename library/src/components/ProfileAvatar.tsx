@@ -13,7 +13,7 @@ const ProfileAvatar = () => {
       <span className="text-sm text-muted-foreground">
         {user?.first_name || localStorage.getItem("user_name")}
       </span>
-      <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
+      <div className="w-10 h-10 border border-slate-100 rounded-full bg-secondary flex items-center justify-center">
         <img src={user?.image} className="object-cover rounded-full" alt="" />
       </div>
     </div>

@@ -57,6 +57,7 @@ const UploadProductsPage = () => {
       toast.success("Mahsulot va hujjat muvaffaqiyatli saqlandi ✅");
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Upload xatolik");
+    } finally {
     }
   };
 

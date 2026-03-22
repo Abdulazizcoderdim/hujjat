@@ -23,6 +23,18 @@ const Saved = () => {
     },
   });
 
+  if (isLoading) {
+    return (
+      <div className="h-svh w-full flex bg-background text-foreground items-center justify-center">
+        <div className="text-center">
+          <p className="text-lg font-semibold mb-2">
+            Saqlangan kitoblar yuklanmoqda...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-svh w-full flex bg-background text-foreground antialiased overflow-hidden">
       <SidebarNav activePage="saved" />
