@@ -14,29 +14,25 @@ import {
   Type,
 } from "lucide-react";
 import * as pdfjsLib from "pdfjs-dist";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import HTMLFlipBook from "react-pageflip";
 import { useNavigate, useParams } from "react-router-dom";
 
 import $api from "@/http/axios";
 import { ICategory, IProduct } from "@/interface";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { PageProps, Theme, ThemeConfig, UserBookProgress } from "@/types";
 
-// ─── PDF.js worker ───────────────────────────────────────────────────────────
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.mjs";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-type Theme = "light" | "sepia" | "dark";
-
-interface ThemeConfig {
-  bg: string;
-  fg: string;
-  overlay: string;
-  accent: string;
-  label: string;
-  icon: React.ReactNode;
-}
+const WINDOW_SIZE = 3;
 
 const THEMES: Record<Theme, ThemeConfig> = {
   light: {
@@ -65,20 +61,11 @@ const THEMES: Record<Theme, ThemeConfig> = {
   },
 };
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
 const getPageFilter = (theme: Theme) => {
   if (theme === "sepia") return "sepia(0.2) contrast(0.97)";
   if (theme === "dark") return "invert(1) hue-rotate(180deg) brightness(0.9)";
   return "none";
 };
-
-// ─── Page component ───────────────────────────────────────────────────────────
-interface PageProps {
-  pageImage: string | undefined;
-  pageNum: number;
-  totalPages: number;
-  theme: Theme;
-}
 
 const Page = React.forwardRef<HTMLDivElement, PageProps>(
   ({ pageImage, pageNum, totalPages, theme }, ref) => {
@@ -89,7 +76,6 @@ const Page = React.forwardRef<HTMLDivElement, PageProps>(
         className="relative w-full h-full overflow-hidden"
         style={{ backgroundColor: cfg.bg }}
       >
-        {/* Subtle paper texture */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
@@ -114,12 +100,11 @@ const Page = React.forwardRef<HTMLDivElement, PageProps>(
           <div className="w-full h-full flex items-center justify-center">
             <Loader2
               className="w-6 h-6 animate-spin"
-              style={{ color: cfg.fg, opacity: 0.3 }}
+              style={{ color: cfg.fg, opacity: 0.15 }}
             />
           </div>
         )}
 
-        {/* Page number */}
         <div
           className="absolute bottom-2 left-0 right-0 text-center text-[10px] font-mono tracking-widest pointer-events-none"
           style={{ color: cfg.fg, opacity: 0.35 }}
@@ -127,7 +112,6 @@ const Page = React.forwardRef<HTMLDivElement, PageProps>(
           {pageNum} / {totalPages}
         </div>
 
-        {/* Inset shadow for depth */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
@@ -139,9 +123,9 @@ const Page = React.forwardRef<HTMLDivElement, PageProps>(
     );
   },
 );
+
 Page.displayName = "Page";
 
-// ─── useBookDimensions ────────────────────────────────────────────────────────
 function useBookDimensions() {
   const [dims, setDims] = useState(() => calcDims());
 
@@ -149,15 +133,13 @@ function useBookDimensions() {
     const vw = window.innerWidth;
     const vh = window.innerHeight;
     const isMobile = vw < 640;
-    const isPortrait = isMobile; // use single-page mode on mobile
+    const isPortrait = isMobile;
 
     if (isPortrait) {
-      // Single-page: fill most of the screen width
       const w = Math.min(vw - 24, 380);
       const h = Math.min(vh * 0.72, w * 1.414);
       return { width: Math.round(w), height: Math.round(h), isMobile: true };
     } else {
-      // Double-page: two pages side by side
       const maxW = Math.min((vw - 80) / 2, 420);
       const h = Math.min(vh * 0.82, maxW * 1.414);
       const w = Math.round(h / 1.414);
@@ -174,6 +156,22 @@ function useBookDimensions() {
   return dims;
 }
 
+function useVirtualWindow(
+  pages: (string | undefined)[],
+  currentPage: number,
+  windowSize: number = WINDOW_SIZE,
+): (string | undefined)[] {
+  return useMemo(() => {
+    const start = Math.max(0, currentPage - windowSize);
+    const end = Math.min(pages.length - 1, currentPage + windowSize);
+
+    return pages.map((img, i) => {
+      if (i >= start && i <= end) return img;
+      return undefined; // placeholder
+    });
+  }, [pages, currentPage, windowSize]);
+}
+
 const BookReader: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -184,7 +182,6 @@ const BookReader: React.FC = () => {
 
   const [pages, setPages] = useState<(string | undefined)[]>([]);
   const [totalPages, setTotalPages] = useState(0);
-  const [currentPage, setCurrentPage] = useState(0);
   const [loadingState, setLoadingState] = useState<"idle" | "loading" | "done">(
     "loading",
   );
@@ -194,6 +191,38 @@ const BookReader: React.FC = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [renderReady, setRenderReady] = useState(false);
+
+  const [maxReadPage, setMaxReadPage] = useState<number>(0);
+  const [currentPage, setCurrentPage] = useState(0);
+
+  const LS_MAX_PAGE_KEY = `pdf_max_page_book_${id}`;
+  const LS_KEY = `pdf_last_page_book_${id}`;
+
+  const getSavedPage = () => {
+    try {
+      return parseInt(localStorage.getItem(LS_KEY), 10);
+    } catch {
+      return 0;
+    }
+  };
+
+  const getSavedMaxPage = () => {
+    try {
+      return parseInt(localStorage.getItem(LS_MAX_PAGE_KEY), 10);
+    } catch {
+      return 0;
+    }
+  };
+
+  const { data: userBook, refetch: refetchUserBook } =
+    useQuery<UserBookProgress>({
+      queryKey: ["user-book", id],
+      queryFn: async () => {
+        const res = await $api.get(`/student-book/by-book/${id}`);
+        return res.data;
+      },
+      enabled: !!id,
+    });
 
   const {
     width: bookWidth,
@@ -210,9 +239,76 @@ const BookReader: React.FC = () => {
     enabled: !!id,
   });
 
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  console.log("book,.....");
+
+  const { mutate: updateProgress } = useMutation({
+    mutationFn: (dto: {
+      lastPage?: number;
+      progress?: number;
+      isFinished?: boolean;
+    }) => $api.patch(`/student-book/${userBook?.id}`, dto).then((r) => r.data),
+    onSuccess: () => {
+      refetchUserBook();
+    },
+  });
+
+  const calculateProgress = useCallback(
+    (pageNumber: number): number => {
+      if (totalPages === 0) return 0;
+      const readPages = pageNumber + 1;
+      return Math.min(100, Math.round((readPages / totalPages) * 100));
+    },
+    [totalPages],
+  );
+
+  const saveProgress = useCallback(
+    (currentPageNum: number) => {
+      if (currentPageNum > maxReadPage) {
+        const newMaxReadPage = currentPageNum;
+        const newProgress = calculateProgress(newMaxReadPage);
+        const isFinished = newProgress === 100;
+
+        localStorage.setItem(LS_KEY, String(currentPageNum));
+        localStorage.setItem(LS_MAX_PAGE_KEY, String(newMaxReadPage));
+        setMaxReadPage(newMaxReadPage);
+
+        if (userBook?.id) {
+          if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+          saveTimerRef.current = setTimeout(() => {
+            updateProgress({
+              lastPage: currentPageNum,
+              progress: newProgress,
+              ...(isFinished && { isFinished: true }),
+            });
+          }, 2000);
+        }
+      } else {
+        localStorage.setItem(LS_KEY, String(currentPageNum));
+
+        if (userBook?.id) {
+          if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+          saveTimerRef.current = setTimeout(() => {
+            updateProgress({ lastPage: currentPageNum });
+          }, 2000);
+        }
+      }
+    },
+    [maxReadPage, userBook?.id, calculateProgress, updateProgress],
+  );
+
+  const onFlip = useCallback(
+    (e: { data: number }) => {
+      const page = e.data;
+      setCurrentPage(page);
+      saveProgress(page);
+    },
+    [saveProgress],
+  );
+
   useEffect(() => {
     if (!book?.fileUrl) return;
-
     let cancelled = false;
 
     const loadPdf = async () => {
@@ -260,7 +356,6 @@ const BookReader: React.FC = () => {
           if (cancelled) return;
 
           buffer[i - 1] = canvas.toDataURL("image/jpeg", 0.82);
-
           setLoadingProgress(Math.round((i / numPages) * 100));
 
           if (i <= BATCH || i % 8 === 0 || i === numPages) {
@@ -291,16 +386,13 @@ const BookReader: React.FC = () => {
     };
   }, [book?.fileUrl]);
 
+  const virtualPages = useVirtualWindow(pages, currentPage, WINDOW_SIZE);
+
   const goNext = useCallback(() => {
     flipBookRef.current?.pageFlip()?.flipNext();
   }, []);
-
   const goPrev = useCallback(() => {
     flipBookRef.current?.pageFlip()?.flipPrev();
-  }, []);
-
-  const onFlip = useCallback((e: { data: number }) => {
-    setCurrentPage(e.data);
   }, []);
 
   useEffect(() => {
@@ -314,11 +406,8 @@ const BookReader: React.FC = () => {
         goPrev();
       }
       if (e.key === "Escape") {
-        if (document.fullscreenElement) {
-          document.exitFullscreen();
-        } else {
-          navigate(-1);
-        }
+        if (document.fullscreenElement) document.exitFullscreen();
+        else navigate(-1);
       }
     };
     window.addEventListener("keydown", handler);
@@ -340,11 +429,9 @@ const BookReader: React.FC = () => {
 
   const toggleFullscreen = useCallback(async () => {
     try {
-      if (!document.fullscreenElement) {
+      if (!document.fullscreenElement)
         await containerRef.current?.requestFullscreen();
-      } else {
-        await document.exitFullscreen();
-      }
+      else await document.exitFullscreen();
     } catch {}
   }, []);
 
@@ -357,8 +444,36 @@ const BookReader: React.FC = () => {
   const cfg = THEMES[theme];
   const progressPct =
     totalPages > 0 ? Math.round(((currentPage + 1) / totalPages) * 100) : 0;
-
   const isBookReady = renderReady && pages.filter(Boolean).length >= 1;
+
+  useEffect(() => {
+    if (!userBook || !isBookReady) return;
+
+    const lsLastPage = getSavedPage();
+    const lsMaxPage = getSavedMaxPage();
+    const dbLastPage = userBook.lastPage ?? 0;
+    const dbProgress = userBook.progress ?? 0;
+
+    let startPage = 0;
+    let maxPage = 0;
+
+    if (dbProgress > 0 && totalPages > 0) {
+      const estimatedMaxPage = Math.floor((dbProgress / 100) * totalPages) - 1;
+      maxPage = Math.max(estimatedMaxPage, dbLastPage);
+    }
+
+    maxPage = Math.max(maxPage, lsMaxPage, lsLastPage);
+    startPage = Math.max(dbLastPage, lsLastPage);
+
+    if (maxPage > 0) setMaxReadPage(maxPage);
+
+    if (startPage > 0 && flipBookRef.current) {
+      setTimeout(() => {
+        flipBookRef.current?.pageFlip()?.turnToPage(startPage);
+        setCurrentPage(startPage);
+      }, 300);
+    }
+  }, [userBook?.id, isBookReady, totalPages]);
 
   if (isError || book === null) {
     return (
@@ -395,7 +510,6 @@ const BookReader: React.FC = () => {
       onTouchStart={resetControlsTimer}
       onClick={resetControlsTimer}
     >
-      {/* ── Top bar ── */}
       <AnimatePresence>
         {showControls && (
           <motion.header
@@ -409,7 +523,6 @@ const BookReader: React.FC = () => {
               background: `linear-gradient(to bottom, ${cfg.overlay}, transparent)`,
             }}
           >
-            {/* Back button */}
             <button
               onClick={() => navigate(-1)}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium transition-opacity hover:opacity-70 active:scale-95"
@@ -419,7 +532,6 @@ const BookReader: React.FC = () => {
               <span className="hidden sm:inline text-sm">Orqaga</span>
             </button>
 
-            {/* Title */}
             <div
               className="flex items-center gap-1.5 max-w-[40%] sm:max-w-[50%]"
               style={{ color: cfg.fg }}
@@ -433,7 +545,6 @@ const BookReader: React.FC = () => {
               </span>
             </div>
 
-            {/* Controls: theme + fullscreen */}
             <div className="flex items-center gap-0.5">
               {(Object.keys(THEMES) as Theme[]).map((t) => (
                 <button
@@ -451,12 +562,10 @@ const BookReader: React.FC = () => {
                   {THEMES[t].icon}
                 </button>
               ))}
-
               <div
                 className="w-px h-4 mx-0.5"
                 style={{ backgroundColor: cfg.fg, opacity: 0.15 }}
               />
-
               <button
                 onClick={toggleFullscreen}
                 className="p-2 rounded-lg transition-opacity opacity-50 hover:opacity-90 active:scale-90"
@@ -486,9 +595,7 @@ const BookReader: React.FC = () => {
             {book?.poster && (
               <div
                 className="w-28 h-40 sm:w-32 sm:h-44 rounded-xl overflow-hidden"
-                style={{
-                  boxShadow: "0 24px 60px -12px rgba(0,0,0,0.35)",
-                }}
+                style={{ boxShadow: "0 24px 60px -12px rgba(0,0,0,0.35)" }}
               >
                 <img
                   src={book.poster}
@@ -497,7 +604,6 @@ const BookReader: React.FC = () => {
                 />
               </div>
             )}
-
             <div className="flex flex-col items-center gap-3">
               <p
                 className="text-sm font-medium"
@@ -529,21 +635,17 @@ const BookReader: React.FC = () => {
           </motion.div>
         )}
 
-        {/* FlipBook */}
         {isBookReady && (
           <motion.div
             key="flipbook"
             initial={{ opacity: 0, scale: 0.93 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            animate={{ opacity: 1, scale: zoom }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
             style={{
-              transform: `scale(${zoom})`,
               transformOrigin: "center center",
-              transition: "transform 0.2s ease",
               position: "relative",
             }}
           >
-            {/* Shadow behind book */}
             <div
               className="absolute -inset-6 rounded-3xl pointer-events-none"
               style={{
@@ -553,13 +655,10 @@ const BookReader: React.FC = () => {
                     : "0 50px 120px -20px rgba(0,0,0,0.22), 0 20px 40px -10px rgba(0,0,0,0.1)",
               }}
             />
-
-            {/* Spine line */}
             <div
               className="absolute top-0 bottom-0 z-10 pointer-events-none"
               style={{
                 left: isMobile ? undefined : "50%",
-                right: isMobile ? undefined : undefined,
                 width: isMobile ? 0 : "2px",
                 transform: isMobile ? undefined : "translateX(-50%)",
                 background:
@@ -569,7 +668,7 @@ const BookReader: React.FC = () => {
               }}
             />
 
-            {/* @ts-ignore — react-pageflip types incomplete */}
+            {/* @ts-ignore */}
             <HTMLFlipBook
               ref={flipBookRef}
               width={bookWidth}
@@ -597,7 +696,7 @@ const BookReader: React.FC = () => {
               swipeDistance={40}
               clickEventForward={true}
             >
-              {pages.map((img, i) => (
+              {virtualPages.map((img, i) => (
                 <Page
                   key={i}
                   pageImage={img}
@@ -610,7 +709,6 @@ const BookReader: React.FC = () => {
           </motion.div>
         )}
 
-        {/* ── Left / Right nav arrows ── */}
         <AnimatePresence>
           {showControls && isBookReady && (
             <>
@@ -666,7 +764,6 @@ const BookReader: React.FC = () => {
         </AnimatePresence>
       </div>
 
-      {/* ── Bottom bar ── */}
       <AnimatePresence>
         {showControls && isBookReady && (
           <motion.div
@@ -696,7 +793,6 @@ const BookReader: React.FC = () => {
                   }}
                 />
               </div>
-
               <p
                 className="text-[11px] font-mono tracking-widest"
                 style={{ color: cfg.fg, opacity: 0.45 }}

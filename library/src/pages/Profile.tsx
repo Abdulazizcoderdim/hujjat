@@ -221,7 +221,7 @@ const Profile = () => {
               <div className="flex flex-col sm:flex-row gap-3">
                 <button
                   onClick={handleLogout}
-                  className="flex-1 h-11 bg-secondary text-secondary-foreground rounded-xl text-sm font-semibold hover:bg-secondary/80 active:scale-[0.98] transition-all"
+                  className="flex-1 py-4 bg-secondary text-secondary-foreground rounded-xl text-sm font-semibold hover:bg-secondary/80 active:scale-[0.98] transition-all"
                 >
                   Tizimdan chiqish
                 </button>

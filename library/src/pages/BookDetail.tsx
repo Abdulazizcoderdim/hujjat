@@ -21,7 +21,6 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 const BookDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [isReading, setIsReading] = useState(false);
   const [saved, setSaved] = useState(false);
 
   const { data: book, isLoading } = useQuery<IProduct<ICategory>>({
@@ -114,14 +113,14 @@ const BookDetail = () => {
 
   return (
     <>
-      {isReading && (
+      {/* {isReading && (
         <PDFReader
           url={book.fileUrl}
           title={book.name}
           author={book.author}
-          onClose={() => setIsReading(false)}
+          onClose={() => setIsReading(true)}
         />
-      )}
+      )} */}
 
       <div className="h-svh w-full flex bg-background text-foreground antialiased overflow-hidden">
         <SidebarNav />

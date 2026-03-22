@@ -1,3 +1,5 @@
+import $api from "@/http/axios";
+import { useMutation } from "@tanstack/react-query";
 import {
   ArrowLeft,
   BookOpen,
@@ -13,16 +15,92 @@ interface PDFReaderProps {
   url: string;
   title?: string;
   author?: string;
+  userBookId: number; // API uchun userBook ID
+  totalPages?: number; // Kitobning umumiy sahifa soni
+  initialPage?: number; // Serverdan kelgan oxirgi sahifa
   onClose: () => void;
 }
 
-const PDFReader = ({ url, title, author, onClose }: PDFReaderProps) => {
-  const [currentPage, setCurrentPage] = useState(1);
+const LS_KEY = (id: number) => `pdf_last_page_${id}`;
+
+const getSavedPage = (id: number, fallback: number): number => {
+  try {
+    const saved = localStorage.getItem(LS_KEY(id));
+    return saved ? parseInt(saved, 10) : fallback;
+  } catch {
+    return fallback;
+  }
+};
+
+const savePageToLS = (id: number, page: number) => {
+  try {
+    localStorage.setItem(LS_KEY(id), String(page));
+  } catch {}
+};
+
+interface UpdateUserBookDto {
+  progress?: number;
+  lastPage?: number;
+  isFinished?: boolean;
+}
+
+const useUpdateProgress = (userBookId: number) => {
+  return useMutation({
+    mutationFn: (dto: UpdateUserBookDto) =>
+      $api.patch(`/user-books/${userBookId}`, dto).then((r) => r.data),
+  });
+};
+
+const PDFReader = ({
+  url,
+  title,
+  author,
+  userBookId,
+  totalPages,
+  initialPage = 1,
+  onClose,
+}: PDFReaderProps) => {
+  const startPage = getSavedPage(userBookId, initialPage);
+
+  const [currentPage, setCurrentPage] = useState(startPage);
   const [zoom, setZoom] = useState(100);
   const [isFullscreen, setIsFullscreen] = useState(false);
+
   const [pageInput, setPageInput] = useState("1");
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const { mutate: updateProgress } = useUpdateProgress(userBookId);
+
+  const persistPage = useCallback(
+    (page: number) => {
+      savePageToLS(userBookId, page);
+
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = setTimeout(() => {
+        const dto: UpdateUserBookDto = { lastPage: page };
+        if (totalPages && totalPages > 0) {
+          const progress = Math.min(100, Math.round((page / totalPages) * 100));
+          dto.progress = progress;
+          if (progress === 100) dto.isFinished = true;
+        }
+        updateProgress(dto);
+      }, 2000);
+    },
+    [userBookId, totalPages, updateProgress],
+  );
+
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+        savePageToLS(userBookId, currentPage);
+        updateProgress({ lastPage: currentPage });
+      }
+    };
+  }, [currentPage]);
 
   const getPdfUrl = useCallback(() => {
     return `${url}#zoom=${zoom}&page=${currentPage}&toolbar=0&navpanes=0&scrollbar=1`;
@@ -31,11 +109,16 @@ const PDFReader = ({ url, title, author, onClose }: PDFReaderProps) => {
   const handleZoomIn = () => setZoom((z) => Math.min(z + 25, 200));
   const handleZoomOut = () => setZoom((z) => Math.max(z - 25, 50));
 
-  const handlePageChange = (page: number) => {
-    if (page < 1) return;
-    setCurrentPage(page);
-    setPageInput(String(page));
-  };
+  const handlePageChange = useCallback(
+    (page: number) => {
+      if (page < 1) return;
+      if (totalPages && page > totalPages) return;
+      setCurrentPage(page);
+      setPageInput(String(page));
+      persistPage(page);
+    },
+    [totalPages, persistPage],
+  );
 
   const toggleFullscreen = useCallback(() => {
     if (!document.fullscreenElement) {
@@ -68,6 +151,11 @@ const PDFReader = ({ url, title, author, onClose }: PDFReaderProps) => {
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, [currentPage, onClose]);
+
+  const progressPercent =
+    totalPages && totalPages > 0
+      ? Math.min(100, Math.round((currentPage / totalPages) * 100))
+      : null;
 
   return (
     <div
@@ -148,15 +236,13 @@ const PDFReader = ({ url, title, author, onClose }: PDFReaderProps) => {
 
       <div className="flex-1 overflow-hidden flex items-stretch bg-[#141414]">
         <iframe
+          key={`${zoom}-${currentPage}`}
           ref={iframeRef}
           src={getPdfUrl()}
           className="w-full h-full border-0"
           style={{
-            transform: `scale(${zoom / 100})`,
-            transformOrigin: "top center",
-            width: `${(100 * 100) / zoom}%`,
-            height: `${(100 * 100) / zoom}%`,
-            zoom: `${zoom}%`,
+            width: "100%",
+            height: "100%",
           }}
           title={title ?? "PDF"}
           allow="fullscreen"
