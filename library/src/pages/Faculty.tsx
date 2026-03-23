@@ -12,13 +12,47 @@ const Faculty = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
 
-  const { data } = useQuery<IProduct<ICategory>[]>({
+  const { data, isLoading } = useQuery<IProduct<ICategory>[]>({
     queryKey: ["category", slug],
     queryFn: async () => {
       const res = await $api.get(`/categories/related-products/${slug}`);
       return res.data;
     },
   });
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!data || data.length === 0) {
+    return (
+      <div className="h-svh w-full flex bg-background text-foreground antialiased overflow-hidden">
+        <SidebarNav activePage={slug || ""} />
+        <main className="flex-1 flex flex-col min-w-0">
+          <header className="h-16 flex-shrink-0 flex items-center justify-between px-4 sm:px-8 border-b border-border bg-card/50 backdrop-blur-md">
+            <div className="flex items-center gap-3 pl-12 md:pl-0">
+              <button
+                onClick={() => navigate(-1)}
+                className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center hover:bg-secondary/80 transition-colors"
+              >
+                <ArrowLeft
+                  className="w-4 h-4 text-foreground"
+                  strokeWidth={1.5}
+                />
+              </button>
+            </div>
+            <div className="flex items-center gap-3">
+              <ProfileAvatar />
+            </div>
+          </header>
+
+          <div className="flex-1 px-4 sm:px-8 py-4 sm:py-6 overflow-y-auto">
+            <p>Kitoblar mavjud emas</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="h-svh w-full flex bg-background text-foreground antialiased overflow-hidden">
