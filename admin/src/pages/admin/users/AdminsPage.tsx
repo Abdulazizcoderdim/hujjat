@@ -63,7 +63,7 @@ export function AdminsPage() {
         search: debouncedSearch,
       };
 
-      params.role = UserRole.STUDENT;
+      // params.role = UserRole.STUDENT;
 
       const res = await $api.get(`/users/role/${UserRole.ADMIN}`, { params });
       return res.data;
@@ -145,7 +145,7 @@ export function AdminsPage() {
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Ism yoki email bo'yicha qidirish..."
+            placeholder="Ism bo'yicha qidirish..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10 bg-card border-border"
@@ -233,7 +233,7 @@ export function AdminsPage() {
           },
         ]}
         data={data.items || []}
-        keyExtractor={(user) => user.id}
+        keyExtractor={(user) => user.id.toString()}
       />
 
       <Pagination
@@ -305,7 +305,7 @@ export function AdminsPage() {
                   setEditForm({ ...editForm, password: e.target.value })
                 }
                 placeholder="O'zgartirish uchun kiriting"
-                minLength={6}
+                minLength={4}
               />
             </div>
 
@@ -333,7 +333,7 @@ export function AdminsPage() {
         confirmLabel="O'chirish"
         onConfirm={() => {
           if (userToDelete) {
-            deleteMutation.mutate(userToDelete.id);
+            deleteMutation.mutate(userToDelete.id.toString());
           }
         }}
         variant="destructive"

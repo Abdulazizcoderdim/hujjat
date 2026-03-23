@@ -157,11 +157,11 @@ export function AdminSidebar({ mobileOpen, onMobileClose }: AdminSidebarProps) {
         <div className="flex h-20 items-center justify-between px-6">
           {!collapsed && (
             <div className="flex items-center gap-3 animate-in fade-in duration-500">
-              <div className="h-10 w-10 rounded-2xl bg-blue-500 flex items-center justify-center shadow-[0_0_15px_rgba(59,130,246,0.5)]">
-                <FileText className="h-6 w-6 text-white" />
+              <div className="h-10 w-10">
+                <img src="/favicon.svg" alt="OTU Logo" />
               </div>
               <span className="font-extrabold text-xl tracking-tight text-white">
-                Doclab
+                OTU
               </span>
             </div>
           )}

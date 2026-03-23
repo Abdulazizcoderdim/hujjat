@@ -54,7 +54,7 @@ export function StudentsTable() {
 
       <div className="flex items-center justify-between gap-4">
         <Input
-          placeholder="Ism, login yoki talaba ID bo'yicha qidirish..."
+          placeholder="To'liq ismi yoki talaba ID bo'yicha qidirish..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="max-w-md"

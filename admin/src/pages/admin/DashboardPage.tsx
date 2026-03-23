@@ -34,12 +34,16 @@ export function DashboardPage() {
   const navigate = useNavigate();
 
   const { data: usersStats, isLoading: usersStatsLoading } = useQuery<{
-    totalUsers: number;
-    activeUsers: number;
-    inactiveUsers: number;
-    adminUsers: number;
-    studentUsers: number;
-    totalProducts: number;
+    totalUsers: string;
+    totalStudents: string;
+    totalAdmins: string;
+    totalProducts: string;
+    growth: {
+      users: string;
+      students: string;
+      admins: string;
+      products: string;
+    };
   }>({
     queryKey: ["users-stats"],
     queryFn: async () => {
@@ -65,7 +69,7 @@ export function DashboardPage() {
         <PageHeader
           isBlue={true}
           title="Boshqaruv paneli"
-          description="Doclab Marketplace statistikasi va umumiy ko'rinishi"
+          description="Osiyo texnologiyalar universiteti kutubxonasi statistikasi va umumiy ko'rinishi"
           // actions={}
         />
       </div>
@@ -74,25 +78,25 @@ export function DashboardPage() {
         {[
           {
             title: "Jami studentlar",
-            value: usersStats?.studentUsers,
+            value: usersStats?.totalStudents,
             icon: Users,
-            trend: 12,
+            trend: usersStats ? parseFloat(usersStats.growth.students) : 0,
             color: "text-blue-600 dark:text-blue-400",
             bg: "bg-blue-100 dark:bg-blue-900/40",
           },
           {
             title: "Jami mahsulotlar",
-            value: usersStats?.totalUsers,
+            value: usersStats?.totalProducts,
             icon: Package,
-            trend: 15,
+            trend: usersStats ? parseFloat(usersStats.growth.products) : 0,
             color: "text-sky-600 dark:text-sky-400",
             bg: "bg-sky-100 dark:bg-sky-900/40",
           },
           {
             title: "Jami adminlar",
-            value: usersStats?.adminUsers,
+            value: usersStats?.totalAdmins,
             icon: Users,
-            trend: 15,
+            trend: usersStats ? parseFloat(usersStats.growth.admins) : 0,
             color: "text-sky-600 dark:text-sky-400",
             bg: "bg-sky-100 dark:bg-sky-900/40",
           },
@@ -131,7 +135,7 @@ export function DashboardPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => navigate("/products/pending")}
+              onClick={() => navigate("/products/approved")}
               className="text-xs sm:text-sm"
             >
               Barchasi <ArrowRight className="ml-1 h-4 w-4" />

@@ -61,7 +61,9 @@ export function LoginPage() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
             <Lock className="w-8 h-8 text-primary" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground">Doclab Admin</h1>
+          <h1 className="text-2xl font-bold text-foreground">
+            OTU Kutubxonasi Admin
+          </h1>
           <p className="text-muted-foreground mt-2">
             Boshqaruv paneliga kirish
           </p>
