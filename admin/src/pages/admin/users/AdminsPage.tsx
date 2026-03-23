@@ -137,8 +137,8 @@ export function AdminsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Xaridorlar"
-        description="Platformadagi barcha xaridorlar ro'yxati"
+        title="Adminlar"
+        description="Platformadagi barcha adminlar ro'yxati"
       />
 
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
