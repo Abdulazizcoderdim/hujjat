@@ -52,16 +52,18 @@ export function DashboardPage() {
     },
   });
 
-  const { data: approvedProducts, isLoading: approvedProductsLoading } =
-    useQuery<ProductByStatus>({
-      queryKey: ["products-by-status", ProductStatus.APPROVED],
-      queryFn: async () => {
-        const res = await $api.get(
-          `/products?status=${ProductStatus.APPROVED}&page=1&limit=5`,
-        );
-        return res.data;
-      },
-    });
+  const {
+    data: approvedProducts = { items: [], pagination: {} as any },
+    isLoading: approvedProductsLoading,
+  } = useQuery<ProductByStatus>({
+    queryKey: ["products-by-status", ProductStatus.APPROVED],
+    queryFn: async () => {
+      const res = await $api.get(
+        `/products?status=${ProductStatus.APPROVED}&page=1&limit=5`,
+      );
+      return res.data;
+    },
+  });
 
   return (
     <div className="space-y-8 p-4 md:p-6 bg-slate-50/50 dark:bg-slate-950 min-h-screen transition-colors duration-300">
@@ -75,47 +77,57 @@ export function DashboardPage() {
       </div>
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {[
-          {
-            title: "Jami studentlar",
-            value: usersStats?.totalStudents,
-            icon: Users,
-            trend: usersStats ? parseFloat(usersStats.growth.students) : 0,
-            color: "text-blue-600 dark:text-blue-400",
-            bg: "bg-blue-100 dark:bg-blue-900/40",
-          },
-          {
-            title: "Jami mahsulotlar",
-            value: usersStats?.totalProducts,
-            icon: Package,
-            trend: usersStats ? parseFloat(usersStats.growth.products) : 0,
-            color: "text-sky-600 dark:text-sky-400",
-            bg: "bg-sky-100 dark:bg-sky-900/40",
-          },
-          {
-            title: "Jami adminlar",
-            value: usersStats?.totalAdmins,
-            icon: Users,
-            trend: usersStats ? parseFloat(usersStats.growth.admins) : 0,
-            color: "text-sky-600 dark:text-sky-400",
-            bg: "bg-sky-100 dark:bg-sky-900/40",
-          },
-        ].map((item, idx) => (
-          <div
-            key={idx}
-            className="group relative overflow-hidden rounded-2xl bg-white dark:bg-slate-900 p-6 border border-blue-100 dark:border-slate-800 shadow-lg transition-all hover:shadow-md hover:-translate-y-1"
-          >
-            <StatCard
-              title={item.title}
-              value={item.value?.toLocaleString() || "0"}
-              icon={item.icon}
-              trend={{ value: item.trend, isPositive: true }}
-            />
+        {usersStatsLoading ? (
+          <p>Loading...</p>
+        ) : (
+          [
+            {
+              title: "Jami studentlar",
+              value: usersStats?.totalStudents || 0,
+              icon: Users,
+              trend: usersStats
+                ? parseFloat(usersStats?.growth?.students || "0")
+                : 0,
+              color: "text-blue-600 dark:text-blue-400",
+              bg: "bg-blue-100 dark:bg-blue-900/40",
+            },
+            {
+              title: "Jami mahsulotlar",
+              value: usersStats?.totalProducts,
+              icon: Package,
+              trend: usersStats
+                ? parseFloat(usersStats?.growth?.products || "0")
+                : 0,
+              color: "text-sky-600 dark:text-sky-400",
+              bg: "bg-sky-100 dark:bg-sky-900/40",
+            },
+            {
+              title: "Jami adminlar",
+              value: usersStats?.totalAdmins,
+              icon: Users,
+              trend: usersStats
+                ? parseFloat(usersStats?.growth?.admins || "0")
+                : 0,
+              color: "text-sky-600 dark:text-sky-400",
+              bg: "bg-sky-100 dark:bg-sky-900/40",
+            },
+          ].map((item, idx) => (
             <div
-              className={`absolute -right-6 -top-6 h-24 w-24 rounded-full ${item.bg} opacity-20 dark:opacity-10 group-hover:scale-150 transition-transform duration-500`}
-            />
-          </div>
-        ))}
+              key={idx}
+              className="group relative overflow-hidden rounded-2xl bg-white dark:bg-slate-900 p-6 border border-blue-100 dark:border-slate-800 shadow-lg transition-all hover:shadow-md hover:-translate-y-1"
+            >
+              <StatCard
+                title={item.title}
+                value={item.value?.toLocaleString() || "0"}
+                icon={item.icon}
+                trend={{ value: item.trend, isPositive: true }}
+              />
+              <div
+                className={`absolute -right-6 -top-6 h-24 w-24 rounded-full ${item.bg} opacity-20 dark:opacity-10 group-hover:scale-150 transition-transform duration-500`}
+              />
+            </div>
+          ))
+        )}
       </div>
 
       <ProductAnalyticsChart />
@@ -147,7 +159,7 @@ export function DashboardPage() {
               <div className="p-12 text-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
               </div>
-            ) : approvedProducts.items.length === 0 ? (
+            ) : approvedProducts?.items?.length === 0 ? (
               <div className="p-8 text-center text-muted-foreground text-sm">
                 Kutilayotgan mahsulot yo'q
               </div>
