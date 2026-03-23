@@ -58,6 +58,14 @@ const SidebarNav = ({ activePage = "home" }: SidebarNavProps) => {
     },
   });
 
+  const { data: booksCount } = useQuery<number>({
+    queryKey: ["books-count"],
+    queryFn: async () => {
+      const res = await $api.get("/products/books/count");
+      return res.data;
+    },
+  });
+
   const close = () => setOpen(false);
 
   const handleLogout = () => {
@@ -134,11 +142,11 @@ const SidebarNav = ({ activePage = "home" }: SidebarNavProps) => {
 
       <div className="p-4 mx-4 mb-4 rounded-xl bg-secondary">
         <p className="text-xs font-semibold text-foreground">
-          12,482 ta kitob mavjud
+          {booksCount?.toLocaleString() || 0} ta kitob mavjud
         </p>
-        <p className="text-[10px] text-muted-foreground mt-0.5">
+        {/* <p className="text-[10px] text-muted-foreground mt-0.5">
           34 ta yangi qo'shildi
-        </p>
+        </p> */}
       </div>
     </>
   );
