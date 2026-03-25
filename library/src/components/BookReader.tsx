@@ -28,6 +28,7 @@ import $api from "@/http/axios";
 import { ICategory, IProduct } from "@/interface";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { PageProps, Theme, ThemeConfig, UserBookProgress } from "@/types";
+import { useEndSession, useStartSession } from "@/hooks/useReading";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.mjs";
@@ -174,29 +175,29 @@ function useVirtualWindow(
 
 const BookReader: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+
+  const LS_MAX_PAGE_KEY = `pdf_max_page_book_${id}`;
+  const LS_KEY = `pdf_last_page_book_${id}`;
+  const SESSION_KEY = `reading_session_${id}`;
+
   const navigate = useNavigate();
 
   const flipBookRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const controlsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sessionIdRef = useRef<number | null>(null);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [pages, setPages] = useState<(string | undefined)[]>([]);
   const [totalPages, setTotalPages] = useState(0);
-  const [loadingState, setLoadingState] = useState<"idle" | "loading" | "done">(
-    "loading",
-  );
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [theme, setTheme] = useState<Theme>("light");
   const [showControls, setShowControls] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [renderReady, setRenderReady] = useState(false);
-
   const [maxReadPage, setMaxReadPage] = useState<number>(0);
   const [currentPage, setCurrentPage] = useState(0);
-
-  const LS_MAX_PAGE_KEY = `pdf_max_page_book_${id}`;
-  const LS_KEY = `pdf_last_page_book_${id}`;
 
   const getSavedPage = () => {
     try {
@@ -214,6 +215,9 @@ const BookReader: React.FC = () => {
     }
   };
 
+  const { startSession } = useStartSession();
+  const { endSession } = useEndSession();
+
   const { data: userBook, refetch: refetchUserBook } =
     useQuery<UserBookProgress>({
       queryKey: ["user-book", id],
@@ -223,6 +227,53 @@ const BookReader: React.FC = () => {
       },
       enabled: !!id,
     });
+
+  useEffect(() => {
+    if (!id) return;
+
+    const existingSession = localStorage.getItem(SESSION_KEY);
+
+    if (existingSession) {
+      sessionIdRef.current = Number(existingSession);
+      return;
+    }
+
+    const start = async () => {
+      try {
+        const res: any = await startSession({
+          productId: Number(id),
+          startPage: userBook?.lastPage || getSavedPage(),
+        });
+
+        sessionIdRef.current = res.data.id;
+
+        localStorage.setItem(SESSION_KEY, res.data.id);
+      } catch (e) {
+        console.error("Session start error", e);
+      }
+    };
+
+    start();
+  }, [id]);
+
+  useEffect(() => {
+    const handleUnload = () => {
+      if (sessionIdRef.current) {
+        navigator.sendBeacon(
+          `${import.meta.env.VITE_API_URL}/reading-sessions/${sessionIdRef.current}/end`,
+          JSON.stringify({
+            endPage: currentPage,
+          }),
+        );
+      }
+    };
+
+    window.addEventListener("beforeunload", handleUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleUnload);
+    };
+  }, [currentPage]);
 
   const {
     width: bookWidth,
@@ -238,8 +289,6 @@ const BookReader: React.FC = () => {
     },
     enabled: !!id,
   });
-
-  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   console.log("book,.....");
 
@@ -312,7 +361,6 @@ const BookReader: React.FC = () => {
     let cancelled = false;
 
     const loadPdf = async () => {
-      setLoadingState("loading");
       setPages([]);
       setTotalPages(0);
       setCurrentPage(0);
@@ -372,11 +420,9 @@ const BookReader: React.FC = () => {
 
         if (!cancelled) {
           setPages([...buffer]);
-          setLoadingState("done");
         }
       } catch (err) {
         console.error("PDF yuklashda xato:", err);
-        if (!cancelled) setLoadingState("done");
       }
     };
 
@@ -490,6 +536,18 @@ const BookReader: React.FC = () => {
     );
   }
 
+  const handleClose = () => {
+    if (sessionIdRef.current) {
+      endSession(sessionIdRef.current, {
+        endPage: currentPage,
+      });
+
+      localStorage.removeItem(SESSION_KEY);
+    }
+
+    navigate(-1);
+  };
+
   return (
     <div
       ref={containerRef}
@@ -524,7 +582,7 @@ const BookReader: React.FC = () => {
             }}
           >
             <button
-              onClick={() => navigate(-1)}
+              onClick={handleClose}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium transition-opacity hover:opacity-70 active:scale-95"
               style={{ color: cfg.fg }}
             >

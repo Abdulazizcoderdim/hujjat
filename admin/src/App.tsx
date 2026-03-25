@@ -23,6 +23,7 @@ import { StudentsTable } from "./pages/admin/users/StudentsTable";
 import NotFound from "./pages/NotFound";
 import UploadProductsPage from "./pages/UploadProductsPage";
 import { authStore } from "./store/auth.store";
+import StudentStats from "./pages/StudentStats";
 
 const queryClient = new QueryClient();
 
@@ -71,6 +72,7 @@ const App = () => {
         <TooltipProvider>
           <Toaster />
           <Sonner />
+
           <BrowserRouter>
             <Routes>
               <Route path="/login" element={<LoginPage />} />
@@ -84,6 +86,7 @@ const App = () => {
                 <Route path="/" element={<DashboardPage />} />
                 <Route path="/users/admins" element={<AdminsPage />} />
                 <Route path="/users/students" element={<StudentsTable />} />
+                <Route path="/students/:id/stats" element={<StudentStats />} />
                 <Route path="/categories" element={<CategoriesPage />} />
 
                 <Route

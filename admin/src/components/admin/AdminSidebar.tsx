@@ -18,7 +18,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 interface NavChild {
@@ -156,14 +156,17 @@ export function AdminSidebar({ mobileOpen, onMobileClose }: AdminSidebarProps) {
         {/* Header - Logo qismi */}
         <div className="flex h-20 items-center justify-between px-6">
           {!collapsed && (
-            <div className="flex items-center gap-3 animate-in fade-in duration-500">
+            <Link
+              to={"/"}
+              className="flex items-center gap-3 animate-in fade-in duration-500"
+            >
               <div className="h-10 w-10">
                 <img src="/favicon.svg" alt="OTU Logo" />
               </div>
               <span className="font-extrabold text-xl tracking-tight text-white">
                 OTU
               </span>
-            </div>
+            </Link>
           )}
 
           <Button

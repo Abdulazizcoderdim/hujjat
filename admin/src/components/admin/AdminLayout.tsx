@@ -19,7 +19,7 @@ export function AdminLayout() {
         >
           <Menu className="h-6 w-6" />
         </Button>
-        <span className="font-extrabold text-lg text-white ml-3">Doclab</span>
+        <span className="font-extrabold text-lg text-white ml-3">OTU</span>
       </div>
 
       {/* Mobile overlay */}

@@ -42,6 +42,38 @@ export function AdminsPage() {
     password: "",
   });
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [addForm, setAddForm] = useState({
+    full_name: "",
+    email: "",
+    login: "",
+    phone: "",
+    password: "",
+  });
+
+  const addMutation = useMutation({
+    mutationFn: (data: any) => $api.post("/users/create-admin", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admins"] });
+      toast({ title: "Admin muvaffaqiyatli yaratildi" });
+      setAddDialogOpen(false);
+      setAddForm({
+        full_name: "",
+        email: "",
+        login: "",
+        phone: "",
+        password: "",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Xatolik",
+        description:
+          error.response?.data?.message || "Yaratishda xatolik yuz berdi",
+        variant: "destructive",
+      });
+    },
+  });
 
   useEffect(() => {
     if (editingUser) {
@@ -62,8 +94,6 @@ export function AdminsPage() {
         limit,
         search: debouncedSearch,
       };
-
-      // params.role = UserRole.STUDENT;
 
       const res = await $api.get(`/users/role/${UserRole.ADMIN}`, { params });
       return res.data;
@@ -141,7 +171,7 @@ export function AdminsPage() {
         description="Platformadagi barcha adminlar ro'yxati"
       />
 
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -151,6 +181,8 @@ export function AdminsPage() {
             className="pl-10 bg-card border-border"
           />
         </div>
+
+        <Button onClick={() => setAddDialogOpen(true)}>Admin qo'shish</Button>
       </div>
 
       <DataTable
@@ -244,6 +276,95 @@ export function AdminsPage() {
         onPageChange={(p) => setPage(p)}
         onLimitChange={(l) => setLimit(l)}
       />
+
+      <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Yangi Admin qo'shish</DialogTitle>
+          </DialogHeader>
+
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              addMutation.mutate(addForm);
+            }}
+            className="space-y-4 py-4"
+          >
+            <div className="space-y-2">
+              <label className="text-sm font-medium">To'liq ism</label>
+              <Input
+                value={addForm.full_name}
+                onChange={(e) =>
+                  setAddForm({ ...addForm, full_name: e.target.value })
+                }
+                placeholder="F.I.O"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Email</label>
+              <Input
+                type="email"
+                value={addForm.email}
+                onChange={(e) =>
+                  setAddForm({ ...addForm, email: e.target.value })
+                }
+                placeholder="example@mail.com"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Login</label>
+              <Input
+                value={addForm.login}
+                onChange={(e) =>
+                  setAddForm({ ...addForm, login: e.target.value })
+                }
+                placeholder="Login"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Telefon</label>
+              <Input
+                value={addForm.phone}
+                onChange={(e) =>
+                  setAddForm({ ...addForm, phone: e.target.value })
+                }
+                placeholder="+998..."
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Parol</label>
+              <Input
+                type="password"
+                value={addForm.password}
+                onChange={(e) =>
+                  setAddForm({ ...addForm, password: e.target.value })
+                }
+                placeholder="Parol"
+                required
+                minLength={4}
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 mt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setAddDialogOpen(false)}
+              >
+                Bekor qilish
+              </Button>
+              <Button type="submit" disabled={addMutation.isPending}>
+                {addMutation.isPending ? "Saqlanmoqda..." : "Qo'shish"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       <Dialog
         open={!!editingUser}

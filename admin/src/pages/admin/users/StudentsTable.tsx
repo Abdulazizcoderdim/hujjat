@@ -14,8 +14,16 @@ import { useDebounce } from "@/hooks/use-debounce";
 import $api from "@/http/axios";
 import { IUser, UserRole } from "@/interface";
 import { useQuery } from "@tanstack/react-query";
-import { Eye, GraduationCap, MapPin, School } from "lucide-react";
+import {
+  ChartColumnStacked,
+  Eye,
+  GraduationCap,
+  MapPin,
+  Pencil,
+  School,
+} from "lucide-react";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 export function StudentsTable() {
   const [search, setSearch] = useState("");
@@ -23,6 +31,8 @@ export function StudentsTable() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [selectedStudent, setSelectedStudent] = useState<IUser | null>(null);
+
+  const navigate = useNavigate();
 
   const studentsQuery = useQuery({
     queryKey: ["students", { debouncedSearch, page, limit }],
@@ -101,10 +111,12 @@ export function StudentsTable() {
                   </td>
                   <td className="px-4 py-3 text-sm">
                     <div className="flex items-center gap-2">
-                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
-                        {user.full_name?.charAt(0) ||
-                          user.first_name?.charAt(0) ||
-                          "?"}
+                      <div className="h-8 w-8 rounded-full flex items-center justify-center text-primary font-medium">
+                        <img
+                          src={user?.image || ""}
+                          className="rounded-full"
+                          alt=""
+                        />
                       </div>
                       <div>
                         <div className="font-medium">
@@ -144,6 +156,22 @@ export function StudentsTable() {
                       onClick={() => setSelectedStudent(user)}
                     >
                       <Eye className="h-4 w-4" />
+                    </Button>
+
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() =>
+                        navigate(`/students/${user.id}/stats`, {
+                          state: {
+                            studentName:
+                              user.full_name ||
+                              `${user.first_name} ${user.second_name}`,
+                          },
+                        })
+                      }
+                    >
+                      <ChartColumnStacked className="h-4 w-4" />
                     </Button>
                   </td>
                 </tr>

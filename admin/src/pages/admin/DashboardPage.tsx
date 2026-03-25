@@ -92,7 +92,7 @@ export function DashboardPage() {
               bg: "bg-blue-100 dark:bg-blue-900/40",
             },
             {
-              title: "Jami mahsulotlar",
+              title: "Jami kitoblar",
               value: usersStats?.totalProducts,
               icon: Package,
               trend: usersStats

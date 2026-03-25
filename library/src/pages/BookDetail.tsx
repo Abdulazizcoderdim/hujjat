@@ -23,6 +23,14 @@ const BookDetail = () => {
   const navigate = useNavigate();
   const [saved, setSaved] = useState(false);
 
+  const { data: isReadBook, isLoading: isLoadingRead } = useQuery({
+    queryKey: ["is-read", id],
+    queryFn: async () => {
+      const { data } = await $api.get(`/student-book/by-book/${id}`);
+      return data;
+    },
+  });
+
   const { data: book, isLoading } = useQuery<IProduct<ICategory>>({
     queryKey: ["book", id],
     queryFn: async () => {
@@ -45,7 +53,9 @@ const BookDetail = () => {
     setSaved(savedBooks.includes(book?.id));
   }, [book?.id]);
 
-  if (isLoading) {
+  console.log("ISBOOOOK READ>>>>>", isReadBook);
+
+  if (isLoading || isLoadingRead) {
     return (
       <div className="h-svh w-full flex bg-background text-foreground items-center justify-center">
         <div className="text-center">
@@ -191,7 +201,7 @@ const BookDetail = () => {
                   className="flex-1 py-3 bg-primary text-primary-foreground rounded-xl font-semibold text-sm hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                 >
                   <BookOpen className="w-4 h-4" strokeWidth={1.5} />
-                  O'qishni boshlash
+                  O'qishni {isReadBook ? "davom ettirish" : "Boshlash"}
                 </button>
 
                 <button
