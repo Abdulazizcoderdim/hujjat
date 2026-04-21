@@ -242,7 +242,7 @@ const BookReader: React.FC = () => {
       try {
         const res: any = await startSession({
           productId: Number(id),
-          startPage: userBook?.lastPage || getSavedPage(),
+          startPage: userBook?.lastPage || getSavedPage() || 1,
         });
 
         sessionIdRef.current = res.data.id;

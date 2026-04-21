@@ -176,13 +176,13 @@ export function DashboardPage() {
                           "text-slate-500 dark:text-slate-400 font-medium",
                       },
                       {
-                        key: "price",
-                        header: "Narxi",
+                        key: "language",
+                        header: "Tili",
                         className:
                           "text-slate-500 dark:text-slate-400 font-medium",
                         render: (p) => (
                           <span className="font-semibold text-slate-700 dark:text-slate-200">
-                            {formatCurrency(p.price)}
+                            {p.language}
                           </span>
                         ),
                       },

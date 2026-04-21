@@ -1,7 +1,16 @@
 import $api from "@/http/axios";
 import { ICategory } from "@/interface";
 import { useQuery } from "@tanstack/react-query";
-import { BookOpen, Home, LogOut, Menu, Star, X } from "lucide-react";
+import {
+  BookOpen,
+  ChartBarStacked,
+  Home,
+  LogOut,
+  Menu,
+  Satellite,
+  Star,
+  X,
+} from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -113,6 +122,14 @@ const SidebarNav = ({ activePage = "home" }: SidebarNavProps) => {
           to="/saved"
           onClick={close}
         />
+        {/*
+        <NavItem
+          icon={<ChartBarStacked className="w-5 h-5" strokeWidth={1.5} />}
+          label="Reyting"
+          active={activePage === "rating"}
+          to="/rating"
+          onClick={close}
+        /> */}
 
         <div className="pt-6 pb-2 px-4">
           <span className="text-[10px] font-mono-label text-muted-foreground">
