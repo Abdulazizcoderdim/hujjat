@@ -1,66 +1,40 @@
 import axios from "axios";
 
+const TOKEN_KEY = "ADMIN_ACCESS_TOKEN";
+
 const $api = axios.create({
   withCredentials: true,
   baseURL: import.meta.env.VITE_API_URL,
 });
 
 $api.interceptors.request.use((config) => {
-  config.headers.Authorization = `Bearer ${localStorage.getItem(
-    "ADMIN_ACCESS_TOKEN",
-  )}`;
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
   return config;
 });
 
-// $api.interceptors.response.use(
-//   (config) => {
-//     return config;
-//   },
-//   async (error) => {
-//     const originalRequest = error.config;
+$api.interceptors.response.use(
+  (res) => res,
+  (error) => {
+    const status = error?.response?.status;
+    const url: string = error?.config?.url || "";
 
-//     if (
-//       error.response?.status === 401 &&
-//       originalRequest &&
-//       !originalRequest._isRetry
-//     ) {
-//       originalRequest._isRetry = true;
+    const isAuthEndpoint =
+      url.includes("/auth/login") || url.includes("/auth/refresh");
 
-//       if (isRefreshing) {
-//         return new Promise((resolve) => {
-//           addRefreshSubscriber((token: string) => {
-//             originalRequest.headers.Authorization = `Bearer ${token}`;
-//             resolve($api.request(originalRequest));
-//           });
-//         });
-//       }
+    if (
+      status === 401 &&
+      !isAuthEndpoint &&
+      window.location.pathname !== "/login"
+    ) {
+      localStorage.removeItem(TOKEN_KEY);
+      window.location.replace("/login");
+    }
 
-//       isRefreshing = true;
-
-//       try {
-//         const { data } = await $axios.post("/auth/refresh");
-//         localStorage.setItem("ADMIN_ACCESS_TOKEN", data.accessToken);
-//         isRefreshing = false;
-//         onRefreshed(data.accessToken);
-//         return $api.request(originalRequest);
-//       } catch (refreshError: any) {
-//         isRefreshing = false;
-//         refreshSubscribers = [];
-
-//         // Faqat 401/403 da login sahifasiga yo'naltirish
-//         // Network xato bo'lsa (server o'chgan, internet yo'q) — otib yubormaslik
-//         const status = refreshError?.response?.status;
-//         if (status === 401 || status === 403) {
-//           localStorage.removeItem("ADMIN_ACCESS_TOKEN");
-//           window.location.href = "/login";
-//         }
-
-//         return Promise.reject(refreshError);
-//       }
-//     }
-
-//     throw error;
-//   },
-// );
+    return Promise.reject(error);
+  },
+);
 
 export default $api;

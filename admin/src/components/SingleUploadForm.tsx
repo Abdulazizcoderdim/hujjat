@@ -27,46 +27,50 @@ export function SingleUploadForm({
   categories,
   onSubmit,
 }: SingleUploadFormProps) {
-  const [poster, setPoster] = useState<File | null>(null);
-  const [file, setFile] = useState<File | null>(null);
-  const [formData, setFormData] = useState({
+  const emptyForm = {
     name: "",
     description: "",
     categoryId: "",
     tags: "",
-    poster: "",
     pages: "",
     author: "",
     year: "",
     language: "",
-  });
+  };
+
+  const [poster, setPoster] = useState<File | null>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [formData, setFormData] = useState(emptyForm);
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const posterInputRef = useRef<HTMLInputElement>(null);
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
+    if (isUploading) return;
     const droppedFile = e.dataTransfer.files[0];
     if (droppedFile) setFile(droppedFile);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    setIsUploading(true);
     e.preventDefault();
     if (!file || isUploading) return;
+
+    setIsUploading(true);
+    setProgress(0);
 
     try {
       const data = new FormData();
       data.append("file", file);
+      if (poster) data.append("poster", poster);
       data.append("name", formData.name);
       data.append("description", formData.description);
       data.append("categoryId", formData.categoryId);
       data.append("tags", formData.tags);
-      data.append("poster", poster as File);
-
       data.append("pages", formData.pages);
       data.append("author", formData.author);
       data.append("year", formData.year);
@@ -75,22 +79,17 @@ export function SingleUploadForm({
       await onSubmit(data, (p) => setProgress(p));
 
       setProgress(100);
-
       setFile(null);
-      setFormData({
-        name: "",
-        description: "",
-        categoryId: "",
-        tags: "",
-        poster: "",
-        pages: "",
-        author: "",
-        year: "",
-        language: "",
-      });
+      setPoster(null);
+      setFormData(emptyForm);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      if (posterInputRef.current) posterInputRef.current.value = "";
+    } catch {
+      // error toast is shown by the parent; keep form values so user can retry
     } finally {
       setTimeout(() => {
         setIsUploading(false);
+        setProgress(0);
       }, 300);
     }
   };
@@ -183,6 +182,7 @@ export function SingleUploadForm({
             <Label>Poster (rasm)</Label>
 
             <Input
+              ref={posterInputRef}
               type="file"
               accept="image/*"
               onChange={(e) => setPoster(e.target.files?.[0] || null)}

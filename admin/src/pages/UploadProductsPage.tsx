@@ -25,39 +25,40 @@ const UploadProductsPage = () => {
   });
 
   const handleSingleUpload = async (
-    data: FormData,
+    formData: FormData,
     onProgress: (percent: number) => void,
   ) => {
     try {
-      const file = data.get("file") as File;
-      const poster = data.get("poster") as File;
-      const name = String(data.get("name") || "");
-      const description = String(data.get("description") || "");
-      const categoryId = String(data.get("categoryId") || "");
-      const tags = String(data.get("tags") || "");
-      const pages = String(data.get("pages") || "");
-      const author = String(data.get("author") || "");
-      const year = String(data.get("year") || "");
-      const language = String(data.get("language") || "");
+      const file = formData.get("file") as File | null;
+      const posterEntry = formData.get("poster");
+      const poster = posterEntry instanceof File ? posterEntry : null;
 
-      await createProduct({
+      if (!file) {
+        toast.error("Fayl tanlanmagan");
+        throw new Error("missing file");
+      }
+
+      const product = await createProduct({
         file,
         poster,
-        name,
-        description,
-        categoryId,
-        tags,
-        pages,
-        author,
-        year,
-        language,
+        name: String(formData.get("name") || ""),
+        description: String(formData.get("description") || ""),
+        categoryId: String(formData.get("categoryId") || ""),
+        tags: String(formData.get("tags") || ""),
+        pages: String(formData.get("pages") || ""),
+        author: String(formData.get("author") || ""),
+        year: String(formData.get("year") || ""),
+        language: String(formData.get("language") || ""),
         onProgress,
       });
 
-      toast.success("Mahsulot va hujjat muvaffaqiyatli saqlandi ✅");
+      toast.success(`"${product.name}" muvaffaqiyatli saqlandi ✅`);
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Upload xatolik");
-    } finally {
+      const msg = err?.response?.data?.message;
+      toast.error(
+        Array.isArray(msg) ? msg.join(", ") : msg || "Yuklashda xatolik",
+      );
+      throw err;
     }
   };
 
@@ -69,7 +70,7 @@ const UploadProductsPage = () => {
 
       <div className="mt-6">
         <SingleUploadForm
-          categories={data.items}
+          categories={data?.items ?? []}
           onSubmit={handleSingleUpload}
         />
       </div>
