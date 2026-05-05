@@ -63,17 +63,21 @@ const UploadProductsPage = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold">Hujjat yuklash</h1>
-      </div>
+    <div className="mx-auto w-full max-w-6xl space-y-6">
+      <header className="space-y-1">
+        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+          Hujjat yuklash
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          Yangi kitob yoki hujjatni kutubxonaga qo'shing. Majburiy maydonlar{" "}
+          <span className="text-destructive">*</span> bilan belgilangan.
+        </p>
+      </header>
 
-      <div className="mt-6">
-        <SingleUploadForm
-          categories={data?.items ?? []}
-          onSubmit={handleSingleUpload}
-        />
-      </div>
+      <SingleUploadForm
+        categories={data?.items ?? []}
+        onSubmit={handleSingleUpload}
+      />
     </div>
   );
 };

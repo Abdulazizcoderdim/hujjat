@@ -108,7 +108,7 @@ export interface ICategory {
   id: string;
   name: string;
   slug: string;
-  icon: string;
+  icon?: string;
   createdAt: string;
   updatedAt: string;
   productsCount?: number;

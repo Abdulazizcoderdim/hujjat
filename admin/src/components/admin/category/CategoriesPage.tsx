@@ -66,7 +66,7 @@ export function CategoriesPage() {
   const pagination = data?.pagination;
 
   const createMutation = useMutation({
-    mutationFn: async (payload: { name: string; icon: string }) => {
+    mutationFn: async (payload: { name: string; icon?: string }) => {
       const { data } = await $api.post("/categories", payload);
       return data;
     },
@@ -83,7 +83,7 @@ export function CategoriesPage() {
       payload,
     }: {
       id: string;
-      payload: { name: string; icon: string };
+      payload: { name: string; icon?: string };
     }) => {
       const { data } = await $api.patch(`/categories/${id}`, payload);
       return data;
@@ -115,27 +115,32 @@ export function CategoriesPage() {
 
   const handleEdit = (category: ICategory) => {
     setSelectedCategory(category);
-    setFormData({ name: category.name, icon: category.icon });
+    setFormData({ name: category.name, icon: category.icon ?? "" });
     setIsFormOpen(true);
   };
 
   const handleSubmit = () => {
-    if (!formData.name.trim() || !formData.icon.trim()) {
+    if (!formData.name.trim()) {
       toast({
         title: "Xatolik",
-        description: "Barcha maydonlarni to‘ldiring",
+        description: "Kategoriya nomini kiriting",
         variant: "destructive",
       });
       return;
     }
 
+    const payload = {
+      name: formData.name.trim(),
+      icon: formData.icon.trim() || undefined,
+    };
+
     if (selectedCategory) {
       updateMutation.mutate({
         id: selectedCategory.id,
-        payload: formData,
+        payload,
       });
     } else {
-      createMutation.mutate(formData);
+      createMutation.mutate(payload);
     }
   };
 
@@ -253,13 +258,13 @@ export function CategoriesPage() {
               />
             </div>
             <div className="space-y-3">
-              <Label>Ikonka (emoji)</Label>
+              <Label>Ikonka (emoji, ixtiyoriy)</Label>
               <Input
                 value={formData.icon}
                 onChange={(e) =>
                   setFormData({ ...formData, icon: e.target.value })
                 }
-                placeholder="icon"
+                placeholder="📚"
               />
             </div>
           </div>
