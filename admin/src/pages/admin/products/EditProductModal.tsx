@@ -1,3 +1,7 @@
+import {
+  CurriculumLinkValue,
+  CurriculumLinksFieldset,
+} from "@/components/CurriculumLinksFieldset";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -15,15 +19,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import $api from "@/http/axios";
+import { ICurriculumLink } from "@/interface";
+import { fetchCurriculumLinks } from "@/service/edusystem";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { AlertCircle, GraduationCap } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
 export function EditProductModal({ id, isOpen, onClose, onSave }: any) {
   const [formData, setFormData] = useState<any>({});
   const [file, setFile] = useState<File | null>(null);
   const [poster, setPoster] = useState<File | null>(null);
+  const [isCurriculumBook, setIsCurriculumBook] = useState(false);
+  const [curriculumLinks, setCurriculumLinks] = useState<CurriculumLinkValue[]>(
+    [],
+  );
 
   const { data: categories } = useQuery({
     queryKey: ["categories-list"],
@@ -34,7 +46,13 @@ export function EditProductModal({ id, isOpen, onClose, onSave }: any) {
   const { data: product, isLoading } = useQuery({
     queryKey: ["product-detail", id],
     queryFn: async () => (await $api.get(`/products/${id}`)).data,
-    enabled: !!id,
+    enabled: !!id && isOpen,
+  });
+
+  const { data: existingLinks } = useQuery<ICurriculumLink[]>({
+    queryKey: ["product-curriculum-links", id],
+    queryFn: () => fetchCurriculumLinks(id!),
+    enabled: !!id && isOpen,
   });
 
   useEffect(() => {
@@ -42,24 +60,73 @@ export function EditProductModal({ id, isOpen, onClose, onSave }: any) {
       setFormData({
         name: product.name,
         description: product.description,
-        categoryId: String(product.category?.id),
-        tags: product.tags?.join(", "),
-        author: product.author,
-        pages: product.pages,
-        year: product.year,
-        language: product.language,
+        categoryId: String(product.category?.id ?? ""),
+        tags: product.tags?.join(", ") ?? "",
+        author: product.author ?? "",
+        pages: product.pages ?? "",
+        year: product.year ?? "",
+        language: product.language ?? "",
       });
+      setIsCurriculumBook(!!product.isCurriculumBook);
+      setFile(null);
+      setPoster(null);
     }
   }, [product]);
 
+  useEffect(() => {
+    if (existingLinks) {
+      setCurriculumLinks(
+        existingLinks.map((l) => ({
+          curriculumId: l.curriculumId,
+          semester: l.semester,
+          subjectId: l.subjectId,
+          isMain: l.isMain,
+        })),
+      );
+    }
+  }, [existingLinks]);
+
+  const linkErrors = useMemo(() => {
+    if (!isCurriculumBook) return null;
+    if (curriculumLinks.length === 0)
+      return "Kamida bitta biriktirish qo'shing yoki tickni olib tashlang";
+    const seen = new Set<string>();
+    for (const l of curriculumLinks) {
+      if (!l.curriculumId || !l.semester || !l.subjectId)
+        return "Har bir biriktirishda o'quv reja, semestr va fan tanlanishi kerak";
+      const key = `${l.curriculumId}-${l.semester}-${l.subjectId}`;
+      if (seen.has(key)) return "Bir xil biriktirish takrorlangan";
+      seen.add(key);
+    }
+    return null;
+  }, [isCurriculumBook, curriculumLinks]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (linkErrors) return;
+
     const data = new FormData();
-    Object.keys(formData).forEach((key) => {
-      if (formData[key]) data.append(key, formData[key]);
+    Object.entries(formData).forEach(([key, val]) => {
+      if (val !== undefined && val !== null && val !== "") {
+        data.append(key, String(val));
+      }
     });
     if (file) data.append("file", file);
     if (poster) data.append("poster", poster);
+    data.append("isCurriculumBook", String(isCurriculumBook));
+    data.append(
+      "curriculumLinks",
+      isCurriculumBook && curriculumLinks.length
+        ? JSON.stringify(
+            curriculumLinks.map((l) => ({
+              curriculumId: Number(l.curriculumId),
+              semester: Number(l.semester),
+              subjectId: Number(l.subjectId),
+              isMain: l.isMain,
+            })),
+          )
+        : "[]",
+    );
     onSave(data);
   };
 
@@ -186,13 +253,53 @@ export function EditProductModal({ id, isOpen, onClose, onSave }: any) {
                 />
               </div>
             </div>
+
+            <div className="col-span-2 border-t pt-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="flex items-center gap-2 text-sm font-medium">
+                  <GraduationCap className="h-4 w-4 text-primary" />
+                  O'quv reja kitobi
+                </Label>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={isCurriculumBook}
+                    onCheckedChange={(v) => {
+                      setIsCurriculumBook(v);
+                      if (!v) setCurriculumLinks([]);
+                    }}
+                  />
+                  <span className="text-sm text-muted-foreground">
+                    {isCurriculumBook ? "Ha" : "Yo'q"}
+                  </span>
+                </div>
+              </div>
+
+              {isCurriculumBook && (
+                <>
+                  <CurriculumLinksFieldset
+                    value={curriculumLinks}
+                    onChange={setCurriculumLinks}
+                  />
+                  {linkErrors && (
+                    <p
+                      className="flex items-center gap-1.5 text-xs text-destructive"
+                      role="alert"
+                    >
+                      <AlertCircle className="h-3.5 w-3.5" /> {linkErrors}
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
           </div>
 
           <DialogFooter className="pt-6">
             <Button type="button" variant="outline" onClick={onClose}>
               Bekor qilish
             </Button>
-            <Button type="submit">Saqlash</Button>
+            <Button type="submit" disabled={!!linkErrors}>
+              Saqlash
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

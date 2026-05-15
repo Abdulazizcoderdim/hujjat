@@ -7,8 +7,24 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ICategory, IProduct } from "@/interface";
-import { Calendar, FileText, Globe, Hash, User } from "lucide-react";
+import { ICategory, ICurriculumLink, IProduct } from "@/interface";
+import {
+  fetchCurriculumLinks,
+  fetchCurriculums,
+  fetchSemesters,
+  fetchSubjects,
+} from "@/service/edusystem";
+import { isEduConfigured } from "@/http/edusystem";
+import { useQuery } from "@tanstack/react-query";
+import {
+  Calendar,
+  FileText,
+  Globe,
+  GraduationCap,
+  Hash,
+  Star,
+  User,
+} from "lucide-react";
 
 export function ViewProductModal({
   product,
@@ -19,9 +35,40 @@ export function ViewProductModal({
   isOpen: boolean;
   onClose: () => void;
 }) {
+  const { data: links } = useQuery<ICurriculumLink[]>({
+    queryKey: ["product-curriculum-links", product?.id],
+    queryFn: () => fetchCurriculumLinks(product.id),
+    enabled: !!product?.id && isOpen && !!product?.isCurriculumBook,
+  });
+
+  const { data: curriculums } = useQuery({
+    queryKey: ["edu", "curriculums"],
+    queryFn: fetchCurriculums,
+    enabled: isEduConfigured && !!links?.length,
+    staleTime: 5 * 60 * 1000,
+  });
+  const { data: subjects } = useQuery({
+    queryKey: ["edu", "subjects", "curriculum-only"],
+    queryFn: () => fetchSubjects(true),
+    enabled: isEduConfigured && !!links?.length,
+    staleTime: 5 * 60 * 1000,
+  });
+  const { data: semesters } = useQuery({
+    queryKey: ["edu", "semesters"],
+    queryFn: fetchSemesters,
+    enabled: isEduConfigured && !!links?.length,
+    staleTime: 5 * 60 * 1000,
+  });
+
   if (!product) return null;
 
-  console.log("Product>>>>>>>>>>>>>>>>", product);
+  const curriculumNameById = new Map(
+    (curriculums ?? []).map((c) => [c.id, c.name]),
+  );
+  const subjectNameById = new Map((subjects ?? []).map((s) => [s.id, s.name]));
+  const semesterNameByValue = new Map(
+    (semesters ?? []).map((s) => [s.value ?? s.id, s.name]),
+  );
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -105,6 +152,53 @@ export function ViewProductModal({
                 ))}
               </div>
             </div>
+
+            {product.isCurriculumBook && (
+              <div className="pt-2 border-t">
+                <p className="text-xs font-semibold uppercase text-muted-foreground mb-2 flex items-center gap-1.5">
+                  <GraduationCap className="h-3.5 w-3.5" />
+                  Biriktirilgan o'quv rejalar
+                </p>
+                {links === undefined ? (
+                  <p className="text-xs text-muted-foreground">Yuklanmoqda...</p>
+                ) : links.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">
+                    Biriktirish yo'q
+                  </p>
+                ) : (
+                  <ul className="space-y-1.5">
+                    {links.map((l) => (
+                      <li
+                        key={l.id}
+                        className="flex items-start gap-2 text-sm"
+                      >
+                        <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-medium text-primary">
+                          {l.semester}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate">
+                            {curriculumNameById.get(l.curriculumId) ??
+                              `O'quv reja #${l.curriculumId}`}
+                            {" — "}
+                            {semesterNameByValue.get(l.semester) ??
+                              `${l.semester}-semestr`}
+                            {", "}
+                            {subjectNameById.get(l.subjectId) ??
+                              `Fan #${l.subjectId}`}
+                          </p>
+                          {l.isMain && (
+                            <span className="mt-0.5 inline-flex items-center gap-1 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
+                              <Star className="h-3 w-3 fill-current" />
+                              Asosiy darslik
+                            </span>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </DialogContent>

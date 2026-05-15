@@ -11,6 +11,8 @@ export const createProduct = async (payload: {
   author: string;
   year: string;
   language: string;
+  isCurriculumBook?: string;
+  curriculumLinks?: string;
   onProgress: (percent: number) => void;
 }) => {
   const formData = new FormData();
@@ -36,6 +38,13 @@ export const createProduct = async (payload: {
   }
   if (payload.language) {
     formData.append("language", payload.language);
+  }
+
+  if (payload.isCurriculumBook !== undefined) {
+    formData.append("isCurriculumBook", payload.isCurriculumBook);
+  }
+  if (payload.curriculumLinks) {
+    formData.append("curriculumLinks", payload.curriculumLinks);
   }
 
   const res = await $api.post("/products", formData, {

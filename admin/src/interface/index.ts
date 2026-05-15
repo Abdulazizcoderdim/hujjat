@@ -100,8 +100,35 @@ export interface IProduct<C> {
   year?: number;
   language?: string;
 
+  isCurriculumBook?: boolean;
+
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ICurriculum {
+  id: number;
+  name: string;
+}
+
+export interface ISubject {
+  id: number;
+  name: string;
+}
+
+export interface ISemester {
+  id: number;
+  name: string;
+  value?: number;
+}
+
+export interface ICurriculumLink {
+  id: number;
+  curriculumId: number;
+  semester: number;
+  subjectId: number;
+  isMain: boolean;
+  createdAt?: string;
 }
 
 export interface ICategory {

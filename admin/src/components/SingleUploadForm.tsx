@@ -1,3 +1,7 @@
+import {
+  CurriculumLinkValue,
+  CurriculumLinksFieldset,
+} from "@/components/CurriculumLinksFieldset";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { ICategory } from "@/interface";
 import {
@@ -26,6 +31,7 @@ import {
   CheckCircle2,
   ClipboardPaste,
   FileText,
+  GraduationCap,
   Hash,
   ImageIcon,
   Languages,
@@ -83,6 +89,10 @@ export function SingleUploadForm({
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [pasteFlash, setPasteFlash] = useState(false);
+  const [isCurriculumBook, setIsCurriculumBook] = useState(false);
+  const [curriculumLinks, setCurriculumLinks] = useState<CurriculumLinkValue[]>(
+    [],
+  );
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const posterInputRef = useRef<HTMLInputElement>(null);
@@ -158,6 +168,21 @@ export function SingleUploadForm({
     setPoster(f);
   };
 
+  const linkErrors = useMemo(() => {
+    if (!isCurriculumBook) return null;
+    if (curriculumLinks.length === 0)
+      return "Kamida bitta biriktirish qo'shing yoki tickni olib tashlang";
+    const seen = new Set<string>();
+    for (const l of curriculumLinks) {
+      if (!l.curriculumId || !l.semester || !l.subjectId)
+        return "Har bir biriktirishda o'quv reja, semestr va fan tanlanishi kerak";
+      const key = `${l.curriculumId}-${l.semester}-${l.subjectId}`;
+      if (seen.has(key)) return "Bir xil biriktirish takrorlangan";
+      seen.add(key);
+    }
+    return null;
+  }, [isCurriculumBook, curriculumLinks]);
+
   const validateAll = (): boolean => {
     const next: Errors = {};
     if (!file) next.file = "Fayl tanlanmagan";
@@ -174,7 +199,7 @@ export function SingleUploadForm({
       next.pages = "Sahifa soni 1 dan kam bo'lmasin";
     }
     setErrors(next);
-    return Object.keys(next).length === 0;
+    return Object.keys(next).length === 0 && !linkErrors;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -197,6 +222,20 @@ export function SingleUploadForm({
       data.append("author", formData.author);
       data.append("year", formData.year);
       data.append("language", formData.language);
+      data.append("isCurriculumBook", String(isCurriculumBook));
+      if (isCurriculumBook && curriculumLinks.length) {
+        data.append(
+          "curriculumLinks",
+          JSON.stringify(
+            curriculumLinks.map((l) => ({
+              curriculumId: Number(l.curriculumId),
+              semester: Number(l.semester),
+              subjectId: Number(l.subjectId),
+              isMain: l.isMain,
+            })),
+          ),
+        );
+      }
 
       await onSubmit(data, (p) => setProgress(p));
 
@@ -217,6 +256,8 @@ export function SingleUploadForm({
     setPoster(null);
     setFormData(initialForm);
     setErrors({});
+    setIsCurriculumBook(false);
+    setCurriculumLinks([]);
     if (fileInputRef.current) fileInputRef.current.value = "";
     if (posterInputRef.current) posterInputRef.current.value = "";
   };
@@ -790,6 +831,58 @@ export function SingleUploadForm({
           </Card>
         </div>
       </div>
+
+      {/* Curriculum section */}
+      <Card>
+        <CardHeader>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="space-y-1">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <GraduationCap className="h-4 w-4 text-primary" />
+                O'quv reja kitobimi?
+              </CardTitle>
+              <CardDescription>
+                Sillabusda berilgan o'quv reja kitobi bo'lsa, biriktirishlarni
+                qo'shing
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch
+                id="isCurriculumBook"
+                checked={isCurriculumBook}
+                onCheckedChange={(v) => {
+                  setIsCurriculumBook(v);
+                  if (!v) setCurriculumLinks([]);
+                }}
+                disabled={isUploading}
+              />
+              <Label
+                htmlFor="isCurriculumBook"
+                className="cursor-pointer text-sm font-medium"
+              >
+                {isCurriculumBook ? "Ha" : "Yo'q"}
+              </Label>
+            </div>
+          </div>
+        </CardHeader>
+        {isCurriculumBook && (
+          <CardContent>
+            <CurriculumLinksFieldset
+              value={curriculumLinks}
+              onChange={setCurriculumLinks}
+              disabled={isUploading}
+            />
+            {linkErrors && (
+              <p
+                className="mt-3 flex items-center gap-1.5 text-xs text-destructive"
+                role="alert"
+              >
+                <AlertCircle className="h-3.5 w-3.5" /> {linkErrors}
+              </p>
+            )}
+          </CardContent>
+        )}
+      </Card>
 
       {/* Action bar */}
       <div className="sticky bottom-0 -mx-4 border-t bg-background/85 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/70 sm:-mx-6 sm:px-6">

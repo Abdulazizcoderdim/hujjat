@@ -49,6 +49,8 @@ const UploadProductsPage = () => {
         author: String(formData.get("author") || ""),
         year: String(formData.get("year") || ""),
         language: String(formData.get("language") || ""),
+        isCurriculumBook: String(formData.get("isCurriculumBook") || "false"),
+        curriculumLinks: String(formData.get("curriculumLinks") || ""),
         onProgress,
       });
 
@@ -63,7 +65,7 @@ const UploadProductsPage = () => {
   };
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-6">
+    <div className="mx-auto w-full space-y-6">
       <header className="space-y-1">
         <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
           Hujjat yuklash

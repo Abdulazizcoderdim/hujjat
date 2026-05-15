@@ -97,10 +97,16 @@ const navItems: NavItem[] = [
 interface AdminSidebarProps {
   mobileOpen?: boolean;
   onMobileClose?: () => void;
+  collapsed?: boolean;
+  onToggleCollapsed?: () => void;
 }
 
-export function AdminSidebar({ mobileOpen, onMobileClose }: AdminSidebarProps) {
-  const [collapsed, setCollapsed] = useState(false);
+export function AdminSidebar({
+  mobileOpen,
+  onMobileClose,
+  collapsed = false,
+  onToggleCollapsed,
+}: AdminSidebarProps) {
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const location = useLocation();
   const navigate = useNavigate();
@@ -182,7 +188,8 @@ export function AdminSidebar({ mobileOpen, onMobileClose }: AdminSidebarProps) {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setCollapsed(!collapsed)}
+            onClick={onToggleCollapsed}
+            aria-label={collapsed ? "Sidebar'ni ochish" : "Sidebar'ni yopish"}
             className={cn(
               "hidden lg:flex text-blue-300 hover:text-white hover:bg-blue-800/50 rounded-xl transition-all",
               collapsed && "mx-auto",

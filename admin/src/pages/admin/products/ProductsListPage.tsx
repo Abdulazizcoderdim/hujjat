@@ -15,7 +15,15 @@ import {
   updateProduct,
 } from "@/service/products";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle, Edit, Eye, Trash2, XCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import {
+  CheckCircle,
+  Edit,
+  Eye,
+  GraduationCap,
+  Trash2,
+  XCircle,
+} from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { EditProductModal } from "./EditProductModal";
@@ -105,6 +113,8 @@ export function ProductsListPage({ status, title, description }: Props) {
                 <TableHead>Poster</TableHead>
                 <TableHead>Nomi</TableHead>
                 <TableHead>Kategoriya</TableHead>
+                <TableHead>Muallif</TableHead>
+                <TableHead>O'quv reja</TableHead>
                 <TableHead>Amallar</TableHead>
               </TableRow>
             </TableHeader>
@@ -120,6 +130,21 @@ export function ProductsListPage({ status, title, description }: Props) {
                   </TableCell>
                   <TableCell className="font-medium">{product.name}</TableCell>
                   <TableCell>{product.category?.name}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {product.author || "—"}
+                  </TableCell>
+                  <TableCell>
+                    {product.isCurriculumBook ? (
+                      <Badge
+                        variant="secondary"
+                        className="gap-1 font-normal text-emerald-600 dark:text-emerald-400"
+                      >
+                        <GraduationCap className="h-3 w-3" /> Ha
+                      </Badge>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
                   <TableCell>
                     <div className="flex gap-2">
                       <Button
