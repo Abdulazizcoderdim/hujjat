@@ -54,6 +54,9 @@ const Login = () => {
       setUser(data.user);
       setIsAuth(true);
       localStorage.setItem("access_token", data.accessToken);
+      if (data.hemisToken) {
+        localStorage.setItem("hemis_token", data.hemisToken);
+      }
       navigate("/");
     } catch (error) {
       toast.error("Login yoki parol noto'g'ri.");

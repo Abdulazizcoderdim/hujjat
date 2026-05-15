@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   BookOpen,
   ChartBarStacked,
+  GraduationCap,
   Home,
   LogOut,
   Menu,
@@ -79,6 +80,7 @@ const SidebarNav = ({ activePage = "home" }: SidebarNavProps) => {
 
   const handleLogout = () => {
     localStorage.removeItem("access_token");
+    localStorage.removeItem("hemis_token");
     navigate("/login");
   };
 
@@ -106,6 +108,13 @@ const SidebarNav = ({ activePage = "home" }: SidebarNavProps) => {
           label="Asosiy"
           active={activePage === "home"}
           to="/"
+          onClick={close}
+        />
+        <NavItem
+          icon={<GraduationCap className="w-5 h-5" strokeWidth={1.5} />}
+          label="O'quv reja kitoblarim"
+          active={activePage === "curriculum"}
+          to="/curriculum-books"
           onClick={close}
         />
         <NavItem

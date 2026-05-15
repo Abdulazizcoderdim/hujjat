@@ -10,6 +10,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute.tsx";
 import $api from "./http/axios.ts";
 import { UserRole } from "./interface/index.ts";
 import BookDetail from "./pages/BookDetail.tsx";
+import CurriculumBooks from "./pages/CurriculumBooks.tsx";
 import Faculty from "./pages/Faculty.tsx";
 import Index from "./pages/Index.tsx";
 import Login from "./pages/Login.tsx";
@@ -39,6 +40,7 @@ const App = () => {
       setUser(data.user);
     } catch (error) {
       localStorage.removeItem("access_token");
+      localStorage.removeItem("hemis_token");
       setIsAuth(false);
     } finally {
       setLoading(false);
@@ -87,6 +89,14 @@ const App = () => {
               element={
                 <ProtectedRoute>
                   <MyBooks />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/curriculum-books"
+              element={
+                <ProtectedRoute>
+                  <CurriculumBooks />
                 </ProtectedRoute>
               }
             />

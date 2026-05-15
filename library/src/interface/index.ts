@@ -25,6 +25,7 @@ export interface IUser {
   group?: string;
   specialty?: string;
   semester?: string;
+  curriculumId?: number;
   level?: string;
   role: UserRole;
   phone?: string;
@@ -100,8 +101,36 @@ export interface IProduct<C> {
   year?: number;
   language?: string;
 
+  isCurriculumBook?: boolean;
+
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ICurriculum {
+  id: number;
+  name: string;
+}
+
+export interface ISubject {
+  id: number;
+  name: string;
+}
+
+export interface ISemester {
+  id: number;
+  name: string;
+  value?: number;
+}
+
+export interface IStudentContext {
+  studentId: number;
+  fullName: string;
+  curriculumId: number;
+  curriculumName: string;
+  currentSemester: number;
+  semesterId: number;
+  subjectIds: number[];
 }
 
 export interface ICategory {
