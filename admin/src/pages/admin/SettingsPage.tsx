@@ -1,171 +1,150 @@
-import { PageHeader } from "@/components/admin/PageHeader";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import {
+  EntButton,
+  EntCard,
+  EntField,
+  EntInput,
+  EntPage,
+  EntToolbar,
+} from "@/components/enterprise";
 import { useToast } from "@/hooks/use-toast";
 import $api from "@/http/axios";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Lock, Mail, User } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export function SettingsPage() {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [loading, setLoading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-
+  const qc = useQueryClient();
   const [profile, setProfile] = useState({
     full_name: "",
     email: "",
     password: "",
     new_password: "",
   });
-  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  const { data: userData, isLoading: userLoading } = useQuery({
+  const { data: userData } = useQuery({
     queryKey: ["admin-profile"],
-    queryFn: async () => {
-      const { data } = await $api.get("/auth/me");
-      return data;
-    },
+    queryFn: async () => (await $api.get("/auth/me")).data,
   });
 
   useEffect(() => {
     if (userData?.user) {
       setProfile((prev) => ({
         ...prev,
-        full_name: userData?.user.full_name || "",
-        email: userData?.user.email || "",
+        full_name: userData.user.full_name || "",
+        email: userData.user.email || "",
       }));
     }
   }, [userData?.user]);
 
-  const handleUpdateProfile = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (profile.new_password && !profile.password) {
-      return toast({
+      toast({
         variant: "destructive",
         title: "Xato",
         description:
-          "Yangi parolni o'rnatish uchun joriy parolingizni kiriting!",
+          "Yangi parolni o'rnatish uchun joriy parolingizni kiriting",
       });
+      return;
     }
-
-    setIsUpdatingProfile(true);
+    setSaving(true);
     try {
       await $api.put("/users/profile", profile);
-      toast({
-        title: "Muvaffaqiyatli",
-        description: "Profil ma'lumotlari yangilandi.",
-      });
+      toast({ title: "Profil yangilandi" });
       setProfile((prev) => ({ ...prev, password: "", new_password: "" }));
-      queryClient.invalidateQueries({ queryKey: ["admin-profile"] });
-    } catch (error: any) {
+      qc.invalidateQueries({ queryKey: ["admin-profile"] });
+    } catch (err: any) {
       toast({
         variant: "destructive",
         title: "Xato",
-        description:
-          error.response?.data?.message || "Profilni yangilashda xatolik",
+        description: err?.response?.data?.message || "Yangilashda xato",
       });
     } finally {
-      setIsUpdatingProfile(false);
+      setSaving(false);
     }
-  };
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("uz-UZ").format(value);
   };
 
   return (
-    <div className="space-y-10 max-w-3xl pb-20">
-      <PageHeader
-        title="Sozlamalar"
-        description="Platforma va profil sozlamalarini boshqarish"
-      />
+    <EntPage>
+      <EntToolbar title="Sozlamalar" />
 
-      <section className="space-y-4">
-        <h2 className="text-xl font-bold flex items-center gap-2">
-          <User className="h-5 w-5" /> Profil sozlamalari
-        </h2>
-        <div className="stat-card space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">To'liq ism</label>
-              <div className="relative">
-                <User className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  className="pl-9"
+      <div style={{ padding: 6, maxWidth: 720 }}>
+        <form onSubmit={handleSubmit} className="ent-stack-y">
+          <EntCard title="Profil ma'lumotlari">
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 8,
+              }}
+            >
+              <EntField label="To'liq ism" required>
+                <EntInput
                   value={profile.full_name}
                   onChange={(e) =>
                     setProfile({ ...profile, full_name: e.target.value })
                   }
+                  required
                 />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Email manzil</label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  className="pl-9"
+              </EntField>
+              <EntField label="Email" required>
+                <EntInput
                   type="email"
                   value={profile.email}
                   onChange={(e) =>
                     setProfile({ ...profile, email: e.target.value })
                   }
+                  required
                 />
-              </div>
+              </EntField>
             </div>
-          </div>
+          </EntCard>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-border/50">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-warning">
-                Joriy parol (O'zgartirish uchun)
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  className="pl-9"
+          <EntCard title="Parolni o'zgartirish (ixtiyoriy)">
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 8,
+              }}
+            >
+              <EntField
+                label="Joriy parol"
+                hint="Yangi parolni o'rnatish uchun zarur"
+              >
+                <EntInput
                   type="password"
-                  placeholder="********"
                   value={profile.password}
                   onChange={(e) =>
                     setProfile({ ...profile, password: e.target.value })
                   }
+                  placeholder="********"
+                  autoComplete="current-password"
                 />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-success">
-                Yangi parol
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  className="pl-9"
+              </EntField>
+              <EntField label="Yangi parol" hint="kamida 4 ta belgi">
+                <EntInput
                   type="password"
-                  placeholder="Kamida 4 ta belgi"
                   value={profile.new_password}
                   onChange={(e) =>
                     setProfile({ ...profile, new_password: e.target.value })
                   }
+                  minLength={4}
+                  placeholder="********"
+                  autoComplete="new-password"
                 />
-              </div>
+              </EntField>
             </div>
-          </div>
+          </EntCard>
 
-          <div className="flex justify-end pt-2">
-            <Button
-              onClick={handleUpdateProfile}
-              disabled={isUpdatingProfile}
-              className="bg-primary"
-            >
-              {isUpdatingProfile ? "Yangilanmoqda..." : "Profilni saqlash"}
-            </Button>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 6 }}>
+            <EntButton type="submit" variant="primary" disabled={saving}>
+              {saving ? "Saqlanmoqda..." : "Profilni saqlash"}
+            </EntButton>
           </div>
-        </div>
-      </section>
-
-      <div className="border-t border-border my-8" />
-    </div>
+        </form>
+      </div>
+    </EntPage>
   );
 }

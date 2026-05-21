@@ -2,43 +2,24 @@ import {
   CurriculumLinkValue,
   CurriculumLinksFieldset,
 } from "@/components/CurriculumLinksFieldset";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Progress } from "@/components/ui/progress";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
+  EntBadge,
+  EntButton,
+  EntCard,
+  EntCheckbox,
+  EntField,
+  EntInput,
+  EntSelect,
+  EntTextarea,
+} from "@/components/enterprise";
 import { ICategory } from "@/interface";
 import {
   AlertCircle,
-  BookOpen,
-  Calendar,
-  CheckCircle2,
   ClipboardPaste,
   FileText,
   GraduationCap,
-  Hash,
-  ImageIcon,
-  Languages,
-  Loader2,
-  Tag,
+  Image as ImageIcon,
   Upload,
-  User,
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -47,19 +28,13 @@ const ALLOWED_DOC_EXT = [".pdf", ".doc", ".docx", ".ppt", ".pptx"];
 const MAX_DOC_SIZE_MB = 200;
 const MAX_POSTER_SIZE_MB = 10;
 
-interface SingleUploadFormProps {
+interface Props {
   categories: ICategory[];
   onSubmit: (
     data: FormData,
     onProgress: (percent: number) => void,
   ) => Promise<void> | void;
 }
-
-const formatBytes = (bytes: number) => {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
-};
 
 const initialForm = {
   name: "",
@@ -70,18 +45,21 @@ const initialForm = {
   author: "",
   year: "",
   language: "",
+  shelfCode: "",
 };
-
 type FormState = typeof initialForm;
 type Errors = Partial<Record<keyof FormState | "file" | "poster", string>>;
 
-export function SingleUploadForm({
-  categories,
-  onSubmit,
-}: SingleUploadFormProps) {
+const fmtBytes = (b: number) => {
+  if (b < 1024) return `${b} B`;
+  if (b < 1024 * 1024) return `${(b / 1024).toFixed(1)} KB`;
+  return `${(b / 1024 / 1024).toFixed(2)} MB`;
+};
+
+export function SingleUploadForm({ categories, onSubmit }: Props) {
+  const [file, setFile] = useState<File | null>(null);
   const [poster, setPoster] = useState<File | null>(null);
   const [posterPreview, setPosterPreview] = useState<string | null>(null);
-  const [file, setFile] = useState<File | null>(null);
   const [formData, setFormData] = useState<FormState>(initialForm);
   const [errors, setErrors] = useState<Errors>({});
   const [isFileDragging, setIsFileDragging] = useState(false);
@@ -107,13 +85,11 @@ export function SingleUploadForm({
     return () => URL.revokeObjectURL(url);
   }, [poster]);
 
-  // Ctrl+V paste — accepts an image from the clipboard as the poster
   useEffect(() => {
     const onPaste = (e: ClipboardEvent) => {
       if (isUploading) return;
       const items = e.clipboardData?.items;
       if (!items) return;
-
       for (const item of Array.from(items)) {
         if (item.kind === "file" && item.type.startsWith("image/")) {
           const blob = item.getAsFile();
@@ -140,12 +116,12 @@ export function SingleUploadForm({
   const validateDocument = (f: File | null) => {
     if (!f) return null;
     const ext = "." + (f.name.split(".").pop() || "").toLowerCase();
-    if (!ALLOWED_DOC_EXT.includes(ext)) return "Faqat PDF qabul qilinadi";
+    if (!ALLOWED_DOC_EXT.includes(ext))
+      return "Faqat PDF, DOC, DOCX, PPT, PPTX qabul qilinadi";
     if (f.size > MAX_DOC_SIZE_MB * 1024 * 1024)
       return `Fayl hajmi ${MAX_DOC_SIZE_MB}MB dan oshmasligi kerak`;
     return null;
   };
-
   const validatePoster = (f: File | null) => {
     if (!f) return null;
     if (!f.type.startsWith("image/")) return "Faqat rasm fayli qabul qilinadi";
@@ -153,14 +129,12 @@ export function SingleUploadForm({
       return `Rasm hajmi ${MAX_POSTER_SIZE_MB}MB dan oshmasligi kerak`;
     return null;
   };
-
   const applyFile = (f: File | null) => {
     const err = validateDocument(f);
     setErrors((prev) => ({ ...prev, file: err || undefined }));
     if (err) return;
     setFile(f);
   };
-
   const applyPoster = (f: File | null) => {
     const err = validatePoster(f);
     setErrors((prev) => ({ ...prev, poster: err || undefined }));
@@ -202,14 +176,23 @@ export function SingleUploadForm({
     return Object.keys(next).length === 0 && !linkErrors;
   };
 
+  const handleReset = () => {
+    setFile(null);
+    setPoster(null);
+    setFormData(initialForm);
+    setErrors({});
+    setIsCurriculumBook(false);
+    setCurriculumLinks([]);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    if (posterInputRef.current) posterInputRef.current.value = "";
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isUploading) return;
     if (!validateAll()) return;
-
     setIsUploading(true);
     setProgress(0);
-
     try {
       const data = new FormData();
       data.append("file", file!);
@@ -222,6 +205,7 @@ export function SingleUploadForm({
       data.append("author", formData.author);
       data.append("year", formData.year);
       data.append("language", formData.language);
+      data.append("shelfCode", formData.shelfCode);
       data.append("isCurriculumBook", String(isCurriculumBook));
       if (isCurriculumBook && curriculumLinks.length) {
         data.append(
@@ -236,30 +220,17 @@ export function SingleUploadForm({
           ),
         );
       }
-
       await onSubmit(data, (p) => setProgress(p));
-
       setProgress(100);
       handleReset();
     } catch {
-      // parent shows error toast; keep values for retry
+      // parent shows toast
     } finally {
       setTimeout(() => {
         setIsUploading(false);
         setProgress(0);
       }, 400);
     }
-  };
-
-  const handleReset = () => {
-    setFile(null);
-    setPoster(null);
-    setFormData(initialForm);
-    setErrors({});
-    setIsCurriculumBook(false);
-    setCurriculumLinks([]);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-    if (posterInputRef.current) posterInputRef.current.value = "";
   };
 
   const tagsList = useMemo(
@@ -271,15 +242,14 @@ export function SingleUploadForm({
     [formData.tags],
   );
 
-  const handleFileDrop = (e: React.DragEvent) => {
+  const onFileDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsFileDragging(false);
     if (isUploading) return;
     const f = e.dataTransfer.files[0];
     if (f) applyFile(f);
   };
-
-  const handlePosterDrop = (e: React.DragEvent) => {
+  const onPosterDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsPosterDragging(false);
     if (isUploading) return;
@@ -287,643 +257,600 @@ export function SingleUploadForm({
     if (f) applyPoster(f);
   };
 
+  // Dropzone styles inline
+  const dzBaseStyle: React.CSSProperties = {
+    border: "1px dashed var(--ent-border-strong)",
+    background: "var(--ent-bg)",
+    padding: 10,
+    cursor: "pointer",
+    minHeight: 80,
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+  };
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="grid gap-6 lg:grid-cols-5">
-        <div className="space-y-6 lg:col-span-3">
-          {/* Document */}
-          <Card className="">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <FileText className="h-4 w-4 text-primary" />
-                Hujjat fayli
-                <span className="ml-1 text-destructive">*</span>
-              </CardTitle>
-              <CardDescription>
-                PDF — maksimal {MAX_DOC_SIZE_MB}MB
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div
-                role="button"
-                tabIndex={isUploading ? -1 : 0}
-                aria-label="Hujjat faylini tanlash yoki tashlab qo'yish"
-                aria-invalid={!!errors.file}
-                aria-describedby={errors.file ? "file-error" : undefined}
-                className={[
-                  "group relative rounded-xl border-2 border-dashed transition-all duration-200",
-                  isFileDragging
-                    ? "border-primary bg-primary/5"
-                    : "border-border hover:border-primary/50 hover:bg-muted/30",
-                  errors.file ? "border-destructive/60 bg-destructive/5" : "",
-                  file ? "bg-muted/40" : "",
-                  isUploading
-                    ? "pointer-events-none opacity-70"
-                    : "cursor-pointer",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                ].join(" ")}
-                onDragOver={(e) => {
+    <form onSubmit={handleSubmit} className="ent-stack-y">
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1.4fr 1fr",
+          gap: 8,
+        }}
+      >
+        {/* LEFT — document + metadata */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <EntCard
+            title={
+              <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>
+                <FileText size={13} />
+                Hujjat fayli <span style={{ color: "var(--ent-danger)" }}>*</span>
+              </span>
+            }
+          >
+            <div
+              role="button"
+              tabIndex={isUploading ? -1 : 0}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setIsFileDragging(true);
+              }}
+              onDragLeave={() => setIsFileDragging(false)}
+              onDrop={onFileDrop}
+              onClick={() => !isUploading && fileInputRef.current?.click()}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
-                  setIsFileDragging(true);
-                }}
-                onDragLeave={() => setIsFileDragging(false)}
-                onDrop={handleFileDrop}
-                onClick={() => !isUploading && fileInputRef.current?.click()}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    fileInputRef.current?.click();
-                  }
+                  fileInputRef.current?.click();
+                }
+              }}
+              style={{
+                ...dzBaseStyle,
+                borderColor: errors.file
+                  ? "var(--ent-danger)"
+                  : isFileDragging
+                    ? "var(--ent-accent)"
+                    : "var(--ent-border-strong)",
+                background: errors.file
+                  ? "var(--ent-danger-bg)"
+                  : isFileDragging
+                    ? "var(--ent-accent-soft)"
+                    : "var(--ent-bg)",
+                pointerEvents: isUploading ? "none" : "auto",
+                opacity: isUploading ? 0.7 : 1,
+              }}
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                hidden
+                accept={ALLOWED_DOC_EXT.join(",")}
+                onChange={(e) => applyFile(e.target.files?.[0] || null)}
+                disabled={isUploading}
+              />
+              {file ? (
+                <>
+                  <FileText size={28} style={{ color: "var(--ent-accent)" }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 500 }}>{file.name}</div>
+                    <div className="ent-muted" style={{ fontSize: 11 }}>
+                      {fmtBytes(file.size)}
+                    </div>
+                  </div>
+                  <EntButton
+                    size="icon"
+                    variant="danger"
+                    disabled={isUploading}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      applyFile(null);
+                    }}
+                  >
+                    <X size={14} />
+                  </EntButton>
+                </>
+              ) : (
+                <>
+                  <Upload size={20} style={{ color: "var(--ent-text-muted)" }} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 12, fontWeight: 500 }}>
+                      Faylni shu yerga tashlang yoki tanlash uchun bosing
+                    </div>
+                    <div className="ent-muted" style={{ fontSize: 11 }}>
+                      PDF, DOC, DOCX, PPT, PPTX — maks. {MAX_DOC_SIZE_MB}MB
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+            {errors.file && (
+              <div
+                style={{
+                  color: "var(--ent-danger)",
+                  fontSize: 11,
+                  marginTop: 4,
+                  display: "flex",
+                  gap: 4,
+                  alignItems: "center",
                 }}
               >
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  className="hidden"
-                  accept={ALLOWED_DOC_EXT.join(",")}
-                  onChange={(e) => applyFile(e.target.files?.[0] || null)}
-                  disabled={isUploading}
-                />
-
-                {file ? (
-                  <div className="flex items-center gap-4 p-4">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                      <FileText className="h-6 w-6" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium" title={file.name}>
-                        {file.name}
-                      </p>
-                      <p className="text-sm text-muted-foreground tabular-nums">
-                        {formatBytes(file.size)}
-                      </p>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      aria-label="Faylni olib tashlash"
-                      disabled={isUploading}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        applyFile(null);
-                      }}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center gap-3 px-6 py-12 text-center">
-                    <div
-                      className={[
-                        "flex h-14 w-14 items-center justify-center rounded-full transition-colors",
-                        isFileDragging
-                          ? "bg-primary/15 text-primary"
-                          : "bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary",
-                      ].join(" ")}
-                    >
-                      <Upload className="h-6 w-6" />
-                    </div>
-                    <div className="space-y-1">
-                      <p className="font-medium">Faylni shu yerga tashlang</p>
-                      <p className="text-sm text-muted-foreground">
-                        yoki{" "}
-                        <span className="font-medium text-primary underline-offset-4 group-hover:underline">
-                          tanlash uchun bosing
-                        </span>
-                      </p>
-                    </div>
-                  </div>
-                )}
+                <AlertCircle size={11} /> {errors.file}
               </div>
-
-              {errors.file && (
-                <p
-                  id="file-error"
-                  className="mt-2 flex items-center gap-1.5 text-xs text-destructive"
-                  role="alert"
+            )}
+            {isUploading && (
+              <div style={{ marginTop: 6 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    fontSize: 11,
+                  }}
                 >
-                  <AlertCircle className="h-3.5 w-3.5" /> {errors.file}
-                </p>
-              )}
-
-              {isUploading && (
-                <div className="mt-4 space-y-2">
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1.5">
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                      Yuklanmoqda...
-                    </span>
-                    <span className="font-mono tabular-nums">{progress}%</span>
-                  </div>
-                  <Progress value={progress} className="h-1.5" />
+                  <span>Yuklanmoqda...</span>
+                  <span className="ent-cell--code">{progress}%</span>
                 </div>
-              )}
-            </CardContent>
-          </Card>
+                <div
+                  style={{
+                    height: 6,
+                    background: "var(--ent-bg)",
+                    border: "1px solid var(--ent-border)",
+                    marginTop: 3,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: `${progress}%`,
+                      height: "100%",
+                      background: "var(--ent-accent)",
+                      transition: "width 200ms",
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+          </EntCard>
 
-          {/* Main info */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <BookOpen className="h-4 w-4 text-primary" />
-                Asosiy ma'lumotlar
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-5">
-              <div className="space-y-2">
-                <Label htmlFor="name">
-                  Hujjat nomi <span className="text-destructive">*</span>
-                </Label>
-                <Input
+          <EntCard title="Asosiy ma'lumotlar">
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <EntField
+                label="Hujjat nomi"
+                required
+                error={errors.name}
+                htmlFor="name"
+              >
+                <EntInput
                   id="name"
                   value={formData.name}
                   onChange={(e) =>
                     setFormData({ ...formData, name: e.target.value })
                   }
-                  placeholder="masalan: O'tgan kunlar"
                   disabled={isUploading}
-                  aria-invalid={!!errors.name}
-                  aria-describedby={errors.name ? "name-error" : undefined}
+                  required
                   autoComplete="off"
                 />
-                {errors.name && (
-                  <p
-                    id="name-error"
-                    className="flex items-center gap-1.5 text-xs text-destructive"
-                    role="alert"
-                  >
-                    <AlertCircle className="h-3.5 w-3.5" /> {errors.name}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description">
-                  Tavsif <span className="text-destructive">*</span>
-                </Label>
-                <Textarea
-                  id="description"
+              </EntField>
+              <EntField
+                label="Tavsif"
+                required
+                error={errors.description}
+                hint={
+                  !errors.description
+                    ? "Foydalanuvchilarga hujjat mazmunini tushunishga yordam beradi"
+                    : undefined
+                }
+              >
+                <EntTextarea
+                  rows={4}
                   value={formData.description}
                   onChange={(e) =>
                     setFormData({ ...formData, description: e.target.value })
                   }
-                  placeholder="Hujjat haqida qisqacha ma'lumot..."
-                  rows={4}
                   disabled={isUploading}
-                  aria-invalid={!!errors.description}
-                  aria-describedby={
-                    errors.description
-                      ? "description-error"
-                      : "description-hint"
-                  }
+                  required
                 />
-                {errors.description ? (
-                  <p
-                    id="description-error"
-                    className="flex items-center gap-1.5 text-xs text-destructive"
-                    role="alert"
-                  >
-                    <AlertCircle className="h-3.5 w-3.5" /> {errors.description}
-                  </p>
-                ) : (
-                  <p
-                    id="description-hint"
-                    className="text-xs text-muted-foreground"
-                  >
-                    Foydalanuvchilarga hujjat mazmunini tushunishga yordam
-                    beradi.
-                  </p>
-                )}
-              </div>
+              </EntField>
 
-              <div className="space-y-2">
-                <Label htmlFor="category">
-                  Kategoriya <span className="text-destructive">*</span>
-                </Label>
-                <Select
-                  value={formData.categoryId}
-                  onValueChange={(value) =>
-                    setFormData((prev) => ({ ...prev, categoryId: value }))
-                  }
-                  disabled={isUploading}
-                >
-                  <SelectTrigger
-                    id="category"
-                    aria-invalid={!!errors.categoryId}
-                  >
-                    <SelectValue placeholder="Kategoriyani tanlang" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.length > 0 ? (
-                      categories.map((cat) => (
-                        <SelectItem key={cat.id} value={cat.id.toString()}>
-                          {cat.icon ? (
-                            <span className="mr-2">{cat.icon}</span>
-                          ) : null}
-                          {cat.name}
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <SelectItem disabled value="no-categories">
-                        Kategoriyalar mavjud emas
-                      </SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-                {errors.categoryId && (
-                  <p
-                    className="flex items-center gap-1.5 text-xs text-destructive"
-                    role="alert"
-                  >
-                    <AlertCircle className="h-3.5 w-3.5" /> {errors.categoryId}
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="space-y-6 lg:col-span-2">
-          {/* Poster */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <ImageIcon className="h-4 w-4 text-primary" />
-                Poster
-              </CardTitle>
-              <CardDescription className="flex flex-wrap items-center gap-1.5">
-                <ClipboardPaste className="h-3.5 w-3.5" />
-                Tashlang, tanlang yoki{" "}
-                <kbd className="rounded border bg-muted px-1.5 py-0.5 font-mono text-[10px] leading-none">
-                  Ctrl
-                </kbd>{" "}
-                +{" "}
-                <kbd className="rounded border bg-muted px-1.5 py-0.5 font-mono text-[10px] leading-none">
-                  V
-                </kbd>{" "}
-                bilan joylang
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
               <div
-                role="button"
-                tabIndex={isUploading ? -1 : 0}
-                aria-label="Posterni tanlash, tashlash yoki joylashtirish"
-                aria-invalid={!!errors.poster}
-                className={[
-                  "group relative flex min-h-[220px] items-center justify-center overflow-hidden rounded-xl border-2 border-dashed transition-all duration-200",
-                  isPosterDragging
-                    ? "border-primary bg-primary/5"
-                    : "border-border hover:border-primary/50 hover:bg-muted/30",
-                  pasteFlash ? "ring-2 ring-primary ring-offset-2" : "",
-                  errors.poster ? "border-destructive/60 bg-destructive/5" : "",
-                  isUploading
-                    ? "pointer-events-none opacity-70"
-                    : "cursor-pointer",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                ].join(" ")}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  setIsPosterDragging(true);
-                }}
-                onDragLeave={() => setIsPosterDragging(false)}
-                onDrop={handlePosterDrop}
-                onClick={() => !isUploading && posterInputRef.current?.click()}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    posterInputRef.current?.click();
-                  }
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: 8,
                 }}
               >
-                <input
-                  ref={posterInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => applyPoster(e.target.files?.[0] || null)}
+                <EntField
+                  label="Kategoriya"
+                  required
+                  error={errors.categoryId}
+                >
+                  <EntSelect
+                    value={formData.categoryId}
+                    onChange={(e) =>
+                      setFormData({ ...formData, categoryId: e.target.value })
+                    }
+                    disabled={isUploading}
+                    required
+                  >
+                    <option value="">— tanlang —</option>
+                    {categories.length > 0 ? (
+                      categories.map((c) => (
+                        <option key={c.id} value={String(c.id)}>
+                          {c.icon ? `${c.icon} ` : ""}
+                          {c.name}
+                        </option>
+                      ))
+                    ) : (
+                      <option disabled>Kategoriya mavjud emas</option>
+                    )}
+                  </EntSelect>
+                </EntField>
+                <EntField label="Javon raqami (shifr)">
+                  <EntInput
+                    mono
+                    value={formData.shelfCode}
+                    onChange={(e) =>
+                      setFormData({ ...formData, shelfCode: e.target.value })
+                    }
+                    placeholder="728.4"
+                    disabled={isUploading}
+                    maxLength={64}
+                  />
+                </EntField>
+              </div>
+            </div>
+          </EntCard>
+
+          <EntCard title="Qo'shimcha ma'lumotlar">
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 8,
+              }}
+            >
+              <EntField label="Muallif">
+                <EntInput
+                  value={formData.author}
+                  onChange={(e) =>
+                    setFormData({ ...formData, author: e.target.value })
+                  }
+                  placeholder="Abdulla Qodiriy"
+                  disabled={isUploading}
+                  autoComplete="off"
+                />
+              </EntField>
+              <EntField label="Til">
+                <EntInput
+                  value={formData.language}
+                  onChange={(e) =>
+                    setFormData({ ...formData, language: e.target.value })
+                  }
+                  placeholder="O'zbekcha"
+                  disabled={isUploading}
+                  autoComplete="off"
+                />
+              </EntField>
+              <EntField label="Sahifalar soni" error={errors.pages}>
+                <EntInput
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  value={formData.pages}
+                  onChange={(e) =>
+                    setFormData({ ...formData, pages: e.target.value })
+                  }
+                  placeholder="240"
                   disabled={isUploading}
                 />
-
-                {posterPreview && poster ? (
-                  <>
-                    <img
-                      src={posterPreview}
-                      alt="Poster oldindan ko'rinishi"
-                      className="absolute inset-0 h-full w-full object-cover blur-xl opacity-30"
-                      aria-hidden
-                    />
-                    <div className="relative flex w-full items-center gap-3 p-4">
-                      <img
-                        src={posterPreview}
-                        alt="Poster"
-                        className="h-32 w-24 shrink-0 rounded-md object-cover shadow-md ring-1 ring-border"
-                      />
-                      <div className="min-w-0 flex-1 space-y-1">
-                        <p
-                          className="truncate text-sm font-medium"
-                          title={poster.name}
-                        >
-                          {poster.name}
-                        </p>
-                        <p className="text-xs text-muted-foreground tabular-nums">
-                          {formatBytes(poster.size)}
-                        </p>
-                        <Badge
-                          variant="secondary"
-                          className="gap-1 font-normal"
-                        >
-                          <CheckCircle2 className="h-3 w-3" /> Tayyor
-                        </Badge>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        aria-label="Posterni olib tashlash"
-                        disabled={isUploading}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          applyPoster(null);
-                        }}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </>
-                ) : (
-                  <div className="flex flex-col items-center gap-3 px-6 py-10 text-center">
-                    <div
-                      className={[
-                        "flex h-14 w-14 items-center justify-center rounded-full transition-colors",
-                        isPosterDragging
-                          ? "bg-primary/15 text-primary"
-                          : "bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary",
-                      ].join(" ")}
-                    >
-                      <ImageIcon className="h-6 w-6" />
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium">
-                        Rasmni tashlang yoki bosing
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        JPG, PNG, WebP — maks. {MAX_POSTER_SIZE_MB}MB
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-              {errors.poster && (
-                <p
-                  className="mt-2 flex items-center gap-1.5 text-xs text-destructive"
-                  role="alert"
-                >
-                  <AlertCircle className="h-3.5 w-3.5" /> {errors.poster}
-                </p>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Optional metadata */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Tag className="h-4 w-4 text-primary" />
-                Qo'shimcha ma'lumotlar
-              </CardTitle>
-              <CardDescription>Ixtiyoriy maydonlar</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="author"
-                    className="flex items-center gap-1.5 text-sm"
-                  >
-                    <User className="h-3.5 w-3.5 text-muted-foreground" />
-                    Muallif
-                  </Label>
-                  <Input
-                    id="author"
-                    value={formData.author}
-                    onChange={(e) =>
-                      setFormData({ ...formData, author: e.target.value })
-                    }
-                    placeholder="Abdulla Qodiriy"
-                    disabled={isUploading}
-                    autoComplete="off"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="language"
-                    className="flex items-center gap-1.5 text-sm"
-                  >
-                    <Languages className="h-3.5 w-3.5 text-muted-foreground" />
-                    Til
-                  </Label>
-                  <Input
-                    id="language"
-                    value={formData.language}
-                    onChange={(e) =>
-                      setFormData({ ...formData, language: e.target.value })
-                    }
-                    placeholder="O'zbekcha"
-                    disabled={isUploading}
-                    autoComplete="off"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="pages"
-                    className="flex items-center gap-1.5 text-sm"
-                  >
-                    <Hash className="h-3.5 w-3.5 text-muted-foreground" />
-                    Sahifalar
-                  </Label>
-                  <Input
-                    id="pages"
-                    type="number"
-                    inputMode="numeric"
-                    min={1}
-                    value={formData.pages}
-                    onChange={(e) =>
-                      setFormData({ ...formData, pages: e.target.value })
-                    }
-                    placeholder="240"
-                    disabled={isUploading}
-                    aria-invalid={!!errors.pages}
-                  />
-                  {errors.pages && (
-                    <p
-                      className="flex items-center gap-1.5 text-xs text-destructive"
-                      role="alert"
-                    >
-                      <AlertCircle className="h-3.5 w-3.5" /> {errors.pages}
-                    </p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="year"
-                    className="flex items-center gap-1.5 text-sm"
-                  >
-                    <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                    Yil
-                  </Label>
-                  <Input
-                    id="year"
-                    type="number"
-                    inputMode="numeric"
-                    min={1000}
-                    max={new Date().getFullYear() + 1}
-                    value={formData.year}
-                    onChange={(e) =>
-                      setFormData({ ...formData, year: e.target.value })
-                    }
-                    placeholder="2024"
-                    disabled={isUploading}
-                    aria-invalid={!!errors.year}
-                  />
-                  {errors.year && (
-                    <p
-                      className="flex items-center gap-1.5 text-xs text-destructive"
-                      role="alert"
-                    >
-                      <AlertCircle className="h-3.5 w-3.5" /> {errors.year}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="tags">Kalit so'zlar</Label>
-                <Input
-                  id="tags"
+              </EntField>
+              <EntField label="Nashr yili" error={errors.year}>
+                <EntInput
+                  type="number"
+                  inputMode="numeric"
+                  min={1000}
+                  max={new Date().getFullYear() + 1}
+                  value={formData.year}
+                  onChange={(e) =>
+                    setFormData({ ...formData, year: e.target.value })
+                  }
+                  placeholder="2024"
+                  disabled={isUploading}
+                />
+              </EntField>
+              <EntField label="Kalit so'zlar" className="ent-grid--2" hint="vergul bilan ajrating">
+                <EntInput
                   value={formData.tags}
                   onChange={(e) =>
                     setFormData({ ...formData, tags: e.target.value })
                   }
-                  placeholder="masalan: roman, klassik, adabiyot"
+                  placeholder="roman, klassik, adabiyot"
                   disabled={isUploading}
                   autoComplete="off"
                 />
-                <p className="text-xs text-muted-foreground">
-                  Vergul (,) bilan ajrating
-                </p>
-                {tagsList.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 pt-1">
-                    {tagsList.map((t, i) => (
-                      <Badge
-                        key={`${t}-${i}`}
-                        variant="secondary"
-                        className="font-normal"
-                      >
-                        {t}
-                      </Badge>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {/* Curriculum section */}
-      <Card>
-        <CardHeader>
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="space-y-1">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <GraduationCap className="h-4 w-4 text-primary" />
-                O'quv reja kitobimi?
-              </CardTitle>
-              <CardDescription>
-                Sillabusda berilgan o'quv reja kitobi bo'lsa, biriktirishlarni
-                qo'shing
-              </CardDescription>
+              </EntField>
             </div>
-            <div className="flex items-center gap-2">
-              <Switch
-                id="isCurriculumBook"
+            {tagsList.length > 0 && (
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 3,
+                  marginTop: 6,
+                }}
+              >
+                {tagsList.map((t, i) => (
+                  <EntBadge key={`${t}-${i}`} variant="muted">
+                    {t}
+                  </EntBadge>
+                ))}
+              </div>
+            )}
+          </EntCard>
+        </div>
+
+        {/* RIGHT — poster + curriculum */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <EntCard
+            title={
+              <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>
+                <ImageIcon size={13} /> Poster (ixtiyoriy)
+              </span>
+            }
+          >
+            <div
+              role="button"
+              tabIndex={isUploading ? -1 : 0}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setIsPosterDragging(true);
+              }}
+              onDragLeave={() => setIsPosterDragging(false)}
+              onDrop={onPosterDrop}
+              onClick={() => !isUploading && posterInputRef.current?.click()}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  posterInputRef.current?.click();
+                }
+              }}
+              style={{
+                ...dzBaseStyle,
+                minHeight: 180,
+                borderColor: errors.poster
+                  ? "var(--ent-danger)"
+                  : isPosterDragging
+                    ? "var(--ent-accent)"
+                    : pasteFlash
+                      ? "var(--ent-accent)"
+                      : "var(--ent-border-strong)",
+                background: errors.poster
+                  ? "var(--ent-danger-bg)"
+                  : isPosterDragging || pasteFlash
+                    ? "var(--ent-accent-soft)"
+                    : "var(--ent-bg)",
+                pointerEvents: isUploading ? "none" : "auto",
+                opacity: isUploading ? 0.7 : 1,
+                flexDirection: posterPreview ? "row" : "column",
+                justifyContent: posterPreview ? "flex-start" : "center",
+                alignItems: posterPreview ? "center" : "center",
+                textAlign: posterPreview ? "left" : "center",
+              }}
+            >
+              <input
+                ref={posterInputRef}
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={(e) => applyPoster(e.target.files?.[0] || null)}
+                disabled={isUploading}
+              />
+              {posterPreview && poster ? (
+                <>
+                  <img
+                    src={posterPreview}
+                    alt=""
+                    style={{
+                      width: 100,
+                      height: 140,
+                      objectFit: "cover",
+                      border: "1px solid var(--ent-border)",
+                    }}
+                  />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div
+                      style={{
+                        fontWeight: 500,
+                        fontSize: 12,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
+                      {poster.name}
+                    </div>
+                    <div
+                      className="ent-muted"
+                      style={{ fontSize: 11 }}
+                    >
+                      {fmtBytes(poster.size)}
+                    </div>
+                    <div style={{ marginTop: 4 }}>
+                      <EntBadge variant="success">Tayyor</EntBadge>
+                    </div>
+                  </div>
+                  <EntButton
+                    size="icon"
+                    variant="danger"
+                    disabled={isUploading}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      applyPoster(null);
+                    }}
+                  >
+                    <X size={14} />
+                  </EntButton>
+                </>
+              ) : (
+                <>
+                  <ImageIcon
+                    size={28}
+                    style={{ color: "var(--ent-text-muted)" }}
+                  />
+                  <div style={{ fontSize: 12, fontWeight: 500 }}>
+                    Rasmni tashlang yoki bosing
+                  </div>
+                  <div className="ent-muted" style={{ fontSize: 11 }}>
+                    JPG, PNG, WebP — maks. {MAX_POSTER_SIZE_MB}MB
+                  </div>
+                  <div
+                    style={{
+                      display: "inline-flex",
+                      gap: 4,
+                      alignItems: "center",
+                      fontSize: 10,
+                      color: "var(--ent-text-faint)",
+                      marginTop: 4,
+                    }}
+                  >
+                    <ClipboardPaste size={11} />
+                    yoki <kbd className="ent-cell--code">Ctrl</kbd>+
+                    <kbd className="ent-cell--code">V</kbd> bilan joylang
+                  </div>
+                </>
+              )}
+            </div>
+            {errors.poster && (
+              <div
+                style={{
+                  color: "var(--ent-danger)",
+                  fontSize: 11,
+                  marginTop: 4,
+                  display: "flex",
+                  gap: 4,
+                  alignItems: "center",
+                }}
+              >
+                <AlertCircle size={11} /> {errors.poster}
+              </div>
+            )}
+          </EntCard>
+
+          <EntCard
+            title={
+              <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>
+                <GraduationCap size={13} /> O'quv reja kitobimi?
+              </span>
+            }
+            actions={
+              <EntCheckbox
                 checked={isCurriculumBook}
-                onCheckedChange={(v) => {
+                onChange={(v) => {
                   setIsCurriculumBook(v);
                   if (!v) setCurriculumLinks([]);
                 }}
                 disabled={isUploading}
+                label={
+                  <EntBadge variant={isCurriculumBook ? "success" : "muted"}>
+                    {isCurriculumBook ? "Ha" : "Yo'q"}
+                  </EntBadge>
+                }
               />
-              <Label
-                htmlFor="isCurriculumBook"
-                className="cursor-pointer text-sm font-medium"
-              >
-                {isCurriculumBook ? "Ha" : "Yo'q"}
-              </Label>
-            </div>
-          </div>
-        </CardHeader>
-        {isCurriculumBook && (
-          <CardContent>
-            <CurriculumLinksFieldset
-              value={curriculumLinks}
-              onChange={setCurriculumLinks}
-              disabled={isUploading}
-            />
-            {linkErrors && (
-              <p
-                className="mt-3 flex items-center gap-1.5 text-xs text-destructive"
-                role="alert"
-              >
-                <AlertCircle className="h-3.5 w-3.5" /> {linkErrors}
-              </p>
-            )}
-          </CardContent>
-        )}
-      </Card>
-
-      {/* Action bar */}
-      <div className="sticky bottom-0 -mx-4 border-t bg-background/85 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/70 sm:-mx-6 sm:px-6">
-        <div className="flex flex-wrap items-center justify-end gap-3">
-          {isUploading && (
-            <div className="mr-auto flex min-w-0 flex-1 items-center gap-3 text-sm">
-              <Loader2 className="h-4 w-4 shrink-0 animate-spin text-primary" />
-              <div className="min-w-0">
-                <p className="truncate font-medium">Yuklanmoqda...</p>
-                <p className="text-xs text-muted-foreground tabular-nums">
-                  {progress}%
-                </p>
-              </div>
-              <Progress value={progress} className="h-1.5 max-w-[180px]" />
-            </div>
-          )}
-          <Button
-            type="button"
-            variant="ghost"
-            disabled={isUploading}
-            onClick={handleReset}
+            }
           >
-            Tozalash
-          </Button>
-          <Button
-            type="submit"
-            disabled={isUploading}
-            className="min-w-[140px] gap-2"
-          >
-            {isUploading ? (
+            {isCurriculumBook ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                {progress}%
+                <CurriculumLinksFieldset
+                  value={curriculumLinks}
+                  onChange={setCurriculumLinks}
+                  disabled={isUploading}
+                />
+                {linkErrors && (
+                  <div
+                    style={{
+                      color: "var(--ent-danger)",
+                      fontSize: 11,
+                      marginTop: 6,
+                      display: "flex",
+                      gap: 4,
+                      alignItems: "center",
+                    }}
+                    role="alert"
+                  >
+                    <AlertCircle size={11} /> {linkErrors}
+                  </div>
+                )}
               </>
             ) : (
-              <>
-                <Upload className="h-4 w-4" />
-                Yuklash
-              </>
+              <div
+                className="ent-muted"
+                style={{ fontSize: 12, padding: "4px 0" }}
+              >
+                Sillabusda berilgan o'quv reja kitobi bo'lsa, "Ha" deb belgilang.
+              </div>
             )}
-          </Button>
+          </EntCard>
+        </div>
+      </div>
+
+      {/* Action bar */}
+      <div
+        style={{
+          position: "sticky",
+          bottom: 0,
+          background: "var(--ent-surface)",
+          borderTop: "1px solid var(--ent-border-strong)",
+          padding: "6px 8px",
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+        }}
+      >
+        {isUploading && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              flex: 1,
+              minWidth: 0,
+            }}
+          >
+            <span style={{ fontSize: 12 }} className="ent-muted">
+              Yuklanmoqda
+            </span>
+            <div
+              style={{
+                flex: 1,
+                maxWidth: 240,
+                height: 6,
+                border: "1px solid var(--ent-border)",
+                background: "var(--ent-bg)",
+              }}
+            >
+              <div
+                style={{
+                  width: `${progress}%`,
+                  height: "100%",
+                  background: "var(--ent-accent)",
+                  transition: "width 200ms",
+                }}
+              />
+            </div>
+            <span className="ent-cell--code" style={{ fontSize: 12 }}>
+              {progress}%
+            </span>
+          </div>
+        )}
+        <div style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
+          <EntButton disabled={isUploading} onClick={handleReset}>
+            Tozalash
+          </EntButton>
+          <EntButton
+            type="submit"
+            variant="primary"
+            disabled={isUploading}
+            style={{ minWidth: 120 }}
+          >
+            {isUploading ? `Yuklanmoqda ${progress}%` : "Yuklash"}
+          </EntButton>
         </div>
       </div>
     </form>

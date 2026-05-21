@@ -1,57 +1,64 @@
-import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
-import { DataTable } from "@/components/admin/DataTable";
-import { PageHeader } from "@/components/admin/PageHeader";
-import { Pagination } from "@/components/common/Pagination";
-import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+  EntButton,
+  EntConfirmDialog,
+  EntDialog,
+  EntField,
+  EntFilterBar,
+  EntFilterField,
+  EntInput,
+  EntPage,
+  EntPagination,
+  EntTable,
+  EntTableWrap,
+  EntToolbar,
+} from "@/components/enterprise";
 import { useDebounce } from "@/hooks/use-debounce";
 import { toast } from "@/hooks/use-toast";
 import $api from "@/http/axios";
 import { ICategory, IPagination } from "@/interface";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Pencil, Plus, Search, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
 
 interface CategoryResponse {
   items: ICategory[];
   pagination: IPagination;
 }
 
-export function CategoriesPage() {
-  const queryClient = useQueryClient();
+const LIMIT_DEFAULT = 25;
 
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
-
-  const [search, setSearch] = useState("");
-  const debouncedSearch = useDebounce(search, 500);
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<ICategory | null>(
-    null,
-  );
-  const [formData, setFormData] = useState({
-    name: "",
-    icon: "",
+const fmtDate = (iso?: string) => {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString("uz-UZ", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
   });
+};
 
-  const { data, isLoading } = useQuery<CategoryResponse>({
-    queryKey: ["categories", { page, debouncedSearch, limit }],
+export function CategoriesPage() {
+  const qc = useQueryClient();
+  const [page, setPage] = useState(1);
+  const [limit] = useState(LIMIT_DEFAULT);
+  const [search, setSearch] = useState("");
+  const debounced = useDebounce(search, 350);
+
+  const [formOpen, setFormOpen] = useState(false);
+  const [confirmDel, setConfirmDel] = useState<ICategory | null>(null);
+  const [selected, setSelected] = useState<ICategory | null>(null);
+  const [formData, setFormData] = useState({ name: "", icon: "" });
+
+  useEffect(() => {
+    setPage(1);
+  }, [debounced]);
+
+  const { data, isLoading, isFetching } = useQuery<CategoryResponse>({
+    queryKey: ["categories", { page, debounced, limit }],
     queryFn: async () => {
       const { data } = await $api.get("/categories", {
-        params: {
-          page,
-          limit,
-          search: debouncedSearch,
-        },
+        params: { page, limit, search: debounced },
       });
       return data;
     },
@@ -62,234 +69,261 @@ export function CategoriesPage() {
       },
   });
 
-  const categories: ICategory[] = data?.items ?? [];
+  const items = data?.items ?? [];
   const pagination = data?.pagination;
 
-  const createMutation = useMutation({
-    mutationFn: async (payload: { name: string; icon?: string }) => {
-      const { data } = await $api.post("/categories", payload);
-      return data;
-    },
+  const createMu = useMutation({
+    mutationFn: async (payload: { name: string; icon?: string }) =>
+      (await $api.post("/categories", payload)).data,
     onSuccess: () => {
-      toast({ title: "Kategoriya qo‘shildi" });
-      queryClient.invalidateQueries({ queryKey: ["categories"] });
-      setIsFormOpen(false);
+      toast({ title: "Kategoriya qo'shildi" });
+      qc.invalidateQueries({ queryKey: ["categories"] });
+      setFormOpen(false);
     },
+    onError: (err: any) =>
+      toast({
+        title: "Xato",
+        description: err?.response?.data?.message || "Yaratishda xato",
+        variant: "destructive",
+      }),
   });
 
-  const updateMutation = useMutation({
-    mutationFn: async ({
-      id,
-      payload,
-    }: {
+  const updateMu = useMutation({
+    mutationFn: async (args: {
       id: string;
       payload: { name: string; icon?: string };
-    }) => {
-      const { data } = await $api.patch(`/categories/${id}`, payload);
-      return data;
-    },
+    }) => (await $api.patch(`/categories/${args.id}`, args.payload)).data,
     onSuccess: () => {
       toast({ title: "Kategoriya yangilandi" });
-      queryClient.invalidateQueries({ queryKey: ["categories"] });
-      setIsFormOpen(false);
+      qc.invalidateQueries({ queryKey: ["categories"] });
+      setFormOpen(false);
     },
+    onError: (err: any) =>
+      toast({
+        title: "Xato",
+        description: err?.response?.data?.message || "Yangilashda xato",
+        variant: "destructive",
+      }),
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { data } = await $api.delete(`/categories/${id}`);
-      return data;
-    },
+  const deleteMu = useMutation({
+    mutationFn: async (id: string) =>
+      (await $api.delete(`/categories/${id}`)).data,
     onSuccess: () => {
-      toast({ title: "Kategoriya o‘chirildi" });
-      queryClient.invalidateQueries({ queryKey: ["categories"] });
-      setIsDeleteOpen(false);
+      toast({ title: "Kategoriya o'chirildi" });
+      qc.invalidateQueries({ queryKey: ["categories"] });
+      setConfirmDel(null);
     },
+    onError: (err: any) =>
+      toast({
+        title: "Xato",
+        description: err?.response?.data?.message || "O'chirishda xato",
+        variant: "destructive",
+      }),
   });
 
   const handleCreate = () => {
-    setSelectedCategory(null);
+    setSelected(null);
     setFormData({ name: "", icon: "" });
-    setIsFormOpen(true);
+    setFormOpen(true);
   };
 
-  const handleEdit = (category: ICategory) => {
-    setSelectedCategory(category);
-    setFormData({ name: category.name, icon: category.icon ?? "" });
-    setIsFormOpen(true);
+  const handleEdit = (cat: ICategory) => {
+    setSelected(cat);
+    setFormData({ name: cat.name, icon: cat.icon ?? "" });
+    setFormOpen(true);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
     if (!formData.name.trim()) {
       toast({
-        title: "Xatolik",
+        title: "Xato",
         description: "Kategoriya nomini kiriting",
         variant: "destructive",
       });
       return;
     }
-
     const payload = {
       name: formData.name.trim(),
       icon: formData.icon.trim() || undefined,
     };
-
-    if (selectedCategory) {
-      updateMutation.mutate({
-        id: selectedCategory.id,
-        payload,
-      });
-    } else {
-      createMutation.mutate(payload);
-    }
+    if (selected) updateMu.mutate({ id: selected.id, payload });
+    else createMu.mutate(payload);
   };
-
-  const handleDelete = () => {
-    if (!selectedCategory) return;
-    deleteMutation.mutate(selectedCategory.id);
-  };
-
-  const columns = [
-    {
-      key: "icon" as keyof ICategory,
-      header: "Ikonka",
-      className: "w-20",
-      render: (c: ICategory) => <span className="text-2xl">{c.icon}</span>,
-    },
-    {
-      key: "name" as keyof ICategory,
-      header: "Nomi",
-      render: (c: ICategory) => <span className="font-medium">{c.name}</span>,
-    },
-    {
-      key: "createdAt" as keyof ICategory,
-      header: "Yaratilgan sana",
-      render: (c: ICategory) =>
-        new Date(c.createdAt).toLocaleDateString("uz-UZ"),
-    },
-    {
-      key: "id" as keyof ICategory,
-      header: "Amallar",
-      className: "w-28",
-      render: (c: ICategory) => (
-        <div className="flex gap-2">
-          <Button size="icon" variant="ghost" onClick={() => handleEdit(c)}>
-            <Pencil className="h-4 w-4" />
-          </Button>
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={() => {
-              setSelectedCategory(c);
-              setIsDeleteOpen(true);
-            }}
-          >
-            <Trash2 className="h-4 w-4 text-destructive" />
-          </Button>
-        </div>
-      ),
-    },
-  ];
 
   return (
-    <div className="space-y-6">
-      <PageHeader
+    <EntPage>
+      <EntToolbar
         title="Kategoriyalar"
-        description="Mahsulot kategoriyalarini boshqarish"
+        actions={
+          <EntButton variant="primary" onClick={handleCreate} size="sm">
+            <Plus size={14} /> Yangi kategoriya
+          </EntButton>
+        }
       />
 
-      {/* Search + Create */}
-      <div className="flex flex-col sm:flex-row gap-4 justify-between">
-        <div className="relative max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
+      <EntFilterBar>
+        <EntFilterField label="Qidiruv">
+          <EntInput
             value={search}
-            onChange={(e) => {
-              setPage(1);
-              setSearch(e.target.value);
-            }}
-            placeholder="Kategoriya qidirish..."
-            className="pl-9"
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Kategoriya nomi"
+            style={{ width: 280 }}
           />
+        </EntFilterField>
+        <div style={{ marginLeft: "auto" }} className="ent-muted">
+          {isFetching && "yuklanmoqda..."}
         </div>
+      </EntFilterBar>
 
-        <Button onClick={handleCreate} className="gap-2">
-          <Plus className="h-4 w-4" />
-          Yangi kategoriya
-        </Button>
-      </div>
+      <EntTableWrap style={{ flex: 1, minHeight: 0 }}>
+        <EntTable>
+          <thead>
+            <tr>
+              <th style={{ width: 40 }}>#</th>
+              <th style={{ width: 60 }}>Ikon</th>
+              <th>Nom</th>
+              <th style={{ width: 160 }}>Slug</th>
+              <th style={{ width: 110 }}>Yaratilgan</th>
+              <th style={{ width: 90 }}>Amallar</th>
+            </tr>
+          </thead>
+          <tbody>
+            {isLoading ? (
+              <tr>
+                <td colSpan={6} className="ent-empty">
+                  Yuklanmoqda...
+                </td>
+              </tr>
+            ) : items.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="ent-empty">
+                  Kategoriya topilmadi
+                </td>
+              </tr>
+            ) : (
+              items.map((c, idx) => (
+                <tr key={c.id}>
+                  <td className="ent-cell--num ent-muted">
+                    {(page - 1) * limit + idx + 1}
+                  </td>
+                  <td style={{ fontSize: 18 }}>
+                    {c.icon || <span className="ent-muted">—</span>}
+                  </td>
+                  <td style={{ fontWeight: 500 }}>{c.name}</td>
+                  <td className="ent-cell--code ent-muted">{c.slug}</td>
+                  <td className="ent-cell--code ent-muted">
+                    {fmtDate(c.createdAt)}
+                  </td>
+                  <td>
+                    <div style={{ display: "flex", gap: 4 }}>
+                      <EntButton
+                        size="icon"
+                        title="Tahrirlash"
+                        onClick={() => handleEdit(c)}
+                      >
+                        <Pencil size={14} />
+                      </EntButton>
+                      <EntButton
+                        size="icon"
+                        variant="danger"
+                        title="O'chirish"
+                        onClick={() => setConfirmDel(c)}
+                      >
+                        <Trash2 size={14} />
+                      </EntButton>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </EntTable>
+      </EntTableWrap>
 
-      {/* Table */}
-      <DataTable
-        data={categories}
-        columns={columns}
-        keyExtractor={(c) => c.id}
-        emptyMessage="Kategoriyalar topilmadi"
-      />
+      {pagination && (
+        <EntPagination
+          page={page}
+          totalPages={pagination.totalPages}
+          total={pagination.total}
+          limit={limit}
+          onChange={setPage}
+        />
+      )}
 
-      {/* Pagination */}
-      <Pagination
-        page={page}
-        totalPages={pagination?.totalPages ?? 1}
-        limit={limit}
-        total={pagination?.total}
-        onPageChange={(p) => setPage(p)}
-        onLimitChange={(l) => setLimit(l)}
-      />
-      {/* Create / Edit Dialog */}
-      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {selectedCategory
-                ? "Kategoriyani tahrirlash"
-                : "Yangi kategoriya"}
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-4 py-4">
-            <div className="space-y-3">
-              <Label>Nomi</Label>
-              <Input
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-              />
-            </div>
-            <div className="space-y-3">
-              <Label>Ikonka (emoji, ixtiyoriy)</Label>
-              <Input
-                value={formData.icon}
-                onChange={(e) =>
-                  setFormData({ ...formData, icon: e.target.value })
-                }
-                placeholder="📚"
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsFormOpen(false)}>
+      {/* Create / Edit dialog */}
+      <EntDialog
+        open={formOpen}
+        onClose={() =>
+          !createMu.isPending && !updateMu.isPending && setFormOpen(false)
+        }
+        title={selected ? "Kategoriyani tahrirlash" : "Yangi kategoriya"}
+        width={420}
+        footer={
+          <>
+            <EntButton
+              disabled={createMu.isPending || updateMu.isPending}
+              onClick={() => setFormOpen(false)}
+            >
               Bekor qilish
-            </Button>
-            <Button onClick={handleSubmit}>
-              {selectedCategory ? "Saqlash" : "Qo‘shish"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </EntButton>
+            <EntButton
+              variant="primary"
+              disabled={createMu.isPending || updateMu.isPending}
+              onClick={(e) => handleSubmit(e as any)}
+            >
+              {createMu.isPending || updateMu.isPending
+                ? "Saqlanmoqda..."
+                : selected
+                  ? "Saqlash"
+                  : "Qo'shish"}
+            </EntButton>
+          </>
+        }
+      >
+        <form className="ent-stack-y" onSubmit={handleSubmit}>
+          <EntField label="Nom" required>
+            <EntInput
+              autoFocus
+              value={formData.name}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
+              required
+              maxLength={120}
+            />
+          </EntField>
+          <EntField label="Ikonka (emoji, ixtiyoriy)">
+            <EntInput
+              value={formData.icon}
+              onChange={(e) =>
+                setFormData({ ...formData, icon: e.target.value })
+              }
+              placeholder="📚"
+              maxLength={10}
+            />
+          </EntField>
+          <button type="submit" style={{ display: "none" }} />
+        </form>
+      </EntDialog>
 
-      {/* Delete */}
-      <ConfirmDialog
-        open={isDeleteOpen}
-        onOpenChange={setIsDeleteOpen}
-        title="Kategoriyani o‘chirish"
-        description={`"${selectedCategory?.name}" kategoriyasi o‘chirilsinmi?`}
-        confirmLabel="O‘chirish"
-        variant="destructive"
-        onConfirm={handleDelete}
+      {/* Delete confirm */}
+      <EntConfirmDialog
+        open={!!confirmDel}
+        title="Kategoriyani o'chirish"
+        variant="danger"
+        confirmLabel="O'chirish"
+        busy={deleteMu.isPending}
+        onClose={() => setConfirmDel(null)}
+        onConfirm={() => confirmDel && deleteMu.mutate(confirmDel.id)}
+        message={
+          <>
+            <strong>"{confirmDel?.name}"</strong> kategoriyasi o'chirilsinmi? Bu
+            amalni qaytarib bo'lmaydi.
+          </>
+        }
       />
-    </div>
+    </EntPage>
   );
 }

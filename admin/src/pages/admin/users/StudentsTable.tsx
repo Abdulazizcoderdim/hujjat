@@ -1,45 +1,55 @@
-import { PageHeader } from "@/components/admin/PageHeader";
-import { StatusBadge } from "@/components/admin/StatusBadge";
-import { Pagination } from "@/components/common/Pagination";
-import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { formatDateTime } from "@/hooks/formatDateTime";
+  EntBadge,
+  EntButton,
+  EntDialog,
+  EntFilterBar,
+  EntFilterField,
+  EntInput,
+  EntPage,
+  EntPagination,
+  EntTable,
+  EntTableWrap,
+  EntToolbar,
+} from "@/components/enterprise";
 import { useDebounce } from "@/hooks/use-debounce";
 import $api from "@/http/axios";
 import { IUser, UserRole } from "@/interface";
 import { useQuery } from "@tanstack/react-query";
-import {
-  ChartColumnStacked,
-  Eye,
-  GraduationCap,
-  MapPin,
-  Pencil,
-  School,
-} from "lucide-react";
+import { BarChart2, Eye } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+const LIMIT_DEFAULT = 25;
+
+const formatDate = (iso?: string | Date) => {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString("uz-UZ", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+};
+
 export function StudentsTable() {
   const [search, setSearch] = useState("");
-  const debouncedSearch = useDebounce(search, 500);
+  const debounced = useDebounce(search, 350);
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
-  const [selectedStudent, setSelectedStudent] = useState<IUser | null>(null);
-
+  const [limit] = useState(LIMIT_DEFAULT);
+  const [selected, setSelected] = useState<IUser | null>(null);
   const navigate = useNavigate();
 
-  const studentsQuery = useQuery({
-    queryKey: ["students", { debouncedSearch, page, limit }],
+  useEffect(() => {
+    setPage(1);
+  }, [debounced]);
+
+  const studentsQ = useQuery({
+    queryKey: ["students", { debounced, page, limit }],
     queryFn: async () => {
       const params = {
         role: UserRole.STUDENT,
-        search: debouncedSearch,
+        search: debounced,
         page,
         limit,
       };
@@ -48,244 +58,271 @@ export function StudentsTable() {
     },
   });
 
-  const students = studentsQuery.data?.items ?? [];
-  const pagination = studentsQuery.data?.pagination;
-
-  useEffect(() => {
-    setPage(1);
-  }, [debouncedSearch]);
+  const items: IUser[] = studentsQ.data?.items ?? [];
+  const pagination = studentsQ.data?.pagination;
 
   return (
-    <div className="space-y-6">
-      <PageHeader
+    <EntPage>
+      <EntToolbar
         title="Talabalar"
-        description="Tizimdagi barcha talabalar ro'yxati va ularning ma'lumotlari"
+        actions={
+          <EntButton onClick={() => studentsQ.refetch()}>↻ Yangilash</EntButton>
+        }
       />
 
-      <div className="flex items-center justify-between gap-4">
-        <Input
-          placeholder="To'liq ismi yoki talaba ID bo'yicha qidirish..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="max-w-md"
-        />
-      </div>
+      <EntFilterBar>
+        <EntFilterField label="Qidiruv">
+          <EntInput
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="FIO yoki talabalik raqami"
+            style={{ width: 280 }}
+          />
+        </EntFilterField>
+        <div style={{ marginLeft: "auto" }} className="ent-muted">
+          {studentsQ.isFetching && "yuklanmoqda..."}
+        </div>
+      </EntFilterBar>
 
-      <div className="rounded-md border">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-muted/50">
+      <EntTableWrap style={{ flex: 1, minHeight: 0 }}>
+        <EntTable>
+          <thead>
+            <tr>
+              <th style={{ width: 40 }}>#</th>
+              <th>FIO</th>
+              <th style={{ width: 130 }}>Talaba ID</th>
+              <th style={{ width: 220 }}>Universitet / Fakultet</th>
+              <th style={{ width: 110 }}>Guruh</th>
+              <th style={{ width: 70 }}>Kurs</th>
+              <th style={{ width: 90 }}>Holat</th>
+              <th style={{ width: 100 }}>Sana</th>
+              <th style={{ width: 90 }}>Amallar</th>
+            </tr>
+          </thead>
+          <tbody>
+            {studentsQ.isLoading ? (
               <tr>
-                <th className="px-4 py-3 text-left text-sm font-semibold">№</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold">
-                  F.I.SH
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold">
-                  Talaba ID
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold">
-                  Universitet / Fakultet
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold">
-                  Guruh
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold">
-                  Holati
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold">
-                  Sana
-                </th>
-                <th className="px-4 py-3 text-right text-sm font-semibold">
-                  Amallar
-                </th>
+                <td colSpan={9} className="ent-empty">
+                  Yuklanmoqda...
+                </td>
               </tr>
-            </thead>
-            <tbody className="divide-y">
-              {students.map((user: IUser, index: number) => (
-                <tr
-                  key={user.id}
-                  className="hover:bg-muted/50 transition-colors"
-                >
-                  <td className="px-4 py-3 text-sm">
-                    {(page - 1) * limit + (index + 1)}
+            ) : items.length === 0 ? (
+              <tr>
+                <td colSpan={9} className="ent-empty">
+                  Talaba topilmadi
+                </td>
+              </tr>
+            ) : (
+              items.map((u, idx) => (
+                <tr key={u.id}>
+                  <td className="ent-cell--num ent-muted">
+                    {(page - 1) * limit + idx + 1}
                   </td>
-                  <td className="px-4 py-3 text-sm">
-                    <div className="flex items-center gap-2">
-                      <div className="h-8 w-8 rounded-full flex items-center justify-center text-primary font-medium">
-                        <img
-                          src={user?.image || ""}
-                          className="rounded-full"
-                          alt=""
-                        />
-                      </div>
-                      <div>
-                        <div className="font-medium">
-                          {user.full_name ||
-                            `${user.first_name} ${user.second_name}`}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {user.email || user.login}
-                        </div>
+                  <td>
+                    <div style={{ fontWeight: 500 }}>
+                      {u.full_name ||
+                        `${u.first_name ?? ""} ${u.second_name ?? ""}`.trim()}
+                    </div>
+                    <div
+                      className="ent-muted"
+                      style={{ fontSize: 11 }}
+                    >
+                      {u.email || u.login || ""}
+                    </div>
+                  </td>
+                  <td className="ent-cell--code">
+                    {u.student_id_number || (
+                      <span className="ent-muted">—</span>
+                    )}
+                  </td>
+                  <td>
+                    <div
+                      style={{
+                        maxWidth: 220,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                      title={`${u.university ?? ""} · ${u.faculty ?? ""}`}
+                    >
+                      {u.university || "—"}
+                      <div
+                        className="ent-muted"
+                        style={{
+                          fontSize: 11,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {u.faculty || "—"}
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-sm font-mono">
-                    {user.student_id_number || "—"}
+                  <td className="ent-muted">{u.group || "—"}</td>
+                  <td className="ent-muted">{u.level || "—"}</td>
+                  <td>
+                    {u.is_active ? (
+                      <EntBadge variant="success">Faol</EntBadge>
+                    ) : (
+                      <EntBadge variant="danger">Bloklangan</EntBadge>
+                    )}
                   </td>
-                  <td className="px-4 py-3 text-sm">
-                    <div className="max-w-[200px] truncate">
-                      {user.university}
-                      <div className="text-xs text-muted-foreground truncate">
-                        {user.faculty}
-                      </div>
+                  <td className="ent-cell--code ent-muted">
+                    {formatDate(u.createdAt)}
+                  </td>
+                  <td>
+                    <div style={{ display: "flex", gap: 4 }}>
+                      <EntButton
+                        size="icon"
+                        title="Batafsil"
+                        onClick={() => setSelected(u)}
+                      >
+                        <Eye size={14} />
+                      </EntButton>
+                      <EntButton
+                        size="icon"
+                        title="Statistika"
+                        onClick={() =>
+                          navigate(`/students/${u.id}/stats`, {
+                            state: {
+                              studentName:
+                                u.full_name ||
+                                `${u.first_name ?? ""} ${u.second_name ?? ""}`.trim(),
+                            },
+                          })
+                        }
+                      >
+                        <BarChart2 size={14} />
+                      </EntButton>
                     </div>
-                  </td>
-                  <td className="px-4 py-3 text-sm">{user.group || "—"}</td>
-                  <td className="px-4 py-3 text-sm">
-                    <StatusBadge
-                      status={user.is_active ? "active" : "blocked"}
-                    />
-                  </td>
-                  <td className="px-4 py-3 text-sm text-muted-foreground">
-                    {formatDateTime(user.createdAt)}
-                  </td>
-                  <td className="px-4 py-3 text-right text-sm">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setSelectedStudent(user)}
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() =>
-                        navigate(`/students/${user.id}/stats`, {
-                          state: {
-                            studentName:
-                              user.full_name ||
-                              `${user.first_name} ${user.second_name}`,
-                          },
-                        })
-                      }
-                    >
-                      <ChartColumnStacked className="h-4 w-4" />
-                    </Button>
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+              ))
+            )}
+          </tbody>
+        </EntTable>
+      </EntTableWrap>
 
-      <Pagination
-        page={page}
-        totalPages={pagination?.totalPages ?? 1}
-        limit={limit}
-        total={pagination?.total}
-        onPageChange={setPage}
-        onLimitChange={setLimit}
-      />
+      {pagination && (
+        <EntPagination
+          page={page}
+          totalPages={pagination.totalPages}
+          total={pagination.total}
+          limit={limit}
+          onChange={setPage}
+        />
+      )}
 
-      {/* Talaba batafsil ma'lumotlari */}
-      <Dialog
-        open={!!selectedStudent}
-        onOpenChange={() => setSelectedStudent(null)}
+      <EntDialog
+        open={!!selected}
+        onClose={() => setSelected(null)}
+        title="Talaba ma'lumotlari"
+        width={640}
+        footer={
+          <EntButton onClick={() => setSelected(null)}>Yopish</EntButton>
+        }
       >
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>Talaba ma'lumotlari kartasi</DialogTitle>
-          </DialogHeader>
-          {selectedStudent && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
-              <div className="space-y-4">
-                <div className="flex flex-col items-center gap-4 p-3 bg-muted/50 rounded-lg">
-                  <div className="h-20 w-auto bg-primary/10 flex items-center justify-center text-xl font-bold text-primary">
-                    <img
-                      src={selectedStudent.image}
-                      alt=""
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div>
-                    <h4 className="font-bold">{selectedStudent.full_name}</h4>
-                    <p className="text-sm text-muted-foreground">
-                      ID: {selectedStudent.student_id_number}
-                    </p>
-                  </div>
+        {selected && (
+          <div style={{ display: "grid", gridTemplateColumns: "120px 1fr", gap: 12 }}>
+            {/* Photo */}
+            <div>
+              {selected.image ? (
+                <img
+                  src={selected.image}
+                  alt=""
+                  style={{
+                    width: 120,
+                    height: 150,
+                    objectFit: "cover",
+                    border: "1px solid var(--ent-border)",
+                  }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: 120,
+                    height: 150,
+                    border: "1px solid var(--ent-border)",
+                    background: "var(--ent-bg)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "var(--ent-text-faint)",
+                    fontSize: 11,
+                  }}
+                >
+                  Rasm yo'q
                 </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <School className="h-4 w-4" /> {selectedStudent.university}
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <GraduationCap className="h-4 w-4" />{" "}
-                    {selectedStudent.faculty} ({selectedStudent.specialty})
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <MapPin className="h-4 w-4" />{" "}
-                    {selectedStudent.address || "Manzil kiritilmagan"}
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-3 border-l pl-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-xs text-muted-foreground italic">
-                      Guruh
-                    </p>
-                    <p className="font-medium">{selectedStudent.group}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground italic">
-                      Bosqich/Semestr
-                    </p>
-                    <p className="font-medium">
-                      {selectedStudent.level}-kurs / {selectedStudent.semester}
-                      -semestr
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground italic">
-                      Telefon
-                    </p>
-                    <p className="font-medium">
-                      {selectedStudent.phone || "—"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground italic">
-                      Tug'ilgan sana
-                    </p>
-                    <p className="font-medium">
-                      {selectedStudent.birth_date
-                        ? new Date(
-                            Number(selectedStudent.birth_date),
-                          ).toLocaleDateString()
-                        : "—"}
-                    </p>
-                  </div>
-                </div>
-                <div className="pt-4 border-t">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium">
-                      Tizimdagi holati:
-                    </span>
-                    <StatusBadge
-                      status={selectedStudent.is_active ? "active" : "blocked"}
-                    />
-                  </div>
-                </div>
+              )}
+              <div style={{ marginTop: 6 }}>
+                {selected.is_active ? (
+                  <EntBadge variant="success">Faol</EntBadge>
+                ) : (
+                  <EntBadge variant="danger">Bloklangan</EntBadge>
+                )}
               </div>
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
-    </div>
+
+            {/* Fields */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "120px 1fr",
+                gap: "4px 8px",
+                fontSize: 12,
+                alignItems: "baseline",
+              }}
+            >
+              <div className="ent-muted">FIO:</div>
+              <div style={{ fontWeight: 600 }}>{selected.full_name || "—"}</div>
+
+              <div className="ent-muted">Talaba ID:</div>
+              <div className="ent-cell--code">
+                {selected.student_id_number || "—"}
+              </div>
+
+              <div className="ent-muted">Email/Login:</div>
+              <div>{selected.email || selected.login || "—"}</div>
+
+              <div className="ent-muted">Telefon:</div>
+              <div className="ent-cell--code">{selected.phone || "—"}</div>
+
+              <div className="ent-muted">Universitet:</div>
+              <div>{selected.university || "—"}</div>
+
+              <div className="ent-muted">Fakultet:</div>
+              <div>{selected.faculty || "—"}</div>
+
+              <div className="ent-muted">Mutaxassislik:</div>
+              <div>{selected.specialty || "—"}</div>
+
+              <div className="ent-muted">Guruh:</div>
+              <div>{selected.group || "—"}</div>
+
+              <div className="ent-muted">Kurs / Semestr:</div>
+              <div>
+                {selected.level || "—"}-kurs / {selected.semester || "—"}-semestr
+              </div>
+
+              <div className="ent-muted">Tug'ilgan sana:</div>
+              <div className="ent-cell--code">
+                {selected.birth_date
+                  ? new Date(Number(selected.birth_date)).toLocaleDateString(
+                      "uz-UZ",
+                    )
+                  : "—"}
+              </div>
+
+              <div className="ent-muted">Manzil:</div>
+              <div>{selected.address || "—"}</div>
+
+              <div className="ent-muted">Ro'yxatdan o'tgan:</div>
+              <div className="ent-cell--code">{formatDate(selected.createdAt)}</div>
+            </div>
+          </div>
+        )}
+      </EntDialog>
+    </EntPage>
   );
 }

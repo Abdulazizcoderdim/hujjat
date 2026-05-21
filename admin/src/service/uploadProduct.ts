@@ -11,6 +11,7 @@ export const createProduct = async (payload: {
   author: string;
   year: string;
   language: string;
+  shelfCode?: string;
   isCurriculumBook?: string;
   curriculumLinks?: string;
   onProgress: (percent: number) => void;
@@ -38,6 +39,9 @@ export const createProduct = async (payload: {
   }
   if (payload.language) {
     formData.append("language", payload.language);
+  }
+  if (payload.shelfCode) {
+    formData.append("shelfCode", payload.shelfCode);
   }
 
   if (payload.isCurriculumBook !== undefined) {

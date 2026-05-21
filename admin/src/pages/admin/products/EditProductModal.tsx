@@ -2,33 +2,31 @@ import {
   CurriculumLinkValue,
   CurriculumLinksFieldset,
 } from "@/components/CurriculumLinksFieldset";
-import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
+  EntBadge,
+  EntButton,
+  EntCheckbox,
+  EntDrawer,
+  EntField,
+  EntInput,
+  EntSelect,
+  EntTextarea,
+} from "@/components/enterprise";
 import $api from "@/http/axios";
-import { ICurriculumLink } from "@/interface";
+import { ICategory, ICurriculumLink } from "@/interface";
 import { fetchCurriculumLinks } from "@/service/edusystem";
 import { useQuery } from "@tanstack/react-query";
 import { AlertCircle, GraduationCap } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-export function EditProductModal({ id, isOpen, onClose, onSave }: any) {
+interface Props {
+  id: number | null;
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (data: FormData) => void;
+}
+
+export function EditProductModal({ id, isOpen, onClose, onSave }: Props) {
   const [formData, setFormData] = useState<any>({});
   const [file, setFile] = useState<File | null>(null);
   const [poster, setPoster] = useState<File | null>(null);
@@ -62,6 +60,7 @@ export function EditProductModal({ id, isOpen, onClose, onSave }: any) {
         description: product.description,
         categoryId: String(product.category?.id ?? ""),
         tags: product.tags?.join(", ") ?? "",
+        shelfCode: product.shelfCode ?? "",
         author: product.author ?? "",
         pages: product.pages ?? "",
         year: product.year ?? "",
@@ -104,12 +103,9 @@ export function EditProductModal({ id, isOpen, onClose, onSave }: any) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (linkErrors) return;
-
     const data = new FormData();
-    Object.entries(formData).forEach(([key, val]) => {
-      if (val !== undefined && val !== null && val !== "") {
-        data.append(key, String(val));
-      }
+    Object.entries(formData).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== "") data.append(k, String(v));
     });
     if (file) data.append("file", file);
     if (poster) data.append("poster", poster);
@@ -130,179 +126,234 @@ export function EditProductModal({ id, isOpen, onClose, onSave }: any) {
     onSave(data);
   };
 
-  if (isLoading) return null;
-
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Mahsulotni tahrirlash</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 py-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2 space-y-2">
-              <Label>Nomi *</Label>
-              <Input
-                value={formData.name || ""}
+    <EntDrawer
+      open={isOpen}
+      onClose={onClose}
+      title="Mahsulotni tahrirlash"
+      width={640}
+      footer={
+        <>
+          <EntButton onClick={onClose}>Bekor qilish</EntButton>
+          <EntButton
+            variant="primary"
+            disabled={!!linkErrors}
+            onClick={(e) => handleSubmit(e as any)}
+          >
+            Saqlash
+          </EntButton>
+        </>
+      }
+    >
+      {isLoading || !product ? (
+        <div className="ent-empty" style={{ border: 0 }}>
+          Yuklanmoqda...
+        </div>
+      ) : (
+        <form className="ent-stack-y" onSubmit={handleSubmit}>
+          <EntField label="Nom" required>
+            <EntInput
+              value={formData.name || ""}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
+              required
+            />
+          </EntField>
+
+          <EntField label="Tavsif" required>
+            <EntTextarea
+              rows={3}
+              value={formData.description || ""}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
+              required
+            />
+          </EntField>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: 8,
+            }}
+          >
+            <EntField label="Kategoriya" required>
+              <EntSelect
+                value={formData.categoryId || ""}
                 onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
+                  setFormData({ ...formData, categoryId: e.target.value })
                 }
                 required
-              />
-            </div>
-
-            <div className="col-span-2 space-y-2">
-              <Label>Tavsif *</Label>
-              <Textarea
-                value={formData.description || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
-                }
-                rows={3}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Kategoriya *</Label>
-              <Select
-                value={formData.categoryId}
-                onValueChange={(v) =>
-                  setFormData({ ...formData, categoryId: v })
-                }
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Kategoriya tanlang" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories?.items.map((cat: any) => (
-                    <SelectItem key={cat.id} value={String(cat.id)}>
-                      {cat.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                <option value="">— tanlang —</option>
+                {categories?.items?.map((c: ICategory) => (
+                  <option key={c.id} value={String(c.id)}>
+                    {c.name}
+                  </option>
+                ))}
+              </EntSelect>
+            </EntField>
 
-            <div className="space-y-2">
-              <Label>Muallif</Label>
-              <Input
+            <EntField label="Javon raqami (shifr)">
+              <EntInput
+                mono
+                value={formData.shelfCode || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, shelfCode: e.target.value })
+                }
+                placeholder="728.4"
+                maxLength={64}
+              />
+            </EntField>
+
+            <EntField label="Muallif">
+              <EntInput
                 value={formData.author || ""}
                 onChange={(e) =>
                   setFormData({ ...formData, author: e.target.value })
                 }
               />
-            </div>
+            </EntField>
 
-            <div className="space-y-2">
-              <Label>Sahifalar soni</Label>
-              <Input
+            <EntField label="Til">
+              <EntInput
+                value={formData.language || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, language: e.target.value })
+                }
+              />
+            </EntField>
+
+            <EntField label="Sahifalar soni">
+              <EntInput
                 type="number"
                 value={formData.pages || ""}
                 onChange={(e) =>
                   setFormData({ ...formData, pages: e.target.value })
                 }
               />
-            </div>
+            </EntField>
 
-            <div className="space-y-2">
-              <Label>Yil</Label>
-              <Input
+            <EntField label="Nashr yili">
+              <EntInput
                 type="number"
                 value={formData.year || ""}
                 onChange={(e) =>
                   setFormData({ ...formData, year: e.target.value })
                 }
               />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Til</Label>
-              <Input
-                value={formData.language || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, language: e.target.value })
-                }
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Teglar (vergul bilan)</Label>
-              <Input
-                value={formData.tags || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, tags: e.target.value })
-                }
-              />
-            </div>
-
-            <div className="border-t col-span-2 pt-4 mt-2 grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-blue-600">Yangi Hujjat yuklash</Label>
-                <Input
-                  type="file"
-                  onChange={(e) => setFile(e.target.files?.[0] || null)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-blue-600">Yangi Poster yuklash</Label>
-                <Input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setPoster(e.target.files?.[0] || null)}
-                />
-              </div>
-            </div>
-
-            <div className="col-span-2 border-t pt-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <Label className="flex items-center gap-2 text-sm font-medium">
-                  <GraduationCap className="h-4 w-4 text-primary" />
-                  O'quv reja kitobi
-                </Label>
-                <div className="flex items-center gap-2">
-                  <Switch
-                    checked={isCurriculumBook}
-                    onCheckedChange={(v) => {
-                      setIsCurriculumBook(v);
-                      if (!v) setCurriculumLinks([]);
-                    }}
-                  />
-                  <span className="text-sm text-muted-foreground">
-                    {isCurriculumBook ? "Ha" : "Yo'q"}
-                  </span>
-                </div>
-              </div>
-
-              {isCurriculumBook && (
-                <>
-                  <CurriculumLinksFieldset
-                    value={curriculumLinks}
-                    onChange={setCurriculumLinks}
-                  />
-                  {linkErrors && (
-                    <p
-                      className="flex items-center gap-1.5 text-xs text-destructive"
-                      role="alert"
-                    >
-                      <AlertCircle className="h-3.5 w-3.5" /> {linkErrors}
-                    </p>
-                  )}
-                </>
-              )}
-            </div>
+            </EntField>
           </div>
 
-          <DialogFooter className="pt-6">
-            <Button type="button" variant="outline" onClick={onClose}>
-              Bekor qilish
-            </Button>
-            <Button type="submit" disabled={!!linkErrors}>
-              Saqlash
-            </Button>
-          </DialogFooter>
+          <EntField label="Teglar (vergul bilan)">
+            <EntInput
+              value={formData.tags || ""}
+              onChange={(e) =>
+                setFormData({ ...formData, tags: e.target.value })
+              }
+              placeholder="masalan: roman, klassik"
+            />
+          </EntField>
+
+          <div
+            style={{
+              borderTop: "1px solid var(--ent-border)",
+              paddingTop: 8,
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: 8,
+            }}
+          >
+            <EntField label="Yangi hujjat fayli (ixtiyoriy)">
+              <input
+                type="file"
+                className="ent-input"
+                onChange={(e) => setFile(e.target.files?.[0] || null)}
+                style={{ padding: 2 }}
+              />
+            </EntField>
+            <EntField label="Yangi poster (ixtiyoriy)">
+              <input
+                type="file"
+                className="ent-input"
+                accept="image/*"
+                onChange={(e) => setPoster(e.target.files?.[0] || null)}
+                style={{ padding: 2 }}
+              />
+            </EntField>
+          </div>
+
+          {/* Curriculum block */}
+          <div
+            style={{
+              borderTop: "1px solid var(--ent-border)",
+              paddingTop: 8,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: 6,
+              }}
+            >
+              <div
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  fontSize: 12,
+                  fontWeight: 600,
+                }}
+              >
+                <GraduationCap size={14} />
+                O'quv reja kitobi
+              </div>
+              <EntCheckbox
+                checked={isCurriculumBook}
+                onChange={(v) => {
+                  setIsCurriculumBook(v);
+                  if (!v) setCurriculumLinks([]);
+                }}
+                label={
+                  <EntBadge variant={isCurriculumBook ? "success" : "muted"}>
+                    {isCurriculumBook ? "Ha" : "Yo'q"}
+                  </EntBadge>
+                }
+              />
+            </div>
+
+            {isCurriculumBook && (
+              <>
+                <CurriculumLinksFieldset
+                  value={curriculumLinks}
+                  onChange={setCurriculumLinks}
+                />
+                {linkErrors && (
+                  <p
+                    style={{
+                      display: "flex",
+                      gap: 4,
+                      alignItems: "center",
+                      color: "var(--ent-danger)",
+                      fontSize: 11,
+                      marginTop: 4,
+                    }}
+                    role="alert"
+                  >
+                    <AlertCircle size={12} /> {linkErrors}
+                  </p>
+                )}
+              </>
+            )}
+          </div>
+
+          <button type="submit" style={{ display: "none" }} />
         </form>
-      </DialogContent>
-    </Dialog>
+      )}
+    </EntDrawer>
   );
 }

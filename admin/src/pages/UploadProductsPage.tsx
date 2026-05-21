@@ -1,3 +1,4 @@
+import { EntPage, EntToolbar } from "@/components/enterprise";
 import { SingleUploadForm } from "@/components/SingleUploadForm";
 import $api from "@/http/axios";
 import { ICategory, IPagination } from "@/interface";
@@ -49,12 +50,13 @@ const UploadProductsPage = () => {
         author: String(formData.get("author") || ""),
         year: String(formData.get("year") || ""),
         language: String(formData.get("language") || ""),
+        shelfCode: String(formData.get("shelfCode") || ""),
         isCurriculumBook: String(formData.get("isCurriculumBook") || "false"),
         curriculumLinks: String(formData.get("curriculumLinks") || ""),
         onProgress,
       });
 
-      toast.success(`"${product.name}" muvaffaqiyatli saqlandi ✅`);
+      toast.success(`"${product.name}" muvaffaqiyatli saqlandi`);
     } catch (err: any) {
       const msg = err?.response?.data?.message;
       toast.error(
@@ -65,22 +67,15 @@ const UploadProductsPage = () => {
   };
 
   return (
-    <div className="mx-auto w-full space-y-6">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
-          Hujjat yuklash
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Yangi kitob yoki hujjatni kutubxonaga qo'shing. Majburiy maydonlar{" "}
-          <span className="text-destructive">*</span> bilan belgilangan.
-        </p>
-      </header>
-
-      <SingleUploadForm
-        categories={data?.items ?? []}
-        onSubmit={handleSingleUpload}
-      />
-    </div>
+    <EntPage>
+      <EntToolbar title="Hujjat yuklash" />
+      <div style={{ padding: 6 }}>
+        <SingleUploadForm
+          categories={data?.items ?? []}
+          onSubmit={handleSingleUpload}
+        />
+      </div>
+    </EntPage>
   );
 };
 

@@ -1,23 +1,31 @@
-import { DataTable } from "@/components/admin/DataTable";
-import { PageHeader } from "@/components/admin/PageHeader";
-import { ProductStatusBadge } from "@/components/admin/ProductStatusBadge";
-import { StatCard } from "@/components/admin/StatCard";
+import {
+  EntBadge,
+  EntButton,
+  EntCard,
+  EntGrid,
+  EntPage,
+  EntStatCard,
+  EntTable,
+  EntTableWrap,
+  EntToolbar,
+} from "@/components/enterprise";
 import ProductAnalyticsChart from "@/components/ProductAnalyticsChart";
-import { Button } from "@/components/ui/button";
-import { formatCurrency } from "@/hooks/format-currency";
 import $api from "@/http/axios";
 import { ICategory, IProduct, ProductStatus } from "@/interface";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, Clock, Package, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-interface ProductChartPoint {
-  name: string;
-  total: number;
-  approved: number;
-  pending: number;
-  disabled: number;
-  rejected: number;
+interface UsersStats {
+  totalUsers?: string;
+  totalStudents?: string;
+  totalAdmins?: string;
+  totalProducts?: string;
+  growth?: {
+    users?: string;
+    students?: string;
+    admins?: string;
+    products?: string;
+  };
 }
 
 interface ProductByStatus {
@@ -30,197 +38,235 @@ interface ProductByStatus {
   };
 }
 
+const fmtNum = (v?: string | number) => {
+  if (v === undefined || v === null) return "—";
+  const n = typeof v === "string" ? Number(v) : v;
+  if (isNaN(n)) return String(v);
+  return n.toLocaleString("uz-UZ");
+};
+
+const fmtPct = (raw?: string) => {
+  if (!raw) return null;
+  const n = Number(raw);
+  if (isNaN(n) || n === 0) return null;
+  const sign = n > 0 ? "▲" : "▼";
+  return `${sign} ${Math.abs(n).toFixed(1)}%`;
+};
+
+const fmtDate = (iso?: string) => {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString("uz-UZ", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+};
+
 export function DashboardPage() {
   const navigate = useNavigate();
 
-  const { data: usersStats, isLoading: usersStatsLoading } = useQuery<{
-    totalUsers: string;
-    totalStudents: string;
-    totalAdmins: string;
-    totalProducts: string;
-    growth: {
-      users: string;
-      students: string;
-      admins: string;
-      products: string;
-    };
-  }>({
+  const { data: stats, isLoading: statsLoading } = useQuery<UsersStats>({
     queryKey: ["users-stats"],
-    queryFn: async () => {
-      const res = await $api.get(`/users/stats`);
-      return res.data;
-    },
+    queryFn: async () => (await $api.get(`/users/stats`)).data,
   });
 
-  const {
-    data: approvedProducts = { items: [], pagination: {} as any },
-    isLoading: approvedProductsLoading,
-  } = useQuery<ProductByStatus>({
-    queryKey: ["products-by-status", ProductStatus.APPROVED],
-    queryFn: async () => {
-      const res = await $api.get(
-        `/products?status=${ProductStatus.APPROVED}&page=1&limit=5`,
-      );
-      return res.data;
-    },
-  });
+  const { data: approved, isLoading: approvedLoading } =
+    useQuery<ProductByStatus>({
+      queryKey: ["dashboard-recent", ProductStatus.APPROVED],
+      queryFn: async () =>
+        (
+          await $api.get(
+            `/products?status=${ProductStatus.APPROVED}&page=1&limit=8`,
+          )
+        ).data,
+    });
 
   return (
-    <div className="space-y-8 p-4 md:p-6 bg-slate-50/50 dark:bg-slate-950 min-h-screen transition-colors duration-300">
-      <div className="bg-blue-500 dark:bg-slate-900/60 border border-blue-100 dark:border-blue-900/30 rounded-2xl p-4 sm:p-6 shadow-lg mb-6">
-        <PageHeader
-          isBlue={true}
-          title="Boshqaruv paneli"
-          description="Osiyo texnologiyalar universiteti kutubxonasi statistikasi va umumiy ko'rinishi"
-          // actions={}
-        />
-      </div>
+    <EntPage>
+      <EntToolbar title="Boshqaruv paneli" />
 
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {usersStatsLoading ? (
-          <p>Loading...</p>
-        ) : (
-          [
-            {
-              title: "Jami studentlar",
-              value: usersStats?.totalStudents || 0,
-              icon: Users,
-              trend: usersStats
-                ? parseFloat(usersStats?.growth?.students || "0")
-                : 0,
-              color: "text-blue-600 dark:text-blue-400",
-              bg: "bg-blue-100 dark:bg-blue-900/40",
-            },
-            {
-              title: "Jami kitoblar",
-              value: usersStats?.totalProducts,
-              icon: Package,
-              trend: usersStats
-                ? parseFloat(usersStats?.growth?.products || "0")
-                : 0,
-              color: "text-sky-600 dark:text-sky-400",
-              bg: "bg-sky-100 dark:bg-sky-900/40",
-            },
-            {
-              title: "Jami adminlar",
-              value: usersStats?.totalAdmins,
-              icon: Users,
-              trend: usersStats
-                ? parseFloat(usersStats?.growth?.admins || "0")
-                : 0,
-              color: "text-sky-600 dark:text-sky-400",
-              bg: "bg-sky-100 dark:bg-sky-900/40",
-            },
-          ].map((item, idx) => (
-            <div
-              key={idx}
-              className="group relative overflow-hidden rounded-2xl bg-white dark:bg-slate-900 p-6 border border-blue-100 dark:border-slate-800 shadow-lg transition-all hover:shadow-md hover:-translate-y-1"
-            >
-              <StatCard
-                title={item.title}
-                value={item.value?.toLocaleString() || "0"}
-                icon={item.icon}
-                trend={{ value: item.trend, isPositive: true }}
-              />
-              <div
-                className={`absolute -right-6 -top-6 h-24 w-24 rounded-full ${item.bg} opacity-20 dark:opacity-10 group-hover:scale-150 transition-transform duration-500`}
-              />
-            </div>
-          ))
-        )}
-      </div>
+      <div style={{ padding: 6 }}>
+        {/* Stat row */}
+        <EntGrid cols={4}>
+          <EntStatCard
+            label="Jami foydalanuvchi"
+            value={statsLoading ? "…" : fmtNum(stats?.totalUsers)}
+            delta={fmtPct(stats?.growth?.users) ?? undefined}
+            deltaDir={
+              fmtPct(stats?.growth?.users)?.startsWith("▲")
+                ? "up"
+                : fmtPct(stats?.growth?.users)?.startsWith("▼")
+                  ? "down"
+                  : undefined
+            }
+          />
+          <EntStatCard
+            label="Talabalar"
+            value={statsLoading ? "…" : fmtNum(stats?.totalStudents)}
+            delta={fmtPct(stats?.growth?.students) ?? undefined}
+            deltaDir={
+              fmtPct(stats?.growth?.students)?.startsWith("▲")
+                ? "up"
+                : fmtPct(stats?.growth?.students)?.startsWith("▼")
+                  ? "down"
+                  : undefined
+            }
+          />
+          <EntStatCard
+            label="Adminlar"
+            value={statsLoading ? "…" : fmtNum(stats?.totalAdmins)}
+            delta={fmtPct(stats?.growth?.admins) ?? undefined}
+            deltaDir={
+              fmtPct(stats?.growth?.admins)?.startsWith("▲")
+                ? "up"
+                : fmtPct(stats?.growth?.admins)?.startsWith("▼")
+                  ? "down"
+                  : undefined
+            }
+          />
+          <EntStatCard
+            label="Kitoblar"
+            value={statsLoading ? "…" : fmtNum(stats?.totalProducts)}
+            delta={fmtPct(stats?.growth?.products) ?? undefined}
+            deltaDir={
+              fmtPct(stats?.growth?.products)?.startsWith("▲")
+                ? "up"
+                : fmtPct(stats?.growth?.products)?.startsWith("▼")
+                  ? "down"
+                  : undefined
+            }
+          />
+        </EntGrid>
 
-      <ProductAnalyticsChart />
+        {/* Chart */}
+        <div style={{ marginTop: 8 }}>
+          <EntCard
+            title="Kitoblar dinamikasi · so'nggi 7 kun"
+            noPadding
+            actions={
+              <EntButton
+                size="xs"
+                onClick={() => navigate("/products/approved")}
+              >
+                Barchasi →
+              </EntButton>
+            }
+          >
+            <ProductAnalyticsChart />
+          </EntCard>
+        </div>
 
-      {/* Tables Grid */}
-      <div className="grid gap-8 lg:grid-cols-2">
-        <div className="rounded-2xl bg-white dark:bg-slate-900 border border-blue-100 dark:border-slate-800 shadow-lg overflow-hidden flex flex-col">
-          <div className="flex items-center justify-between p-4 sm:p-5 border-b border-blue-50 dark:border-slate-800 bg-blue-500 dark:bg-slate-800/50">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="p-2 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-lg">
-                <Clock className="h-5 w-5" />
-              </div>
-              <h3 className="font-bold text-sm sm:text-base text-white dark:text-slate-100">
-                Oxirgi yuklangan hujjatlar
-              </h3>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate("/products/approved")}
-              className="text-xs sm:text-sm"
-            >
-              Barchasi <ArrowRight className="ml-1 h-4 w-4" />
-            </Button>
-          </div>
-
-          <div className="flex-1 p-2">
-            {approvedProductsLoading ? (
-              <div className="p-12 text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-              </div>
-            ) : approvedProducts?.items?.length === 0 ? (
-              <div className="p-8 text-center text-muted-foreground text-sm">
-                Kutilayotgan mahsulot yo'q
-              </div>
-            ) : (
-              <>
-                {/* Desktop */}
-                <div className="hidden sm:block">
-                  <DataTable
-                    columns={[
-                      {
-                        key: "name",
-                        header: "Nomi",
-                        className:
-                          "text-slate-500 dark:text-slate-400 font-medium",
-                      },
-                      {
-                        key: "language",
-                        header: "Tili",
-                        className:
-                          "text-slate-500 dark:text-slate-400 font-medium",
-                        render: (p) => (
-                          <span className="font-semibold text-slate-700 dark:text-slate-200">
-                            {p.language}
-                          </span>
-                        ),
-                      },
-                      {
-                        key: "status",
-                        header: "Holati",
-                        className:
-                          "text-slate-500 dark:text-slate-400 font-medium",
-                        render: (p) => <ProductStatusBadge status={p.status} />,
-                      },
-                    ]}
-                    data={approvedProducts.items}
-                    keyExtractor={(p) => p.id.toString()}
-                    emptyMessage="Kutilayotgan mahsulot yo'q"
-                  />
-                </div>
-
-                {/* Mobile */}
-                <div className="sm:hidden divide-y divide-slate-100 dark:divide-slate-800">
-                  {approvedProducts.items.map((p) => (
-                    <div key={p.id} className="p-3 space-y-2">
-                      <p className="font-medium text-sm text-slate-700 dark:text-slate-200 truncate">
-                        {p.name}
-                      </p>
-                      <div className="flex items-center justify-between">
-                        <span className="font-semibold text-slate-700 dark:text-slate-200">
-                          {formatCurrency(p.price)}
-                        </span>
-                        <ProductStatusBadge status={p.status} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
+        {/* Recent uploaded */}
+        <div style={{ marginTop: 8 }}>
+          <EntCard
+            title="So'nggi yuklangan hujjatlar"
+            noPadding
+            actions={
+              <EntButton
+                size="xs"
+                onClick={() => navigate("/products/approved")}
+              >
+                Barchasi →
+              </EntButton>
+            }
+          >
+            <EntTableWrap style={{ borderTop: 0, border: 0 }}>
+              <EntTable>
+                <thead>
+                  <tr>
+                    <th style={{ width: 40 }}>#</th>
+                    <th style={{ width: 50 }}>Poster</th>
+                    <th>Nom</th>
+                    <th style={{ width: 180 }}>Muallif</th>
+                    <th style={{ width: 110 }}>Shifr</th>
+                    <th style={{ width: 80 }}>Til</th>
+                    <th style={{ width: 100 }}>Holat</th>
+                    <th style={{ width: 110 }}>Sana</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {approvedLoading ? (
+                    <tr>
+                      <td colSpan={8} className="ent-empty">
+                        Yuklanmoqda...
+                      </td>
+                    </tr>
+                  ) : (approved?.items ?? []).length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="ent-empty">
+                        Hozircha yozuv yo'q
+                      </td>
+                    </tr>
+                  ) : (
+                    approved!.items.map((p, idx) => {
+                      const anyP = p as any;
+                      return (
+                        <tr
+                          key={p.id}
+                          style={{ cursor: "pointer" }}
+                          onClick={() => navigate(`/products/approved`)}
+                          title="Mahsulot ro'yxatiga o'tish"
+                        >
+                          <td className="ent-cell--num ent-muted">{idx + 1}</td>
+                          <td>
+                            {p.poster ? (
+                              <img
+                                src={p.poster}
+                                alt=""
+                                style={{
+                                  width: 32,
+                                  height: 44,
+                                  objectFit: "cover",
+                                  border: "1px solid var(--ent-border)",
+                                }}
+                              />
+                            ) : (
+                              <div
+                                style={{
+                                  width: 32,
+                                  height: 44,
+                                  background: "var(--ent-bg)",
+                                  border: "1px solid var(--ent-border)",
+                                }}
+                              />
+                            )}
+                          </td>
+                          <td style={{ fontWeight: 500 }}>{p.name}</td>
+                          <td className="ent-muted">{p.author || "—"}</td>
+                          <td className="ent-cell--code">
+                            {anyP.shelfCode || (
+                              <span className="ent-muted">—</span>
+                            )}
+                          </td>
+                          <td className="ent-muted">{p.language || "—"}</td>
+                          <td>
+                            <EntBadge
+                              variant={
+                                p.status === ProductStatus.APPROVED
+                                  ? "success"
+                                  : "danger"
+                              }
+                            >
+                              {p.status === ProductStatus.APPROVED
+                                ? "Tasdiqlangan"
+                                : "Rad etilgan"}
+                            </EntBadge>
+                          </td>
+                          <td className="ent-cell--code ent-muted">
+                            {fmtDate(p.createdAt)}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </EntTable>
+            </EntTableWrap>
+          </EntCard>
         </div>
       </div>
-    </div>
+    </EntPage>
   );
 }

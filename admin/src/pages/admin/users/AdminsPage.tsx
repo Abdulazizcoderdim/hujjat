@@ -1,23 +1,24 @@
-import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
-import { DataTable } from "@/components/admin/DataTable";
-import { PageHeader } from "@/components/admin/PageHeader";
-import { StatusBadge } from "@/components/admin/StatusBadge";
-import { Pagination } from "@/components/common/Pagination";
-import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { formatDateTime } from "@/hooks/formatDateTime";
+  EntBadge,
+  EntButton,
+  EntConfirmDialog,
+  EntDrawer,
+  EntField,
+  EntFilterBar,
+  EntFilterField,
+  EntInput,
+  EntPage,
+  EntPagination,
+  EntTable,
+  EntTableWrap,
+  EntToolbar,
+} from "@/components/enterprise";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useToast } from "@/hooks/use-toast";
 import $api from "@/http/axios";
 import { IPagination, IUser, UserRole } from "@/interface";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Pencil, Search, Trash2 } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 interface BuyerResponse {
@@ -25,24 +26,37 @@ interface BuyerResponse {
   pagination: IPagination;
 }
 
+const LIMIT_DEFAULT = 25;
+
+const fmtDate = (iso?: string | Date) => {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString("uz-UZ", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+};
+
 export function AdminsPage() {
-  const queryClient = useQueryClient();
+  const qc = useQueryClient();
   const { toast } = useToast();
 
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [userToDelete, setUserToDelete] = useState<IUser | null>(null);
-  const debouncedSearch = useDebounce(searchQuery, 500);
-  const [editingUser, setEditingUser] = useState<IUser | null>(null);
+  const [limit] = useState(LIMIT_DEFAULT);
+  const [search, setSearch] = useState("");
+  const debounced = useDebounce(search, 350);
+
+  const [editing, setEditing] = useState<IUser | null>(null);
   const [editForm, setEditForm] = useState({
     full_name: "",
     email: "",
     phone: "",
     password: "",
   });
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [addDialogOpen, setAddDialogOpen] = useState(false);
+
+  const [adding, setAdding] = useState(false);
   const [addForm, setAddForm] = useState({
     full_name: "",
     email: "",
@@ -51,50 +65,27 @@ export function AdminsPage() {
     password: "",
   });
 
-  const addMutation = useMutation({
-    mutationFn: (data: any) => $api.post("/users/create-admin", data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admins"] });
-      toast({ title: "Admin muvaffaqiyatli yaratildi" });
-      setAddDialogOpen(false);
-      setAddForm({
-        full_name: "",
-        email: "",
-        login: "",
-        phone: "",
-        password: "",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Xatolik",
-        description:
-          error.response?.data?.message || "Yaratishda xatolik yuz berdi",
-        variant: "destructive",
-      });
-    },
-  });
+  const [confirmDel, setConfirmDel] = useState<IUser | null>(null);
 
   useEffect(() => {
-    if (editingUser) {
+    setPage(1);
+  }, [debounced]);
+
+  useEffect(() => {
+    if (editing) {
       setEditForm({
-        full_name: editingUser.full_name || "",
-        email: editingUser.email || "",
-        phone: editingUser.phone || "",
+        full_name: editing.full_name || "",
+        email: editing.email || "",
+        phone: editing.phone || "",
         password: "",
       });
     }
-  }, [editingUser]);
+  }, [editing]);
 
-  const { data } = useQuery<BuyerResponse>({
-    queryKey: ["admins", { page, debouncedSearch, limit }],
+  const { data, isLoading, isFetching } = useQuery<BuyerResponse>({
+    queryKey: ["admins", { page, debounced, limit }],
     queryFn: async () => {
-      const params: Record<string, any> = {
-        page,
-        limit,
-        search: debouncedSearch,
-      };
-
+      const params = { page, limit, search: debounced };
       const res = await $api.get(`/users/role/${UserRole.ADMIN}`, { params });
       return res.data;
     },
@@ -105,360 +96,372 @@ export function AdminsPage() {
       },
   });
 
+  const items = data?.items ?? [];
   const pagination = data?.pagination;
 
-  const updateMutation = useMutation({
-    mutationFn: (data: any) => $api.patch(`/users/${editingUser?.id}`, data),
+  const addMu = useMutation({
+    mutationFn: (payload: typeof addForm) =>
+      $api.post("/users/create-admin", payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admins"] });
-      toast({ title: "Ma'lumotlar muvaffaqiyatli yangilandi" });
-      setEditingUser(null);
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Xatolik",
-        description:
-          error.response?.data?.message || "Yangilashda xatolik yuz berdi",
-        variant: "destructive",
+      qc.invalidateQueries({ queryKey: ["admins"] });
+      toast({ title: "Admin yaratildi" });
+      setAdding(false);
+      setAddForm({
+        full_name: "",
+        email: "",
+        login: "",
+        phone: "",
+        password: "",
       });
     },
+    onError: (err: any) =>
+      toast({
+        title: "Xato",
+        description: err?.response?.data?.message || "Yaratishda xato",
+        variant: "destructive",
+      }),
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => $api.delete(`/users/${id}`),
+  const updateMu = useMutation({
+    mutationFn: (payload: any) => $api.patch(`/users/${editing?.id}`, payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admins"] });
-      toast({ title: "Admin muvaffaqiyatli o'chirildi" });
-      setDeleteDialogOpen(false);
-      setUserToDelete(null);
+      qc.invalidateQueries({ queryKey: ["admins"] });
+      toast({ title: "Yangilandi" });
+      setEditing(null);
     },
-    onError: (error: any) => {
+    onError: (err: any) =>
       toast({
-        title: "Xatolik",
-        description:
-          error.response?.data?.message || "O'chirishda xatolik yuz berdi",
+        title: "Xato",
+        description: err?.response?.data?.message || "Yangilashda xato",
         variant: "destructive",
-      });
+      }),
+  });
+
+  const deleteMu = useMutation({
+    mutationFn: (id: number) => $api.delete(`/users/${id}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admins"] });
+      toast({ title: "O'chirildi" });
+      setConfirmDel(null);
     },
+    onError: (err: any) =>
+      toast({
+        title: "Xato",
+        description: err?.response?.data?.message || "O'chirishda xato",
+        variant: "destructive",
+      }),
   });
 
   const handleUpdate = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingUser) return;
-
+    if (!editing) return;
     const payload: any = {
       full_name: editForm.full_name,
       email: editForm.email,
       phone: editForm.phone,
     };
-
-    if (editForm.password && editForm.password.length >= 6) {
+    if (editForm.password && editForm.password.length >= 4) {
       payload.password = editForm.password;
     }
-
-    updateMutation.mutate(payload);
-  };
-
-  const handleDelete = (user: IUser) => {
-    setDeleteDialogOpen(true);
-    setUserToDelete(user);
+    updateMu.mutate(payload);
   };
 
   return (
-    <div className="space-y-6">
-      <PageHeader
+    <EntPage>
+      <EntToolbar
         title="Adminlar"
-        description="Platformadagi barcha adminlar ro'yxati"
-      />
-
-      <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Ism bo'yicha qidirish..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 bg-card border-border"
-          />
-        </div>
-
-        <Button onClick={() => setAddDialogOpen(true)}>Admin qo'shish</Button>
-      </div>
-
-      <DataTable
-        columns={[
-          {
-            key: "index",
-            header: "№",
-            render: (_o, index) =>
-              (data?.pagination?.page - 1) * data?.pagination?.limit +
-              (index + 1),
-          },
-          {
-            key: "full_name",
-            header: "Ism",
-            render: (user) => (
-              <div className="flex items-center gap-3">
-                <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center">
-                  <span className="text-sm font-medium text-primary">
-                    {user.full_name?.charAt(0) || "?"}
-                  </span>
-                </div>
-                <span className="font-medium text-foreground">
-                  {user.full_name || "Noma'lum"}
-                </span>
-              </div>
-            ),
-          },
-          {
-            key: "email",
-            header: "Email",
-            render: (user) => user.email || "—",
-          },
-          {
-            key: "phone",
-            header: "Telefon",
-            render: (user) => user.phone || "—",
-          },
-          {
-            key: "is_active",
-            header: "Holati",
-            render: (user) => (
-              <StatusBadge status={user.is_active ? "active" : "blocked"} />
-            ),
-          },
-          {
-            key: "createdAt",
-            header: "Ro'yxatdan o'tgan",
-            render: (user) => formatDateTime(user.createdAt),
-          },
-          {
-            key: "actions",
-            header: "Amallar",
-            render: (user) => (
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setEditingUser(user);
-                  }}
-                  className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDelete(user);
-                  }}
-                  className="h-8 w-8 text-destructive hover:text-destructive/80"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            ),
-          },
-        ]}
-        data={data.items || []}
-        keyExtractor={(user) => user.id.toString()}
-      />
-
-      <Pagination
-        page={page}
-        totalPages={pagination?.totalPages ?? 1}
-        limit={limit}
-        total={pagination?.total}
-        onPageChange={(p) => setPage(p)}
-        onLimitChange={(l) => setLimit(l)}
-      />
-
-      <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Yangi Admin qo'shish</DialogTitle>
-          </DialogHeader>
-
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              addMutation.mutate(addForm);
-            }}
-            className="space-y-4 py-4"
+        actions={
+          <EntButton
+            variant="primary"
+            onClick={() => setAdding(true)}
+            size="sm"
           >
-            <div className="space-y-2">
-              <label className="text-sm font-medium">To'liq ism</label>
-              <Input
-                value={addForm.full_name}
-                onChange={(e) =>
-                  setAddForm({ ...addForm, full_name: e.target.value })
-                }
-                placeholder="F.I.O"
-              />
-            </div>
+            <Plus size={14} />
+            Admin qo'shish
+          </EntButton>
+        }
+      />
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Email</label>
-              <Input
-                type="email"
-                value={addForm.email}
-                onChange={(e) =>
-                  setAddForm({ ...addForm, email: e.target.value })
-                }
-                placeholder="example@mail.com"
-                required
-              />
-            </div>
+      <EntFilterBar>
+        <EntFilterField label="Qidiruv">
+          <EntInput
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Ism yoki email"
+            style={{ width: 280 }}
+          />
+        </EntFilterField>
+        <div style={{ marginLeft: "auto" }} className="ent-muted">
+          {isFetching && "yuklanmoqda..."}
+        </div>
+      </EntFilterBar>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Login</label>
-              <Input
-                value={addForm.login}
-                onChange={(e) =>
-                  setAddForm({ ...addForm, login: e.target.value })
-                }
-                placeholder="Login"
-              />
-            </div>
+      <EntTableWrap style={{ flex: 1, minHeight: 0 }}>
+        <EntTable>
+          <thead>
+            <tr>
+              <th style={{ width: 40 }}>#</th>
+              <th>Ism</th>
+              <th style={{ width: 220 }}>Email</th>
+              <th style={{ width: 150 }}>Telefon</th>
+              <th style={{ width: 90 }}>Holat</th>
+              <th style={{ width: 110 }}>Sana</th>
+              <th style={{ width: 90 }}>Amallar</th>
+            </tr>
+          </thead>
+          <tbody>
+            {isLoading ? (
+              <tr>
+                <td colSpan={7} className="ent-empty">
+                  Yuklanmoqda...
+                </td>
+              </tr>
+            ) : items.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="ent-empty">
+                  Admin topilmadi
+                </td>
+              </tr>
+            ) : (
+              items.map((u, idx) => (
+                <tr key={u.id}>
+                  <td className="ent-cell--num ent-muted">
+                    {(page - 1) * limit + idx + 1}
+                  </td>
+                  <td>
+                    <div style={{ fontWeight: 500 }}>
+                      {u.full_name || "Noma'lum"}
+                    </div>
+                    {u.login && (
+                      <div className="ent-muted" style={{ fontSize: 11 }}>
+                        {u.login}
+                      </div>
+                    )}
+                  </td>
+                  <td>{u.email || <span className="ent-muted">—</span>}</td>
+                  <td className="ent-cell--code">{u.phone || "—"}</td>
+                  <td>
+                    {u.is_active ? (
+                      <EntBadge variant="success">Faol</EntBadge>
+                    ) : (
+                      <EntBadge variant="danger">Bloklangan</EntBadge>
+                    )}
+                  </td>
+                  <td className="ent-cell--code ent-muted">
+                    {fmtDate(u.createdAt)}
+                  </td>
+                  <td>
+                    <div style={{ display: "flex", gap: 4 }}>
+                      <EntButton
+                        size="icon"
+                        title="Tahrirlash"
+                        onClick={() => setEditing(u)}
+                      >
+                        <Pencil size={14} />
+                      </EntButton>
+                      <EntButton
+                        size="icon"
+                        variant="danger"
+                        title="O'chirish"
+                        onClick={() => setConfirmDel(u)}
+                      >
+                        <Trash2 size={14} />
+                      </EntButton>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </EntTable>
+      </EntTableWrap>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Telefon</label>
-              <Input
-                value={addForm.phone}
-                onChange={(e) =>
-                  setAddForm({ ...addForm, phone: e.target.value })
-                }
-                placeholder="+998..."
-              />
-            </div>
+      {pagination && (
+        <EntPagination
+          page={page}
+          totalPages={pagination.totalPages}
+          total={pagination.total}
+          limit={limit}
+          onChange={setPage}
+        />
+      )}
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Parol</label>
-              <Input
-                type="password"
-                value={addForm.password}
-                onChange={(e) =>
-                  setAddForm({ ...addForm, password: e.target.value })
-                }
-                placeholder="Parol"
-                required
-                minLength={4}
-              />
-            </div>
-
-            <div className="flex justify-end gap-2 mt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setAddDialogOpen(false)}
-              >
-                Bekor qilish
-              </Button>
-              <Button type="submit" disabled={addMutation.isPending}>
-                {addMutation.isPending ? "Saqlanmoqda..." : "Qo'shish"}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={!!editingUser}
-        onOpenChange={(open) => !open && setEditingUser(null)}
+      {/* Add drawer */}
+      <EntDrawer
+        open={adding}
+        onClose={() => !addMu.isPending && setAdding(false)}
+        title="Yangi admin qo'shish"
+        width={460}
+        footer={
+          <>
+            <EntButton
+              disabled={addMu.isPending}
+              onClick={() => setAdding(false)}
+            >
+              Bekor qilish
+            </EntButton>
+            <EntButton
+              variant="primary"
+              disabled={addMu.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                addMu.mutate(addForm);
+              }}
+            >
+              {addMu.isPending ? "Saqlanmoqda..." : "Qo'shish"}
+            </EntButton>
+          </>
+        }
       >
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Admin tahrirlash</DialogTitle>
-          </DialogHeader>
+        <form
+          className="ent-stack-y"
+          onSubmit={(e) => {
+            e.preventDefault();
+            addMu.mutate(addForm);
+          }}
+        >
+          <EntField label="To'liq ism" required>
+            <EntInput
+              value={addForm.full_name}
+              onChange={(e) =>
+                setAddForm({ ...addForm, full_name: e.target.value })
+              }
+              placeholder="F.I.O"
+              required
+            />
+          </EntField>
+          <EntField label="Email" required>
+            <EntInput
+              type="email"
+              value={addForm.email}
+              onChange={(e) =>
+                setAddForm({ ...addForm, email: e.target.value })
+              }
+              placeholder="example@mail.com"
+              required
+            />
+          </EntField>
+          <EntField label="Login">
+            <EntInput
+              value={addForm.login}
+              onChange={(e) =>
+                setAddForm({ ...addForm, login: e.target.value })
+              }
+              placeholder="login"
+            />
+          </EntField>
+          <EntField label="Telefon">
+            <EntInput
+              value={addForm.phone}
+              onChange={(e) =>
+                setAddForm({ ...addForm, phone: e.target.value })
+              }
+              placeholder="+998..."
+            />
+          </EntField>
+          <EntField label="Parol" required hint="kamida 4 ta belgi">
+            <EntInput
+              type="password"
+              value={addForm.password}
+              onChange={(e) =>
+                setAddForm({ ...addForm, password: e.target.value })
+              }
+              minLength={4}
+              required
+            />
+          </EntField>
+          <button type="submit" style={{ display: "none" }} />
+        </form>
+      </EntDrawer>
 
-          <form onSubmit={handleUpdate} className="space-y-4 py-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">To'liq ism</label>
-              <Input
+      {/* Edit drawer */}
+      <EntDrawer
+        open={!!editing}
+        onClose={() => !updateMu.isPending && setEditing(null)}
+        title="Admin tahrirlash"
+        width={460}
+        footer={
+          <>
+            <EntButton
+              disabled={updateMu.isPending}
+              onClick={() => setEditing(null)}
+            >
+              Bekor qilish
+            </EntButton>
+            <EntButton
+              variant="primary"
+              disabled={updateMu.isPending}
+              onClick={(e) => handleUpdate(e as any)}
+            >
+              {updateMu.isPending ? "Saqlanmoqda..." : "Saqlash"}
+            </EntButton>
+          </>
+        }
+      >
+        {editing && (
+          <form className="ent-stack-y" onSubmit={handleUpdate}>
+            <EntField label="To'liq ism" required>
+              <EntInput
                 value={editForm.full_name}
                 onChange={(e) =>
                   setEditForm({ ...editForm, full_name: e.target.value })
                 }
-                placeholder="F.I.O"
                 required
               />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Email</label>
-              <Input
+            </EntField>
+            <EntField label="Email" required>
+              <EntInput
                 type="email"
                 value={editForm.email}
                 onChange={(e) =>
                   setEditForm({ ...editForm, email: e.target.value })
                 }
-                placeholder="example@mail.com"
                 required
               />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Telefon</label>
-              <Input
+            </EntField>
+            <EntField label="Telefon">
+              <EntInput
                 value={editForm.phone}
                 onChange={(e) =>
                   setEditForm({ ...editForm, phone: e.target.value })
                 }
                 placeholder="+998..."
               />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">
-                Yangi parol{" "}
-                <span className="text-muted-foreground font-normal text-xs">
-                  (ixtiyoriy)
-                </span>
-              </label>
-              <Input
+            </EntField>
+            <EntField
+              label="Yangi parol"
+              hint="ixtiyoriy — bo'sh qoldirilsa o'zgarmaydi"
+            >
+              <EntInput
                 type="password"
                 value={editForm.password}
                 onChange={(e) =>
                   setEditForm({ ...editForm, password: e.target.value })
                 }
-                placeholder="O'zgartirish uchun kiriting"
                 minLength={4}
               />
-            </div>
-
-            <div className="flex justify-end gap-2 mt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setEditingUser(null)}
-              >
-                Bekor qilish
-              </Button>
-              <Button type="submit" disabled={updateMutation.isPending}>
-                {updateMutation.isPending ? "Saqlanmoqda..." : "Saqlash"}
-              </Button>
-            </div>
+            </EntField>
+            <button type="submit" style={{ display: "none" }} />
           </form>
-        </DialogContent>
-      </Dialog>
+        )}
+      </EntDrawer>
 
-      <ConfirmDialog
-        open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
-        title="Admin o'chirish"
-        description={`${userToDelete?.full_name} adminni o'chirishni xohlaysizmi? Bu amalni qaytarib bo'lmaydi.`}
+      {/* Delete confirm */}
+      <EntConfirmDialog
+        open={!!confirmDel}
+        title="Adminni o'chirish"
+        variant="danger"
         confirmLabel="O'chirish"
-        onConfirm={() => {
-          if (userToDelete) {
-            deleteMutation.mutate(userToDelete.id.toString());
-          }
-        }}
-        variant="destructive"
+        busy={deleteMu.isPending}
+        onClose={() => setConfirmDel(null)}
+        onConfirm={() => confirmDel && deleteMu.mutate(confirmDel.id)}
+        message={
+          <>
+            <strong>{confirmDel?.full_name}</strong> adminni o'chirishni
+            xohlaysizmi? Bu amalni qaytarib bo'lmaydi.
+          </>
+        }
       />
-    </div>
+    </EntPage>
   );
 }

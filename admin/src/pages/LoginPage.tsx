@@ -1,17 +1,13 @@
-import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+  EntButton,
+  EntCard,
+  EntField,
+  EntInput,
+} from "@/components/enterprise";
 import { useToast } from "@/hooks/use-toast";
 import $api from "@/http/axios";
 import { authStore } from "@/store/auth.store";
-import { AlertCircle, Lock, User } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -19,110 +15,145 @@ export function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { setIsAuth, setUser } = authStore();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-
+    setLoading(true);
+    setError("");
     try {
-      const payload = {
-        email,
-        password,
-      };
-
-      const { data } = await $api.post("/auth/login", payload);
-
+      const { data } = await $api.post("/auth/login", { email, password });
       localStorage.setItem("ADMIN_ACCESS_TOKEN", data.accessToken);
       setUser(data.user);
       setIsAuth(true);
-
       navigate("/");
-      toast({
-        title: "Muvaffaqiyatli! Tizimga kirdingiz",
-      });
-    } catch (error: any) {
-      toast({
-        title: error?.response?.data?.message || "Xatolik",
-        description: "Iltimoms qaytadan urinib ko'ring!",
-      });
+      toast({ title: "Tizimga kirdingiz" });
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || "Login yoki parol noto'g'ri";
+      setError(msg);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 mb-4">
-            <img src="/favicon.svg" />
+    <div
+      className="ent-scope"
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "var(--ent-bg)",
+        padding: 20,
+        fontFamily:
+          '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      }}
+    >
+      <div style={{ width: 360 }}>
+        {/* Brand */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 6,
+            marginBottom: 14,
+          }}
+        >
+          <img
+            src="/favicon.svg"
+            alt="OTU"
+            style={{
+              width: 48,
+              height: 48,
+              display: "block",
+            }}
+          />
+          <div
+            style={{
+              fontSize: 14,
+              fontWeight: 700,
+              color: "var(--ent-accent)",
+              letterSpacing: 0.5,
+              textAlign: "center",
+            }}
+          >
+            OTU · KUTUBXONA ADMIN
           </div>
-          <h1 className="text-2xl font-bold text-foreground">
-            OTU Kutubxonasi Admin
-          </h1>
-          <p className="text-muted-foreground mt-2">
+          <div
+            className="ent-muted"
+            style={{ fontSize: 11, textAlign: "center" }}
+          >
             Boshqaruv paneliga kirish
-          </p>
+          </div>
         </div>
 
-        <Card className="border-border/50 bg-card/50 backdrop-blur">
-          <CardHeader className="space-y-1 pb-4">
-            <CardTitle className="text-xl">Kirish</CardTitle>
-            <CardDescription>
-              Foydalanuvchi nomi va parolingizni kiriting
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
-                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                  {error}
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <Label htmlFor="username">Foydalanuvchi nomi</Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    id="username"
-                    type="text"
-                    placeholder="admin"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10"
-                    required
-                  />
-                </div>
+        <EntCard title="Tizimga kirish">
+          <form
+            onSubmit={handleSubmit}
+            style={{ display: "flex", flexDirection: "column", gap: 8 }}
+          >
+            {error && (
+              <div
+                style={{
+                  border: "1px solid var(--ent-danger)",
+                  background: "var(--ent-danger-bg)",
+                  color: "var(--ent-danger)",
+                  fontSize: 11,
+                  padding: "6px 8px",
+                  display: "flex",
+                  gap: 6,
+                  alignItems: "center",
+                }}
+              >
+                <AlertCircle size={12} />
+                {error}
               </div>
+            )}
+            <EntField label="Foydalanuvchi nomi" htmlFor="login" required>
+              <EntInput
+                id="login"
+                type="text"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoFocus
+                required
+              />
+            </EntField>
+            <EntField label="Parol" htmlFor="pass" required>
+              <EntInput
+                id="pass"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </EntField>
+            <EntButton
+              type="submit"
+              variant="primary"
+              disabled={loading}
+              style={{ width: "100%", marginTop: 4, height: 32 }}
+            >
+              {loading ? "Tekshirilmoqda..." : "Kirish"}
+            </EntButton>
+          </form>
+        </EntCard>
 
-              <div className="space-y-2">
-                <Label htmlFor="password">Parol</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10"
-                    required
-                  />
-                </div>
-              </div>
-
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Kirish..." : "Kirish"}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+        <div
+          style={{
+            textAlign: "center",
+            fontSize: 10,
+            color: "var(--ent-text-faint)",
+            marginTop: 14,
+          }}
+        >
+          © {new Date().getFullYear()} Osiyo Texnologiyalar Universiteti
+        </div>
       </div>
     </div>
   );

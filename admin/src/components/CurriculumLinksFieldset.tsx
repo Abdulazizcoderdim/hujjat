@@ -1,15 +1,10 @@
-import { SearchableSelect } from "@/components/SearchableSelect";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  EntBadge,
+  EntButton,
+  EntCheckbox,
+  EntSelect,
+} from "@/components/enterprise";
+import { SearchableSelect } from "@/components/SearchableSelect";
 import { isEduConfigured } from "@/http/edusystem";
 import {
   fetchCurriculums,
@@ -17,13 +12,7 @@ import {
   fetchSubjects,
 } from "@/service/edusystem";
 import { useQuery } from "@tanstack/react-query";
-import {
-  AlertCircle,
-  GraduationCap,
-  Loader2,
-  Plus,
-  Trash2,
-} from "lucide-react";
+import { AlertCircle, GraduationCap, Loader2, Plus, Trash2 } from "lucide-react";
 
 export interface CurriculumLinkValue {
   curriculumId: number | "";
@@ -52,14 +41,12 @@ export function CurriculumLinksFieldset({ value, onChange, disabled }: Props) {
     enabled: isEduConfigured,
     staleTime: 5 * 60 * 1000,
   });
-
   const subjectsQ = useQuery({
     queryKey: ["edu", "subjects", "curriculum-only"],
     queryFn: () => fetchSubjects(true),
     enabled: isEduConfigured,
     staleTime: 5 * 60 * 1000,
   });
-
   const semestersQ = useQuery({
     queryKey: ["edu", "semesters"],
     queryFn: fetchSemesters,
@@ -79,21 +66,36 @@ export function CurriculumLinksFieldset({ value, onChange, disabled }: Props) {
   const updateRow = (idx: number, patch: Partial<CurriculumLinkValue>) => {
     onChange(value.map((row, i) => (i === idx ? { ...row, ...patch } : row)));
   };
-
   const removeRow = (idx: number) => {
     onChange(value.filter((_, i) => i !== idx));
   };
-
   const addRow = () => {
     onChange([...value, blank()]);
   };
 
   if (!isEduConfigured) {
     return (
-      <div className="flex items-start gap-2 rounded-md border border-destructive/50 bg-destructive/5 p-3 text-sm text-destructive">
-        <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-        <p>
-          <code className="rounded bg-destructive/10 px-1">
+      <div
+        style={{
+          display: "flex",
+          alignItems: "flex-start",
+          gap: 6,
+          border: "1px solid var(--ent-danger)",
+          background: "var(--ent-danger-bg)",
+          color: "var(--ent-danger)",
+          padding: "6px 8px",
+          fontSize: 11,
+        }}
+      >
+        <AlertCircle size={12} style={{ flexShrink: 0, marginTop: 1 }} />
+        <p style={{ margin: 0 }}>
+          <code
+            style={{
+              background: "rgba(193,53,44,0.12)",
+              padding: "0 4px",
+              fontFamily: "var(--ent-font-mono)",
+            }}
+          >
             VITE_EDUSYSTEM_CORE_URL
           </code>{" "}
           sozlanmagan — biriktirish uchun .env'da uni o'rnating.
@@ -103,76 +105,137 @@ export function CurriculumLinksFieldset({ value, onChange, disabled }: Props) {
   }
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-sm">
-          <GraduationCap className="h-4 w-4 text-primary" />
-          <span className="font-medium">O'quv reja biriktirishlari</span>
-          {value.length > 0 && (
-            <Badge variant="secondary" className="font-normal">
-              {value.length}
-            </Badge>
-          )}
+    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 8,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            fontSize: 12,
+            fontWeight: 600,
+          }}
+        >
+          <GraduationCap size={13} />
+          <span>O'quv reja biriktirishlari</span>
+          {value.length > 0 && <EntBadge variant="muted">{value.length}</EntBadge>}
         </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
+        <EntButton
+          size="xs"
           onClick={addRow}
           disabled={disabled || isLoading}
-          className="gap-1.5"
         >
-          <Plus className="h-3.5 w-3.5" />
+          <Plus size={11} />
           Biriktirish qo'shish
-        </Button>
+        </EntButton>
       </div>
 
       {hasError && (
-        <div className="flex items-start gap-2 rounded-md border border-destructive/50 bg-destructive/5 p-3 text-xs text-destructive">
-          <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-          <p>edusystem-core'dan ma'lumot olishda xato. Qaytadan urinib ko'ring.</p>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            gap: 6,
+            border: "1px solid var(--ent-danger)",
+            background: "var(--ent-danger-bg)",
+            color: "var(--ent-danger)",
+            padding: "5px 8px",
+            fontSize: 11,
+          }}
+        >
+          <AlertCircle size={11} style={{ flexShrink: 0, marginTop: 2 }} />
+          <span>edusystem-core'dan ma'lumot olishda xato. Qaytadan urinib ko'ring.</span>
         </div>
       )}
 
       {isLoading && (
-        <div className="flex items-center justify-center gap-2 rounded-md border border-dashed p-4 text-xs text-muted-foreground">
-          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            gap: 6,
+            border: "1px dashed var(--ent-border)",
+            padding: 10,
+            fontSize: 11,
+            color: "var(--ent-text-muted)",
+          }}
+        >
+          <Loader2 size={12} className="animate-spin" />
           O'quv rejalar yuklanmoqda...
         </div>
       )}
 
       {!isLoading && value.length === 0 && (
-        <div className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
+        <div
+          style={{
+            border: "1px dashed var(--ent-border)",
+            padding: 16,
+            textAlign: "center",
+            fontSize: 12,
+            color: "var(--ent-text-muted)",
+          }}
+        >
           Hali biriktirish yo'q. Yuqoridagi tugma orqali qo'shing.
         </div>
       )}
 
-      <div className="space-y-3">
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
         {value.map((row, idx) => (
           <div
             key={idx}
-            className="rounded-lg border bg-muted/20 p-3 space-y-3"
+            style={{
+              border: "1px solid var(--ent-border)",
+              background: "var(--ent-surface-alt)",
+              padding: 8,
+            }}
           >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-muted-foreground">
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: 6,
+              }}
+            >
+              <span
+                className="ent-muted"
+                style={{ fontSize: 11, fontWeight: 600 }}
+              >
                 Biriktirish #{idx + 1}
               </span>
-              <Button
-                type="button"
-                variant="ghost"
+              <EntButton
                 size="icon"
-                aria-label="Biriktirishni o'chirish"
+                variant="danger"
                 disabled={disabled}
                 onClick={() => removeRow(idx)}
-                className="h-7 w-7 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                title="O'chirish"
               >
-                <Trash2 className="h-3.5 w-3.5" />
-              </Button>
+                <Trash2 size={12} />
+              </EntButton>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs">O'quv reja</Label>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 110px 1fr",
+                gap: 6,
+              }}
+            >
+              <div>
+                <div
+                  className="ent-muted"
+                  style={{ fontSize: 11, marginBottom: 2 }}
+                >
+                  O'quv reja
+                </div>
                 <SearchableSelect
                   value={row.curriculumId ? String(row.curriculumId) : ""}
                   onChange={(v) =>
@@ -183,37 +246,45 @@ export function CurriculumLinksFieldset({ value, onChange, disabled }: Props) {
                     value: String(c.id),
                     label: c.name,
                   }))}
-                  placeholder="O'quv rejani tanlang"
+                  placeholder="Tanlang"
                   searchPlaceholder="O'quv reja nomidan qidirish..."
                   emptyText="O'quv reja topilmadi"
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <Label className="text-xs">Semestr</Label>
-                <Select
-                  value={row.semester ? String(row.semester) : ""}
-                  onValueChange={(v) => updateRow(idx, { semester: Number(v) })}
-                  disabled={disabled || isLoading || hasError}
+              <div>
+                <div
+                  className="ent-muted"
+                  style={{ fontSize: 11, marginBottom: 2 }}
                 >
-                  <SelectTrigger className="h-9">
-                    <SelectValue placeholder="Tanlang" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {semesters.map((s) => (
-                      <SelectItem
-                        key={s.id}
-                        value={String(s.value ?? s.id)}
-                      >
-                        {s.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  Semestr
+                </div>
+                <EntSelect
+                  value={row.semester ? String(row.semester) : ""}
+                  onChange={(e) =>
+                    updateRow(idx, {
+                      semester: e.target.value ? Number(e.target.value) : "",
+                    })
+                  }
+                  disabled={disabled || isLoading || hasError}
+                  style={{ width: "100%" }}
+                >
+                  <option value="">— tanlang —</option>
+                  {semesters.map((s) => (
+                    <option key={s.id} value={String(s.value ?? s.id)}>
+                      {s.name}
+                    </option>
+                  ))}
+                </EntSelect>
               </div>
 
-              <div className="space-y-1.5">
-                <Label className="text-xs">Fan</Label>
+              <div>
+                <div
+                  className="ent-muted"
+                  style={{ fontSize: 11, marginBottom: 2 }}
+                >
+                  Fan
+                </div>
                 <SearchableSelect
                   value={row.subjectId ? String(row.subjectId) : ""}
                   onChange={(v) =>
@@ -224,28 +295,20 @@ export function CurriculumLinksFieldset({ value, onChange, disabled }: Props) {
                     value: String(s.id),
                     label: s.name,
                   }))}
-                  placeholder="Fanni tanlang"
+                  placeholder="Tanlang"
                   searchPlaceholder="Fan nomidan qidirish..."
                   emptyText="Fan topilmadi"
                 />
               </div>
             </div>
 
-            <div className="flex items-center gap-2 pt-1">
-              <Checkbox
-                id={`isMain-${idx}`}
+            <div style={{ marginTop: 6 }}>
+              <EntCheckbox
                 checked={row.isMain}
-                onCheckedChange={(checked) =>
-                  updateRow(idx, { isMain: !!checked })
-                }
+                onChange={(v) => updateRow(idx, { isMain: v })}
                 disabled={disabled}
+                label="Asosiy darslik"
               />
-              <Label
-                htmlFor={`isMain-${idx}`}
-                className="cursor-pointer text-sm font-normal"
-              >
-                Asosiy darslik
-              </Label>
             </div>
           </div>
         ))}

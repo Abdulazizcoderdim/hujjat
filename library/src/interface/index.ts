@@ -123,6 +123,19 @@ export interface ISemester {
   value?: number;
 }
 
+export type LoanStatus = "active" | "returned" | "lost";
+
+export interface ILoan<P> {
+  id: number;
+  product: P;
+  borrowedAt: string;
+  dueAt: string;
+  returnedAt: string | null;
+  status: LoanStatus;
+  notes: string | null;
+  createdAt: string;
+}
+
 export interface IStudentContext {
   studentId: number;
   fullName: string;

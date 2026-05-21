@@ -101,6 +101,7 @@ export interface IProduct<C> {
   language?: string;
 
   isCurriculumBook?: boolean;
+  shelfCode?: string;
 
   createdAt: string;
   updatedAt: string;
@@ -129,6 +130,71 @@ export interface ICurriculumLink {
   subjectId: number;
   isMain: boolean;
   createdAt?: string;
+}
+
+export type LoanStatus = "active" | "returned" | "lost";
+
+export interface ILoanUser {
+  id: number;
+  full_name?: string;
+  first_name?: string;
+  second_name?: string;
+  login?: string;
+  student_id_number?: string;
+  group?: string;
+  faculty?: string;
+  level?: string;
+  image?: string;
+}
+
+export interface IActiveLoanShort {
+  id: number;
+  borrowedAt: string;
+  dueAt: string;
+  user: { id: number; full_name?: string; login?: string } | null;
+}
+
+export interface ICatalogProduct extends IProduct<ICategory> {
+  isAvailable: boolean;
+  activeLoan: IActiveLoanShort | null;
+}
+
+export type HemisSyncStatus =
+  | "pending"
+  | "running"
+  | "completed"
+  | "failed"
+  | "cancelled";
+
+export interface IHemisSyncJob {
+  id: number;
+  status: HemisSyncStatus;
+  startedAt: string | null;
+  finishedAt: string | null;
+  currentPage: number;
+  totalPages: number;
+  totalRecords: number;
+  processedRecords: number;
+  createdCount: number;
+  updatedCount: number;
+  errorCount: number;
+  error: string | null;
+  triggeredBy: { id: number; full_name?: string; login?: string } | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ILoan {
+  id: number;
+  product: IProduct<ICategory>;
+  user: ILoanUser;
+  librarian: ILoanUser | null;
+  borrowedAt: string;
+  dueAt: string;
+  returnedAt: string | null;
+  status: LoanStatus;
+  notes: string | null;
+  createdAt: string;
 }
 
 export interface ICategory {

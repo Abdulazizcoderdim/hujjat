@@ -3,6 +3,7 @@ import { ICategory } from "@/interface";
 import { useQuery } from "@tanstack/react-query";
 import {
   BookOpen,
+  BookMarked,
   ChartBarStacked,
   GraduationCap,
   Home,
@@ -122,6 +123,13 @@ const SidebarNav = ({ activePage = "home" }: SidebarNavProps) => {
           label="Mening kitoblarim"
           active={activePage === "mybooks"}
           to="/my-books"
+          onClick={close}
+        />
+        <NavItem
+          icon={<BookMarked className="w-5 h-5" strokeWidth={1.5} />}
+          label="Olingan kitoblarim"
+          active={activePage === "physical-loans"}
+          to="/physical-loans"
           onClick={close}
         />
         <NavItem

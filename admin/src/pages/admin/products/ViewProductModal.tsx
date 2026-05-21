@@ -1,12 +1,10 @@
-import { ProductStatusBadge } from "@/components/admin/ProductStatusBadge";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  EntBadge,
+  EntButton,
+  EntCard,
+  EntDialog,
+} from "@/components/enterprise";
+import { isEduConfigured } from "@/http/edusystem";
 import { ICategory, ICurriculumLink, IProduct } from "@/interface";
 import {
   fetchCurriculumLinks,
@@ -14,31 +12,24 @@ import {
   fetchSemesters,
   fetchSubjects,
 } from "@/service/edusystem";
-import { isEduConfigured } from "@/http/edusystem";
 import { useQuery } from "@tanstack/react-query";
-import {
-  Calendar,
-  FileText,
-  Globe,
-  GraduationCap,
-  Hash,
-  Star,
-  User,
-} from "lucide-react";
+import { FileText, GraduationCap, Star } from "lucide-react";
+
+const fmt = (v?: any) => (v ? v : "—");
 
 export function ViewProductModal({
   product,
   isOpen,
   onClose,
 }: {
-  product: IProduct<ICategory>;
+  product: IProduct<ICategory> | null;
   isOpen: boolean;
   onClose: () => void;
 }) {
   const { data: links } = useQuery<ICurriculumLink[]>({
     queryKey: ["product-curriculum-links", product?.id],
-    queryFn: () => fetchCurriculumLinks(product.id),
-    enabled: !!product?.id && isOpen && !!product?.isCurriculumBook,
+    queryFn: () => fetchCurriculumLinks(product!.id),
+    enabled: !!product?.id && isOpen && !!(product as any)?.isCurriculumBook,
   });
 
   const { data: curriculums } = useQuery({
@@ -61,147 +52,211 @@ export function ViewProductModal({
   });
 
   if (!product) return null;
+  const p = product as any;
 
   const curriculumNameById = new Map(
     (curriculums ?? []).map((c) => [c.id, c.name]),
   );
-  const subjectNameById = new Map((subjects ?? []).map((s) => [s.id, s.name]));
+  const subjectNameById = new Map(
+    (subjects ?? []).map((s) => [s.id, s.name]),
+  );
   const semesterNameByValue = new Map(
     (semesters ?? []).map((s) => [s.value ?? s.id, s.name]),
   );
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Mahsulot tafsilotlari</DialogTitle>
-        </DialogHeader>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
-          {/* Chap tomon: Poster */}
-          <div className="space-y-4">
+    <EntDialog
+      open={isOpen}
+      onClose={onClose}
+      title="Mahsulot tafsilotlari"
+      width={760}
+      footer={<EntButton onClick={onClose}>Yopish</EntButton>}
+    >
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "180px 1fr",
+          gap: 12,
+        }}
+      >
+        {/* Left: poster + file */}
+        <div>
+          {p.poster ? (
             <img
-              src={product.poster || "/placeholder-image.png"}
-              className="w-full aspect-[3/4] object-cover rounded-lg border shadow-sm"
-              alt={product.name}
+              src={p.poster}
+              alt={p.name}
+              style={{
+                width: 180,
+                height: 240,
+                objectFit: "cover",
+                border: "1px solid var(--ent-border)",
+              }}
             />
+          ) : (
+            <div
+              style={{
+                width: 180,
+                height: 240,
+                background: "var(--ent-bg)",
+                border: "1px solid var(--ent-border)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "var(--ent-text-faint)",
+                fontSize: 11,
+              }}
+            >
+              Poster yo'q
+            </div>
+          )}
 
-            <Button className="w-full" variant="outline" asChild>
-              <a href={product.fileUrl} target="_blank" rel="noreferrer">
-                <FileText className="mr-2 h-4 w-4" /> Hujjatni ochish (
-                {(product.fileSize / 1024 / 1024).toFixed(2)} MB)
-              </a>
-            </Button>
+          {p.fileUrl && (
+            <EntButton
+              size="sm"
+              variant="primary"
+              style={{ width: "100%", marginTop: 6 }}
+              onClick={() => window.open(p.fileUrl, "_blank")}
+            >
+              <FileText size={14} /> Hujjatni ochish
+              {p.fileSize ? ` (${(p.fileSize / 1024 / 1024).toFixed(2)} MB)` : ""}
+            </EntButton>
+          )}
+        </div>
+
+        {/* Right: metadata */}
+        <div>
+          <div
+            style={{
+              fontSize: 16,
+              fontWeight: 700,
+              marginBottom: 2,
+            }}
+          >
+            {p.name}
+          </div>
+          <div className="ent-muted" style={{ fontSize: 12, marginBottom: 8 }}>
+            {p.author || "—"}
           </div>
 
-          {/* O'ng tomon: Ma'lumotlar */}
-          <div className="space-y-4">
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "120px 1fr",
+              gap: "3px 8px",
+              fontSize: 12,
+              alignItems: "baseline",
+            }}
+          >
+            <div className="ent-muted">Shifr:</div>
+            <div className="ent-cell--code">{fmt(p.shelfCode)}</div>
+
+            <div className="ent-muted">Kategoriya:</div>
+            <div>{fmt(p.category?.name)}</div>
+
+            <div className="ent-muted">Yil:</div>
+            <div className="ent-cell--code">{fmt(p.year)}</div>
+
+            <div className="ent-muted">Til:</div>
+            <div>{fmt(p.language)}</div>
+
+            <div className="ent-muted">Sahifalar:</div>
+            <div className="ent-cell--code">{fmt(p.pages)}</div>
+
+            <div className="ent-muted">Holat:</div>
             <div>
-              <h2 className="text-2xl font-bold">{product.name}</h2>
-              <ProductStatusBadge status={product.status} />
+              {p.status === "approved" ? (
+                <EntBadge variant="success">Tasdiqlangan</EntBadge>
+              ) : (
+                <EntBadge variant="danger">Rad etilgan</EntBadge>
+              )}
             </div>
+          </div>
 
-            <p className="text-muted-foreground whitespace-pre-wrap">
-              {product.description}
-            </p>
-
-            <div className="grid grid-cols-2 gap-4 pt-4 border-t">
-              <div className="flex items-center gap-2">
-                <User className="h-4 w-4 opacity-70" />
-                <span className="text-sm font-medium">
-                  {product.author || "Noma'lum"}
-                </span>
+          {p.description && (
+            <EntCard
+              title="Tavsif"
+              className="ent-card"
+              bodyClassName="ent-card__body"
+            >
+              <div
+                style={{
+                  whiteSpace: "pre-wrap",
+                  fontSize: 12,
+                  lineHeight: 1.5,
+                }}
+              >
+                {p.description}
               </div>
+            </EntCard>
+          )}
 
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 opacity-70" />
-                <span className="text-sm">
-                  {product.year || "Yil kiritilmagan"}
-                </span>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Globe className="h-4 w-4 opacity-70" />
-                <span className="text-sm">
-                  {product.language || "Til kiritilmagan"}
-                </span>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Hash className="h-4 w-4 opacity-70" />
-                <span className="text-sm">{product.pages} sahifa</span>
-              </div>
-            </div>
-
-            <div className="pt-4">
-              <p className="text-xs font-semibold uppercase text-muted-foreground mb-2">
-                Kategoriya
-              </p>
-              <Badge>{product.category?.name}</Badge>
-            </div>
-
-            <div className="pt-2">
-              <p className="text-xs font-semibold uppercase text-muted-foreground mb-2">
-                Teglar
-              </p>
-              <div className="flex flex-wrap gap-1">
-                {product.tags?.map((tag: string) => (
-                  <Badge key={tag} className="text-[10px]">
-                    {tag}
-                  </Badge>
+          {p.tags?.length > 0 && (
+            <EntCard title="Teglar" className="ent-card">
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                {p.tags.map((t: string) => (
+                  <EntBadge key={t} variant="muted">
+                    {t}
+                  </EntBadge>
                 ))}
               </div>
-            </div>
+            </EntCard>
+          )}
 
-            {product.isCurriculumBook && (
-              <div className="pt-2 border-t">
-                <p className="text-xs font-semibold uppercase text-muted-foreground mb-2 flex items-center gap-1.5">
-                  <GraduationCap className="h-3.5 w-3.5" />
+          {p.isCurriculumBook && (
+            <EntCard
+              title={
+                <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>
+                  <GraduationCap size={13} />
                   Biriktirilgan o'quv rejalar
-                </p>
-                {links === undefined ? (
-                  <p className="text-xs text-muted-foreground">Yuklanmoqda...</p>
-                ) : links.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">
-                    Biriktirish yo'q
-                  </p>
-                ) : (
-                  <ul className="space-y-1.5">
-                    {links.map((l) => (
-                      <li
-                        key={l.id}
-                        className="flex items-start gap-2 text-sm"
-                      >
-                        <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-medium text-primary">
-                          {l.semester}
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate">
-                            {curriculumNameById.get(l.curriculumId) ??
-                              `O'quv reja #${l.curriculumId}`}
-                            {" — "}
-                            {semesterNameByValue.get(l.semester) ??
-                              `${l.semester}-semestr`}
-                            {", "}
-                            {subjectNameById.get(l.subjectId) ??
-                              `Fan #${l.subjectId}`}
-                          </p>
-                          {l.isMain && (
-                            <span className="mt-0.5 inline-flex items-center gap-1 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
-                              <Star className="h-3 w-3 fill-current" />
-                              Asosiy darslik
-                            </span>
-                          )}
+                </span>
+              }
+              className="ent-card"
+            >
+              {!links ? (
+                <span className="ent-muted">Yuklanmoqda...</span>
+              ) : links.length === 0 ? (
+                <span className="ent-muted">Biriktirish yo'q</span>
+              ) : (
+                <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
+                  {links.map((l) => (
+                    <li
+                      key={l.id}
+                      style={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: 6,
+                        padding: "3px 0",
+                        borderBottom: "1px dotted var(--ent-border)",
+                        fontSize: 12,
+                      }}
+                    >
+                      <EntBadge>{l.semester}-sem</EntBadge>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div>
+                          {curriculumNameById.get(l.curriculumId) ??
+                            `O'quv reja #${l.curriculumId}`}
                         </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            )}
-          </div>
+                        <div className="ent-muted" style={{ fontSize: 11 }}>
+                          {subjectNameById.get(l.subjectId) ??
+                            `Fan #${l.subjectId}`}
+                          {" · "}
+                          {semesterNameByValue.get(l.semester) ??
+                            `${l.semester}-semestr`}
+                        </div>
+                      </div>
+                      {l.isMain && (
+                        <EntBadge variant="success">
+                          <Star size={10} /> Asosiy
+                        </EntBadge>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </EntCard>
+          )}
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </EntDialog>
   );
 }

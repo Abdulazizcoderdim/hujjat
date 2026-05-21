@@ -1,12 +1,17 @@
-import { Button } from "@/components/ui/button";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  EntBadge,
+  EntButton,
+  EntConfirmDialog,
+  EntFilterBar,
+  EntFilterField,
+  EntInput,
+  EntPage,
+  EntPagination,
+  EntTable,
+  EntTableWrap,
+  EntToolbar,
+} from "@/components/enterprise";
+import { PosterPreviewDialog } from "@/components/enterprise/PosterPreviewDialog";
 import { ICategory, IPagination, IProduct, ProductStatus } from "@/interface";
 import {
   changeProductStatus,
@@ -15,20 +20,11 @@ import {
   updateProduct,
 } from "@/service/products";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Badge } from "@/components/ui/badge";
-import {
-  CheckCircle,
-  Edit,
-  Eye,
-  GraduationCap,
-  Trash2,
-  XCircle,
-} from "lucide-react";
+import { CheckCircle, Edit, Eye, GraduationCap, Trash2, XCircle } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { EditProductModal } from "./EditProductModal";
 import { ViewProductModal } from "./ViewProductModal";
-import { Pagination } from "@/components/common/Pagination";
 
 interface Props {
   status: ProductStatus;
@@ -41,17 +37,38 @@ interface ProductResponse {
   pagination: IPagination;
 }
 
-export function ProductsListPage({ status, title, description }: Props) {
-  const queryClient = useQueryClient();
+const LIMIT_DEFAULT = 25;
+
+const fmtDate = (iso?: string) => {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString("uz-UZ", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+};
+
+export function ProductsListPage({ status, title }: Props) {
+  const qc = useQueryClient();
+  const [page, setPage] = useState(1);
+  const [limit] = useState(LIMIT_DEFAULT);
+  const [search, setSearch] = useState("");
+
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [confirmDel, setConfirmDel] = useState<IProduct<ICategory> | null>(
+    null,
+  );
+  const [preview, setPreview] = useState<{
+    poster: string;
+    caption: string;
+  } | null>(null);
 
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
-
-  const { data, isLoading } = useQuery<ProductResponse>({
+  const { data, isLoading, isFetching } = useQuery<ProductResponse>({
     queryKey: ["products", { status, page, limit }],
     queryFn: () => getProducts({ status, page, limit }),
     placeholderData: (prev) =>
@@ -61,190 +78,277 @@ export function ProductsListPage({ status, title, description }: Props) {
       },
   });
 
+  const items = data?.items ?? [];
   const pagination = data?.pagination;
 
-  const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: FormData }) =>
-      updateProduct(id, data),
+  // Local client-side filter for search (server doesn't have it for this endpoint)
+  const filtered = search.trim()
+    ? items.filter((p) => {
+        const q = search.trim().toLowerCase();
+        return (
+          p.name?.toLowerCase().includes(q) ||
+          p.author?.toLowerCase().includes(q) ||
+          (p as any).shelfCode?.toLowerCase().includes(q)
+        );
+      })
+    : items;
+
+  const updateMu = useMutation({
+    mutationFn: (args: { id: number; data: FormData }) =>
+      updateProduct(args.id, args.data),
     onSuccess: () => {
-      toast.success("Muvaffaqiyatli yangilandi ✅");
-      queryClient.invalidateQueries({ queryKey: ["products"] });
+      toast.success("Yangilandi");
+      qc.invalidateQueries({ queryKey: ["products"] });
       setIsEditOpen(false);
       setSelectedId(null);
     },
-    onError: (error: any) => {
-      toast.error(
-        error?.response?.data?.message || "Yangilashda xatolik yuz berdi",
-      );
-    },
+    onError: (err: any) =>
+      toast.error(err?.response?.data?.message || "Yangilashda xato"),
   });
 
-  const deleteMutate = useMutation({
+  const deleteMu = useMutation({
     mutationFn: deleteProduct,
     onSuccess: () => {
       toast.success("O'chirildi");
-      queryClient.invalidateQueries({ queryKey: ["products"] });
+      qc.invalidateQueries({ queryKey: ["products"] });
+      setConfirmDel(null);
     },
+    onError: (err: any) =>
+      toast.error(err?.response?.data?.message || "O'chirishda xato"),
   });
 
-  const statusMutate = useMutation({
-    mutationFn: ({ id, s }: { id: number; s: string }) =>
-      changeProductStatus(id, s),
+  const statusMu = useMutation({
+    mutationFn: (args: { id: number; s: string }) =>
+      changeProductStatus(args.id, args.s),
     onSuccess: () => {
       toast.success("Status o'zgardi");
-      queryClient.invalidateQueries({ queryKey: ["products"] });
+      qc.invalidateQueries({ queryKey: ["products"] });
     },
+    onError: (err: any) =>
+      toast.error(err?.response?.data?.message || "Xato yuz berdi"),
   });
 
-  if (isLoading) return <div>Yuklanmoqda...</div>;
-
   return (
-    <>
-      <div className="p-6 space-y-4">
-        <div>
-          <h1 className="text-2xl font-bold">{title}</h1>
-          <p className="text-muted-foreground">{description}</p>
-        </div>
+    <EntPage>
+      <EntToolbar title={title} />
 
-        <div className="border rounded-lg">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Poster</TableHead>
-                <TableHead>Nomi</TableHead>
-                <TableHead>Kategoriya</TableHead>
-                <TableHead>Muallif</TableHead>
-                <TableHead>O'quv reja</TableHead>
-                <TableHead>Amallar</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {data?.items.map((product: any) => (
-                <TableRow key={product.id}>
-                  <TableCell>
-                    <img
-                      src={product.poster}
-                      className="w-10 h-14 object-cover rounded"
-                      alt=""
-                    />
-                  </TableCell>
-                  <TableCell className="font-medium">{product.name}</TableCell>
-                  <TableCell>{product.category?.name}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {product.author || "—"}
-                  </TableCell>
-                  <TableCell>
-                    {product.isCurriculumBook ? (
-                      <Badge
-                        variant="secondary"
-                        className="gap-1 font-normal text-emerald-600 dark:text-emerald-400"
-                      >
-                        <GraduationCap className="h-3 w-3" /> Ha
-                      </Badge>
+      <EntFilterBar>
+        <EntFilterField label="Qidiruv">
+          <EntInput
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="nom / muallif / shifr"
+            style={{ width: 280 }}
+          />
+        </EntFilterField>
+        <div style={{ marginLeft: "auto" }} className="ent-muted">
+          {isFetching && "yuklanmoqda..."}
+        </div>
+      </EntFilterBar>
+
+      <EntTableWrap style={{ flex: 1, minHeight: 0 }}>
+        <EntTable>
+          <thead>
+            <tr>
+              <th style={{ width: 40 }}>#</th>
+              <th style={{ width: 50 }}>Poster</th>
+              <th>Nom</th>
+              <th style={{ width: 180 }}>Muallif</th>
+              <th style={{ width: 130 }}>Kategoriya</th>
+              <th style={{ width: 110 }}>Shifr</th>
+              <th style={{ width: 90 }}>O'quv reja</th>
+              <th style={{ width: 100 }}>Sana</th>
+              <th style={{ width: 150 }}>Amallar</th>
+            </tr>
+          </thead>
+          <tbody>
+            {isLoading ? (
+              <tr>
+                <td colSpan={9} className="ent-empty">
+                  Yuklanmoqda...
+                </td>
+              </tr>
+            ) : filtered.length === 0 ? (
+              <tr>
+                <td colSpan={9} className="ent-empty">
+                  Yozuv topilmadi
+                </td>
+              </tr>
+            ) : (
+              filtered.map((p: any, idx) => (
+                <tr key={p.id}>
+                  <td className="ent-cell--num ent-muted">
+                    {(page - 1) * limit + idx + 1}
+                  </td>
+                  <td>
+                    {p.poster ? (
+                      <img
+                        src={p.poster}
+                        alt=""
+                        title="Rasmni kattalashtirish"
+                        onClick={() =>
+                          setPreview({ poster: p.poster, caption: p.name })
+                        }
+                        style={{
+                          width: 32,
+                          height: 44,
+                          objectFit: "cover",
+                          border: "1px solid var(--ent-border)",
+                          cursor: "zoom-in",
+                          display: "block",
+                        }}
+                      />
                     ) : (
-                      <span className="text-xs text-muted-foreground">—</span>
+                      <div
+                        style={{
+                          width: 32,
+                          height: 44,
+                          background: "var(--ent-bg)",
+                          border: "1px solid var(--ent-border)",
+                        }}
+                      />
                     )}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button
+                  </td>
+                  <td style={{ fontWeight: 500 }}>{p.name}</td>
+                  <td className="ent-muted">{p.author || "—"}</td>
+                  <td className="ent-muted">{p.category?.name || "—"}</td>
+                  <td className="ent-cell--code">
+                    {p.shelfCode || <span className="ent-muted">—</span>}
+                  </td>
+                  <td>
+                    {p.isCurriculumBook ? (
+                      <EntBadge variant="success">
+                        <GraduationCap size={11} /> Ha
+                      </EntBadge>
+                    ) : (
+                      <span className="ent-muted">—</span>
+                    )}
+                  </td>
+                  <td className="ent-cell--code ent-muted">
+                    {fmtDate(p.createdAt)}
+                  </td>
+                  <td>
+                    <div style={{ display: "flex", gap: 4 }}>
+                      <EntButton
                         size="icon"
-                        variant="ghost"
+                        title="Ko'rish"
                         onClick={() => {
-                          setSelectedId(product.id);
-                          setSelectedProduct(product);
+                          setSelectedId(p.id);
+                          setSelectedProduct(p);
                           setIsViewOpen(true);
                         }}
                       >
-                        <Eye className="w-4 h-4" />
-                      </Button>
-
-                      <Button
+                        <Eye size={14} />
+                      </EntButton>
+                      <EntButton
                         size="icon"
-                        variant="ghost"
+                        title="Tahrirlash"
                         onClick={() => {
-                          setSelectedId(product.id);
+                          setSelectedId(p.id);
                           setIsEditOpen(true);
                         }}
                       >
-                        <Edit className="w-4 h-4 text-blue-500" />
-                      </Button>
-
+                        <Edit size={14} />
+                      </EntButton>
                       {status === ProductStatus.REJECTED ? (
-                        <Button
+                        <EntButton
                           size="icon"
-                          variant="ghost"
+                          title="Tasdiqlash"
                           onClick={() =>
-                            statusMutate.mutate({
-                              id: product.id,
+                            statusMu.mutate({
+                              id: p.id,
                               s: ProductStatus.APPROVED,
                             })
                           }
                         >
-                          <CheckCircle className="w-4 h-4 text-green-500" />
-                        </Button>
+                          <CheckCircle
+                            size={14}
+                            style={{ color: "var(--ent-success)" }}
+                          />
+                        </EntButton>
                       ) : (
-                        <Button
+                        <EntButton
                           size="icon"
-                          variant="ghost"
+                          title="Rad etish"
                           onClick={() =>
-                            statusMutate.mutate({
-                              id: product.id,
+                            statusMu.mutate({
+                              id: p.id,
                               s: ProductStatus.REJECTED,
                             })
                           }
                         >
-                          <XCircle className="w-4 h-4 text-orange-500" />
-                        </Button>
+                          <XCircle
+                            size={14}
+                            style={{ color: "var(--ent-warn)" }}
+                          />
+                        </EntButton>
                       )}
-
-                      <Button
+                      <EntButton
                         size="icon"
-                        variant="ghost"
-                        onClick={() => {
-                          if (confirm("O'chirilsinmi?"))
-                            deleteMutate.mutate(product.id);
-                        }}
+                        variant="danger"
+                        title="O'chirish"
+                        onClick={() => setConfirmDel(p)}
                       >
-                        <Trash2 className="w-4 h-4 text-red-500" />
-                      </Button>
+                        <Trash2 size={14} />
+                      </EntButton>
                     </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </EntTable>
+      </EntTableWrap>
 
-        <EditProductModal
-          id={selectedId}
-          isOpen={isEditOpen}
-          onClose={() => {
-            setIsEditOpen(false);
-            setSelectedId(null);
-          }}
-          onSave={(data: FormData) => {
-            if (selectedId) {
-              updateMutation.mutate({ id: selectedId, data });
-            }
-          }}
+      {pagination && (
+        <EntPagination
+          page={page}
+          totalPages={pagination.totalPages}
+          total={pagination.total}
+          limit={limit}
+          onChange={setPage}
         />
+      )}
 
-        <ViewProductModal
-          product={selectedProduct}
-          isOpen={isViewOpen}
-          onClose={() => setIsViewOpen(false)}
-        />
-      </div>
-
-      <Pagination
-        page={page}
-        totalPages={pagination?.totalPages ?? 1}
-        limit={limit}
-        total={pagination?.total}
-        onPageChange={(p) => setPage(p)}
-        onLimitChange={(l) => setLimit(l)}
+      <EditProductModal
+        id={selectedId}
+        isOpen={isEditOpen}
+        onClose={() => {
+          setIsEditOpen(false);
+          setSelectedId(null);
+        }}
+        onSave={(data: FormData) => {
+          if (selectedId) updateMu.mutate({ id: selectedId, data });
+        }}
       />
-    </>
+
+      <ViewProductModal
+        product={selectedProduct}
+        isOpen={isViewOpen}
+        onClose={() => setIsViewOpen(false)}
+      />
+
+      <PosterPreviewDialog
+        poster={preview?.poster ?? null}
+        caption={preview?.caption}
+        onClose={() => setPreview(null)}
+      />
+
+      <EntConfirmDialog
+        open={!!confirmDel}
+        title="Mahsulotni o'chirish"
+        variant="danger"
+        confirmLabel="O'chirish"
+        busy={deleteMu.isPending}
+        onClose={() => setConfirmDel(null)}
+        onConfirm={() => confirmDel && deleteMu.mutate(confirmDel.id as any)}
+        message={
+          <>
+            <strong>"{confirmDel?.name}"</strong> mahsulotini o'chirishni
+            xohlaysizmi? Bu amalni qaytarib bo'lmaydi.
+          </>
+        }
+      />
+    </EntPage>
   );
 }

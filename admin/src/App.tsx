@@ -1,5 +1,5 @@
-import { AdminLayout } from "@/components/admin/AdminLayout";
 import { ProtectedRoute } from "@/components/admin/ProtectedRoute";
+import { EntAppLayout } from "@/components/enterprise/layout";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -20,6 +20,10 @@ import $api from "./http/axios";
 import { UserRole } from "./interface";
 import { AdminsPage } from "./pages/admin/users/AdminsPage";
 import { StudentsTable } from "./pages/admin/users/StudentsTable";
+import { SyncPage } from "./pages/admin/users/SyncPage";
+import { CatalogPage } from "./pages/admin/library/CatalogPage";
+import { LoansPage } from "./pages/admin/library/LoansPage";
+import { QuickReturnPage } from "./pages/admin/library/QuickReturnPage";
 import NotFound from "./pages/NotFound";
 import UploadProductsPage from "./pages/UploadProductsPage";
 import { authStore } from "./store/auth.store";
@@ -68,7 +72,7 @@ const App = () => {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+      <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
         <TooltipProvider>
           <Toaster />
           <Sonner />
@@ -79,13 +83,14 @@ const App = () => {
               <Route
                 element={
                   <ProtectedRoute>
-                    <AdminLayout />
+                    <EntAppLayout />
                   </ProtectedRoute>
                 }
               >
                 <Route path="/" element={<DashboardPage />} />
                 <Route path="/users/admins" element={<AdminsPage />} />
                 <Route path="/users/students" element={<StudentsTable />} />
+                <Route path="/users/sync" element={<SyncPage />} />
                 <Route path="/students/:id/stats" element={<StudentStats />} />
                 <Route path="/categories" element={<CategoriesPage />} />
 
@@ -101,6 +106,10 @@ const App = () => {
                   path="/products/rejected"
                   element={<RejectedProductsPage />}
                 />
+
+                <Route path="/library/catalog" element={<CatalogPage />} />
+                <Route path="/library/loans" element={<LoansPage />} />
+                <Route path="/library/return" element={<QuickReturnPage />} />
 
                 <Route path="/settings" element={<SettingsPage />} />
               </Route>
