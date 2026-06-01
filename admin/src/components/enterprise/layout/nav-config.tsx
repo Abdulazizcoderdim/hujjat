@@ -1,18 +1,23 @@
 import { UserRole } from "@/interface";
 import {
+  Activity,
   BookOpen,
   ChartBarBig,
+  ClipboardList,
   FileBarChart2,
   FileCheck2,
   FileText,
   FileX2,
   FolderTree,
+  KeyRound,
   LayoutDashboard,
   Library,
   ListChecks,
+  MessageSquarePlus,
   Package,
   RefreshCw,
   RotateCcw,
+  ScrollText,
   Settings,
   ShieldCheck,
   Upload,
@@ -51,6 +56,24 @@ export const NAV: NavSection[] = [
       },
     ],
   },
+  // ============ OPERATOR-only section ============
+  {
+    title: "Kitoblar",
+    items: [
+      {
+        title: "Kitob yuklash",
+        href: "/products/upload",
+        icon: Upload,
+        roles: [UserRole.OPERATOR],
+      },
+      {
+        title: "Mening yuklaganlarim",
+        href: "/products/my-uploads",
+        icon: FileText,
+        roles: [UserRole.OPERATOR],
+      },
+    ],
+  },
   {
     title: "Foydalanuvchilar",
     items: [
@@ -62,6 +85,11 @@ export const NAV: NavSection[] = [
         children: [
           { title: "Talabalar", href: "/users/students", icon: Users },
           { title: "Adminlar", href: "/users/admins", icon: ShieldCheck },
+          {
+            title: "Operatorlar monitoringi",
+            href: "/monitoring",
+            icon: Activity,
+          },
           {
             title: "HEMIS sinxronizatsiya",
             href: "/users/sync",
@@ -78,6 +106,12 @@ export const NAV: NavSection[] = [
         title: "Kategoriyalar",
         href: "/categories",
         icon: FolderTree,
+        roles: [UserRole.ADMIN],
+      },
+      {
+        title: "Kitob so'rovlari",
+        href: "/requests",
+        icon: MessageSquarePlus,
         roles: [UserRole.ADMIN],
       },
       {
@@ -134,6 +168,39 @@ export const NAV: NavSection[] = [
     ],
   },
   {
+    title: "Audit",
+    items: [
+      {
+        title: "Audit jurnali",
+        href: "/audit",
+        icon: ScrollText,
+        roles: [UserRole.ADMIN],
+        children: [
+          {
+            title: "Umumiy ko'rinish",
+            href: "/audit",
+            icon: Activity,
+          },
+          {
+            title: "Loginlar",
+            href: "/audit/logins",
+            icon: KeyRound,
+          },
+          {
+            title: "O'qish sessiyalari",
+            href: "/audit/sessions",
+            icon: BookOpen,
+          },
+          {
+            title: "Admin amallari",
+            href: "/audit/actions",
+            icon: ClipboardList,
+          },
+        ],
+      },
+    ],
+  },
+  {
     title: "Tizim",
     items: [
       {
@@ -153,7 +220,10 @@ export const PATH_TITLES: Record<string, string> = {
   "/users/students": "Talabalar",
   "/users/admins": "Adminlar",
   "/users/sync": "HEMIS sinxronizatsiya",
+  "/monitoring": "Operatorlar monitoringi",
+  "/products/my-uploads": "Mening yuklaganlarim",
   "/categories": "Kategoriyalar",
+  "/requests": "Kitob so'rovlari",
   "/products": "Mahsulotlar",
   "/products/upload": "Yuklash",
   "/products/approved": "Tasdiqlangan",
@@ -162,6 +232,10 @@ export const PATH_TITLES: Record<string, string> = {
   "/library/catalog": "Katalog",
   "/library/loans": "Qarzlar",
   "/library/return": "Tezkor qaytarish",
+  "/audit": "Audit",
+  "/audit/logins": "Loginlar",
+  "/audit/sessions": "O'qish sessiyalari",
+  "/audit/actions": "Admin amallari",
   "/settings": "Sozlamalar",
 };
 

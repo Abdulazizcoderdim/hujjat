@@ -61,6 +61,7 @@ export function EditProductModal({ id, isOpen, onClose, onSave }: Props) {
         categoryId: String(product.category?.id ?? ""),
         tags: product.tags?.join(", ") ?? "",
         shelfCode: product.shelfCode ?? "",
+        udc: product.udc ?? "",
         author: product.author ?? "",
         pages: product.pages ?? "",
         year: product.year ?? "",
@@ -205,6 +206,18 @@ export function EditProductModal({ id, isOpen, onClose, onSave }: Props) {
                 }
                 placeholder="728.4"
                 maxLength={64}
+              />
+            </EntField>
+
+            <EntField label="UDK (Universal Decimal Classification)">
+              <EntInput
+                mono
+                value={formData.udc || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, udc: e.target.value })
+                }
+                placeholder="04.34"
+                maxLength={32}
               />
             </EntField>
 

@@ -12,8 +12,10 @@ export const createProduct = async (payload: {
   year: string;
   language: string;
   shelfCode?: string;
+  udc?: string;
   isCurriculumBook?: string;
   curriculumLinks?: string;
+  force?: boolean;
   onProgress: (percent: number) => void;
 }) => {
   const formData = new FormData();
@@ -43,6 +45,9 @@ export const createProduct = async (payload: {
   if (payload.shelfCode) {
     formData.append("shelfCode", payload.shelfCode);
   }
+  if (payload.udc) {
+    formData.append("udc", payload.udc);
+  }
 
   if (payload.isCurriculumBook !== undefined) {
     formData.append("isCurriculumBook", payload.isCurriculumBook);
@@ -55,6 +60,7 @@ export const createProduct = async (payload: {
     headers: {
       "Content-Type": "multipart/form-data",
     },
+    params: payload.force ? { force: "true" } : undefined,
 
     onUploadProgress: (progressEvent) => {
       const percentCompleted = Math.round(

@@ -1,4 +1,5 @@
 import { ProtectedRoute } from "@/components/admin/ProtectedRoute";
+import { RoleProtected } from "@/components/admin/RoleProtected";
 import { EntAppLayout } from "@/components/enterprise/layout";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
@@ -24,6 +25,14 @@ import { SyncPage } from "./pages/admin/users/SyncPage";
 import { CatalogPage } from "./pages/admin/library/CatalogPage";
 import { LoansPage } from "./pages/admin/library/LoansPage";
 import { QuickReturnPage } from "./pages/admin/library/QuickReturnPage";
+import { AuditOverviewPage } from "./pages/admin/audit/AuditOverviewPage";
+import { LoginsPage as AuditLoginsPage } from "./pages/admin/audit/LoginsPage";
+import { SessionsPage as AuditSessionsPage } from "./pages/admin/audit/SessionsPage";
+import { ActionsPage as AuditActionsPage } from "./pages/admin/audit/ActionsPage";
+import { RequestsPage } from "./pages/admin/requests/RequestsPage";
+import { MyUploadsPage } from "./pages/admin/operator/MyUploadsPage";
+import { MonitoringPage } from "./pages/admin/monitoring/MonitoringPage";
+import { OperatorDetailPage } from "./pages/admin/monitoring/OperatorDetailPage";
 import NotFound from "./pages/NotFound";
 import UploadProductsPage from "./pages/UploadProductsPage";
 import { authStore } from "./store/auth.store";
@@ -39,8 +48,11 @@ const App = () => {
       setLoading(true);
       const { data } = await $api.get("/auth/me");
 
-      if (data.user.role !== UserRole.ADMIN) {
-        throw new Error("Siz admin emassiz!");
+      if (
+        data.user.role !== UserRole.ADMIN &&
+        data.user.role !== UserRole.OPERATOR
+      ) {
+        throw new Error("Sizda admin panelga kirish huquqi yo'q");
       }
 
       setIsAuth(true);
@@ -87,31 +99,189 @@ const App = () => {
                   </ProtectedRoute>
                 }
               >
-                <Route path="/" element={<DashboardPage />} />
-                <Route path="/users/admins" element={<AdminsPage />} />
-                <Route path="/users/students" element={<StudentsTable />} />
-                <Route path="/users/sync" element={<SyncPage />} />
-                <Route path="/students/:id/stats" element={<StudentStats />} />
-                <Route path="/categories" element={<CategoriesPage />} />
-
+                {/* Admin-only routes */}
                 <Route
-                  path="/products/upload"
-                  element={<UploadProductsPage />}
+                  path="/"
+                  element={
+                    <RoleProtected roles={[UserRole.ADMIN]}>
+                      <DashboardPage />
+                    </RoleProtected>
+                  }
                 />
                 <Route
+                  path="/users/admins"
+                  element={
+                    <RoleProtected roles={[UserRole.ADMIN]}>
+                      <AdminsPage />
+                    </RoleProtected>
+                  }
+                />
+                <Route
+                  path="/users/students"
+                  element={
+                    <RoleProtected roles={[UserRole.ADMIN]}>
+                      <StudentsTable />
+                    </RoleProtected>
+                  }
+                />
+                <Route
+                  path="/users/sync"
+                  element={
+                    <RoleProtected roles={[UserRole.ADMIN]}>
+                      <SyncPage />
+                    </RoleProtected>
+                  }
+                />
+                <Route
+                  path="/students/:id/stats"
+                  element={
+                    <RoleProtected roles={[UserRole.ADMIN]}>
+                      <StudentStats />
+                    </RoleProtected>
+                  }
+                />
+                <Route
+                  path="/categories"
+                  element={
+                    <RoleProtected roles={[UserRole.ADMIN]}>
+                      <CategoriesPage />
+                    </RoleProtected>
+                  }
+                />
+                <Route
+                  path="/requests"
+                  element={
+                    <RoleProtected roles={[UserRole.ADMIN]}>
+                      <RequestsPage />
+                    </RoleProtected>
+                  }
+                />
+
+                {/* Shared (admin + operator) */}
+                <Route
+                  path="/products/upload"
+                  element={
+                    <RoleProtected
+                      roles={[UserRole.ADMIN, UserRole.OPERATOR]}
+                    >
+                      <UploadProductsPage />
+                    </RoleProtected>
+                  }
+                />
+                <Route
+                  path="/products/my-uploads"
+                  element={
+                    <RoleProtected
+                      roles={[UserRole.ADMIN, UserRole.OPERATOR]}
+                    >
+                      <MyUploadsPage />
+                    </RoleProtected>
+                  }
+                />
+
+                {/* Admin-only resources */}
+                <Route
                   path="/products/approved"
-                  element={<ApprovedProductsPage />}
+                  element={
+                    <RoleProtected roles={[UserRole.ADMIN]}>
+                      <ApprovedProductsPage />
+                    </RoleProtected>
+                  }
                 />
                 <Route
                   path="/products/rejected"
-                  element={<RejectedProductsPage />}
+                  element={
+                    <RoleProtected roles={[UserRole.ADMIN]}>
+                      <RejectedProductsPage />
+                    </RoleProtected>
+                  }
                 />
 
-                <Route path="/library/catalog" element={<CatalogPage />} />
-                <Route path="/library/loans" element={<LoansPage />} />
-                <Route path="/library/return" element={<QuickReturnPage />} />
+                <Route
+                  path="/library/catalog"
+                  element={
+                    <RoleProtected roles={[UserRole.ADMIN]}>
+                      <CatalogPage />
+                    </RoleProtected>
+                  }
+                />
+                <Route
+                  path="/library/loans"
+                  element={
+                    <RoleProtected roles={[UserRole.ADMIN]}>
+                      <LoansPage />
+                    </RoleProtected>
+                  }
+                />
+                <Route
+                  path="/library/return"
+                  element={
+                    <RoleProtected roles={[UserRole.ADMIN]}>
+                      <QuickReturnPage />
+                    </RoleProtected>
+                  }
+                />
 
-                <Route path="/settings" element={<SettingsPage />} />
+                <Route
+                  path="/audit"
+                  element={
+                    <RoleProtected roles={[UserRole.ADMIN]}>
+                      <AuditOverviewPage />
+                    </RoleProtected>
+                  }
+                />
+                <Route
+                  path="/audit/logins"
+                  element={
+                    <RoleProtected roles={[UserRole.ADMIN]}>
+                      <AuditLoginsPage />
+                    </RoleProtected>
+                  }
+                />
+                <Route
+                  path="/audit/sessions"
+                  element={
+                    <RoleProtected roles={[UserRole.ADMIN]}>
+                      <AuditSessionsPage />
+                    </RoleProtected>
+                  }
+                />
+                <Route
+                  path="/audit/actions"
+                  element={
+                    <RoleProtected roles={[UserRole.ADMIN]}>
+                      <AuditActionsPage />
+                    </RoleProtected>
+                  }
+                />
+
+                <Route
+                  path="/monitoring"
+                  element={
+                    <RoleProtected roles={[UserRole.ADMIN]}>
+                      <MonitoringPage />
+                    </RoleProtected>
+                  }
+                />
+                <Route
+                  path="/monitoring/:id"
+                  element={
+                    <RoleProtected roles={[UserRole.ADMIN]}>
+                      <OperatorDetailPage />
+                    </RoleProtected>
+                  }
+                />
+
+                <Route
+                  path="/settings"
+                  element={
+                    <RoleProtected
+                      roles={[UserRole.ADMIN, UserRole.OPERATOR]}
+                    >
+                      <SettingsPage />
+                    </RoleProtected>
+                  }
+                />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>

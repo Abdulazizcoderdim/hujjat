@@ -46,6 +46,7 @@ const initialForm = {
   year: "",
   language: "",
   shelfCode: "",
+  udc: "",
 };
 type FormState = typeof initialForm;
 type Errors = Partial<Record<keyof FormState | "file" | "poster", string>>;
@@ -206,6 +207,7 @@ export function SingleUploadForm({ categories, onSubmit }: Props) {
       data.append("year", formData.year);
       data.append("language", formData.language);
       data.append("shelfCode", formData.shelfCode);
+      data.append("udc", formData.udc);
       data.append("isCurriculumBook", String(isCurriculumBook));
       if (isCurriculumBook && curriculumLinks.length) {
         data.append(
@@ -493,6 +495,21 @@ export function SingleUploadForm({ categories, onSubmit }: Props) {
                     placeholder="728.4"
                     disabled={isUploading}
                     maxLength={64}
+                  />
+                </EntField>
+                <EntField
+                  label="UDK (Universal Decimal Classification)"
+                  hint="masalan: 04.34 — mavzu bo'yicha klassifikatsiya"
+                >
+                  <EntInput
+                    mono
+                    value={formData.udc}
+                    onChange={(e) =>
+                      setFormData({ ...formData, udc: e.target.value })
+                    }
+                    placeholder="04.34"
+                    disabled={isUploading}
+                    maxLength={32}
                   />
                 </EntField>
               </div>

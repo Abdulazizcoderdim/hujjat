@@ -19,6 +19,7 @@ export interface LoansResponse {
 export interface CatalogFilters {
   search?: string;
   shelfCode?: string;
+  udc?: string;
   availability?: "all" | "available" | "borrowed";
   category?: number;
   page?: number;
@@ -31,6 +32,7 @@ export const fetchCatalog = async (
   const params: Record<string, string | number> = {};
   if (filters.search?.trim()) params.search = filters.search.trim();
   if (filters.shelfCode?.trim()) params.shelfCode = filters.shelfCode.trim();
+  if (filters.udc?.trim()) params.udc = filters.udc.trim();
   if (filters.availability && filters.availability !== "all")
     params.availability = filters.availability;
   if (filters.category) params.category = filters.category;

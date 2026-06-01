@@ -9,6 +9,8 @@ import {
   EntInput,
   EntPage,
   EntPagination,
+  EntTab,
+  EntTabs,
   EntTable,
   EntTableWrap,
   EntToolbar,
@@ -20,6 +22,7 @@ import { IPagination, IUser, UserRole } from "@/interface";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 
 interface BuyerResponse {
   items: IUser[];
@@ -39,9 +42,15 @@ const fmtDate = (iso?: string | Date) => {
   });
 };
 
+type TabKey = "admin" | "operator";
+
 export function AdminsPage() {
   const qc = useQueryClient();
   const { toast } = useToast();
+
+  const [params, setParams] = useSearchParams();
+  const tab = (params.get("tab") as TabKey) === "operator" ? "operator" : "admin";
+  const role = tab === "operator" ? UserRole.OPERATOR : UserRole.ADMIN;
 
   const [page, setPage] = useState(1);
   const [limit] = useState(LIMIT_DEFAULT);
@@ -69,7 +78,20 @@ export function AdminsPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [debounced]);
+  }, [debounced, tab]);
+
+  useEffect(() => {
+    setSearch("");
+  }, [tab]);
+
+  useEffect(() => {
+    if (params.get("new") === "1") {
+      setAdding(true);
+      const p = new URLSearchParams(params);
+      p.delete("new");
+      setParams(p, { replace: true });
+    }
+  }, [params, setParams]);
 
   useEffect(() => {
     if (editing) {
@@ -82,11 +104,20 @@ export function AdminsPage() {
     }
   }, [editing]);
 
+  const setTab = (next: TabKey) => {
+    const p = new URLSearchParams(params);
+    if (next === "admin") p.delete("tab");
+    else p.set("tab", next);
+    setParams(p, { replace: true });
+  };
+
+  const queryKey = ["role-users", role, { page, debounced, limit }] as const;
+
   const { data, isLoading, isFetching } = useQuery<BuyerResponse>({
-    queryKey: ["admins", { page, debounced, limit }],
+    queryKey,
     queryFn: async () => {
-      const params = { page, limit, search: debounced };
-      const res = await $api.get(`/users/role/${UserRole.ADMIN}`, { params });
+      const reqParams = { page, limit, search: debounced };
+      const res = await $api.get(`/users/role/${role}`, { params: reqParams });
       return res.data;
     },
     placeholderData: (prev) =>
@@ -99,12 +130,17 @@ export function AdminsPage() {
   const items = data?.items ?? [];
   const pagination = data?.pagination;
 
+  const createEndpoint =
+    role === UserRole.OPERATOR ? "/users/create-operator" : "/users/create-admin";
+
   const addMu = useMutation({
-    mutationFn: (payload: typeof addForm) =>
-      $api.post("/users/create-admin", payload),
+    mutationFn: (payload: typeof addForm) => $api.post(createEndpoint, payload),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["admins"] });
-      toast({ title: "Admin yaratildi" });
+      qc.invalidateQueries({ queryKey: ["role-users"] });
+      toast({
+        title:
+          role === UserRole.OPERATOR ? "Operator yaratildi" : "Admin yaratildi",
+      });
       setAdding(false);
       setAddForm({
         full_name: "",
@@ -125,7 +161,7 @@ export function AdminsPage() {
   const updateMu = useMutation({
     mutationFn: (payload: any) => $api.patch(`/users/${editing?.id}`, payload),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["admins"] });
+      qc.invalidateQueries({ queryKey: ["role-users"] });
       toast({ title: "Yangilandi" });
       setEditing(null);
     },
@@ -140,7 +176,7 @@ export function AdminsPage() {
   const deleteMu = useMutation({
     mutationFn: (id: number) => $api.delete(`/users/${id}`),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["admins"] });
+      qc.invalidateQueries({ queryKey: ["role-users"] });
       toast({ title: "O'chirildi" });
       setConfirmDel(null);
     },
@@ -166,10 +202,21 @@ export function AdminsPage() {
     updateMu.mutate(payload);
   };
 
+  const addButtonLabel =
+    role === UserRole.OPERATOR ? "Operator qo'shish" : "Admin qo'shish";
+  const drawerTitle =
+    role === UserRole.OPERATOR ? "Yangi operator qo'shish" : "Yangi admin qo'shish";
+  const editTitle =
+    role === UserRole.OPERATOR ? "Operatorni tahrirlash" : "Adminni tahrirlash";
+  const deleteTitle =
+    role === UserRole.OPERATOR ? "Operatorni o'chirish" : "Adminni o'chirish";
+  const emptyText =
+    role === UserRole.OPERATOR ? "Operator topilmadi" : "Admin topilmadi";
+
   return (
     <EntPage>
       <EntToolbar
-        title="Adminlar"
+        title="Adminlar va operatorlar"
         actions={
           <EntButton
             variant="primary"
@@ -177,10 +224,19 @@ export function AdminsPage() {
             size="sm"
           >
             <Plus size={14} />
-            Admin qo'shish
+            {addButtonLabel}
           </EntButton>
         }
       />
+
+      <EntTabs>
+        <EntTab active={tab === "admin"} onClick={() => setTab("admin")}>
+          Adminlar
+        </EntTab>
+        <EntTab active={tab === "operator"} onClick={() => setTab("operator")}>
+          Operatorlar
+        </EntTab>
+      </EntTabs>
 
       <EntFilterBar>
         <EntFilterField label="Qidiruv">
@@ -219,7 +275,7 @@ export function AdminsPage() {
             ) : items.length === 0 ? (
               <tr>
                 <td colSpan={7} className="ent-empty">
-                  Admin topilmadi
+                  {emptyText}
                 </td>
               </tr>
             ) : (
@@ -290,7 +346,7 @@ export function AdminsPage() {
       <EntDrawer
         open={adding}
         onClose={() => !addMu.isPending && setAdding(false)}
-        title="Yangi admin qo'shish"
+        title={drawerTitle}
         width={460}
         footer={
           <>
@@ -378,7 +434,7 @@ export function AdminsPage() {
       <EntDrawer
         open={!!editing}
         onClose={() => !updateMu.isPending && setEditing(null)}
-        title="Admin tahrirlash"
+        title={editTitle}
         width={460}
         footer={
           <>
@@ -449,7 +505,7 @@ export function AdminsPage() {
       {/* Delete confirm */}
       <EntConfirmDialog
         open={!!confirmDel}
-        title="Adminni o'chirish"
+        title={deleteTitle}
         variant="danger"
         confirmLabel="O'chirish"
         busy={deleteMu.isPending}
@@ -457,7 +513,7 @@ export function AdminsPage() {
         onConfirm={() => confirmDel && deleteMu.mutate(confirmDel.id)}
         message={
           <>
-            <strong>{confirmDel?.full_name}</strong> adminni o'chirishni
+            <strong>{confirmDel?.full_name}</strong>ni o'chirishni
             xohlaysizmi? Bu amalni qaytarib bo'lmaydi.
           </>
         }

@@ -38,6 +38,7 @@ export function CatalogPage() {
   const [params, setParams] = useSearchParams();
   const search = params.get("search") ?? "";
   const shelfCode = params.get("shelfCode") ?? "";
+  const udc = params.get("udc") ?? "";
   const availability =
     (params.get("availability") as "all" | "available" | "borrowed") ?? "all";
   const categoryParam = params.get("category") ?? "";
@@ -72,12 +73,13 @@ export function CatalogPage() {
     () => ({
       search,
       shelfCode,
+      udc,
       availability,
       category: categoryParam ? Number(categoryParam) : undefined,
       page,
       limit: LIMIT,
     }),
-    [search, shelfCode, availability, categoryParam, page],
+    [search, shelfCode, udc, availability, categoryParam, page],
   );
 
   const { data, isLoading, isFetching, refetch } = useQuery({
@@ -117,6 +119,15 @@ export function CatalogPage() {
             style={{ width: 140 }}
           />
         </EntFilterField>
+        <EntFilterField label="UDK">
+          <EntInput
+            mono
+            value={udc}
+            onChange={(e) => setParam("udc", e.target.value)}
+            placeholder="04.34"
+            style={{ width: 120 }}
+          />
+        </EntFilterField>
         <EntFilterField label="Holat">
           <EntSelect
             value={availability}
@@ -154,6 +165,7 @@ export function CatalogPage() {
               <th>Nom</th>
               <th style={{ width: 180 }}>Muallif</th>
               <th style={{ width: 110 }}>Shifr</th>
+              <th style={{ width: 90 }}>UDK</th>
               <th style={{ width: 130 }}>Kategoriya</th>
               <th style={{ width: 70 }}>Yil</th>
               <th style={{ width: 110 }}>Holat</th>
@@ -163,13 +175,13 @@ export function CatalogPage() {
           <tbody>
             {isLoading ? (
               <tr>
-                <td colSpan={9} className="ent-empty">
+                <td colSpan={10} className="ent-empty">
                   Yuklanmoqda...
                 </td>
               </tr>
             ) : items.length === 0 ? (
               <tr>
-                <td colSpan={9} className="ent-empty">
+                <td colSpan={10} className="ent-empty">
                   Yozuv topilmadi
                 </td>
               </tr>
@@ -219,6 +231,11 @@ export function CatalogPage() {
                     <td className="ent-muted">{p.author || "—"}</td>
                     <td className="ent-cell--code">
                       {p.shelfCode || (
+                        <span className="ent-muted">—</span>
+                      )}
+                    </td>
+                    <td className="ent-cell--code">
+                      {(p as any).udc || (
                         <span className="ent-muted">—</span>
                       )}
                     </td>
