@@ -15,6 +15,7 @@ import Faculty from "./pages/Faculty.tsx";
 import Index from "./pages/Index.tsx";
 import Login from "./pages/Login.tsx";
 import MyBooks from "./pages/MyBooks.tsx";
+import MyRequests from "./pages/MyRequests.tsx";
 import PhysicalLoans from "./pages/PhysicalLoans.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Products from "./pages/Products.tsx";
@@ -98,6 +99,14 @@ const App = () => {
               element={
                 <ProtectedRoute>
                   <PhysicalLoans />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/my-requests"
+              element={
+                <ProtectedRoute>
+                  <MyRequests />
                 </ProtectedRoute>
               }
             />

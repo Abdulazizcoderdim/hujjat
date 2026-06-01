@@ -9,6 +9,7 @@ import {
   Home,
   LogOut,
   Menu,
+  MessageSquarePlus,
   Satellite,
   Star,
   X,
@@ -137,6 +138,13 @@ const SidebarNav = ({ activePage = "home" }: SidebarNavProps) => {
           label="Saqlanganlar"
           active={activePage === "saved"}
           to="/saved"
+          onClick={close}
+        />
+        <NavItem
+          icon={<MessageSquarePlus className="w-5 h-5" strokeWidth={1.5} />}
+          label="Kitob so'rash"
+          active={activePage === "my-requests"}
+          to="/my-requests"
           onClick={close}
         />
         {/*

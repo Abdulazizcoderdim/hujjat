@@ -1,6 +1,7 @@
 export enum UserRole {
   ADMIN = "admin",
   STUDENT = "student",
+  OPERATOR = "operator",
 }
 
 export enum OrderRefundStatus {
@@ -134,6 +135,39 @@ export interface ILoan<P> {
   status: LoanStatus;
   notes: string | null;
   createdAt: string;
+}
+
+export type BookRequestStatus =
+  | "pending"
+  | "approved"
+  | "rejected"
+  | "fulfilled";
+
+export interface IBookRequest {
+  id: number;
+  requestedBy: {
+    id: number;
+    full_name?: string;
+    login?: string;
+    group?: string;
+    student_id_number?: string;
+  } | null;
+  title: string;
+  author: string | null;
+  description: string | null;
+  reason: string | null;
+  status: BookRequestStatus;
+  adminNote: string | null;
+  reviewedBy: { id: number; full_name?: string } | null;
+  reviewedAt: string | null;
+  fulfilledProduct: {
+    id: number;
+    name: string;
+    poster?: string;
+    author?: string;
+  } | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface IStudentContext {

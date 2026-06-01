@@ -1,5 +1,6 @@
 import BookCard from "@/components/BookCard";
 import ProfileAvatar from "@/components/ProfileAvatar";
+import { RequestBookDialog } from "@/components/RequestBookDialog";
 import SidebarNav from "@/components/SidebarNav";
 import {
   Select,
@@ -29,7 +30,7 @@ import {
   Sparkles,
   X,
 } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 interface ResCategory {
@@ -44,6 +45,7 @@ const ALL = "all";
 const Products = () => {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
+  const [requestOpen, setRequestOpen] = useState(false);
   const { user } = authStore();
 
   const search = params.get("q") ?? "";
@@ -435,6 +437,12 @@ const Products = () => {
                     <p className="text-xs text-muted-foreground/60 mt-1">
                       Boshqa kalit so'z bilan qidirib ko'ring
                     </p>
+                    <button
+                      onClick={() => setRequestOpen(true)}
+                      className="mt-5 inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+                    >
+                      📚 Bu kitobni qo'shing — so'rab yuborish
+                    </button>
                   </>
                 )}
               </div>
@@ -442,6 +450,12 @@ const Products = () => {
           </motion.div>
         </div>
       </main>
+
+      <RequestBookDialog
+        open={requestOpen}
+        onClose={() => setRequestOpen(false)}
+        defaultTitle={search.trim()}
+      />
     </div>
   );
 };
