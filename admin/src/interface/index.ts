@@ -177,6 +177,27 @@ export interface ICurriculumLink {
   createdAt?: string;
 }
 
+export interface ICurriculumTreeSubject {
+  subjectId: number;
+  bookCount: number;
+}
+
+export interface ICurriculumTreeSemester {
+  semester: number;
+  totalBooks: number;
+  subjects: ICurriculumTreeSubject[];
+}
+
+export interface ICurriculumTreeNode {
+  curriculumId: number;
+  totalBooks: number;
+  semesters: ICurriculumTreeSemester[];
+}
+
+export interface ICurriculumTreeResponse {
+  curricula: ICurriculumTreeNode[];
+}
+
 export type LoanStatus = "active" | "returned" | "lost";
 
 export interface ILoanUser {

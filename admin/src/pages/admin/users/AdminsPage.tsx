@@ -85,6 +85,11 @@ export function AdminsPage() {
   }, [tab]);
 
   useEffect(() => {
+    setEditing(null);
+    setConfirmDel(null);
+  }, [tab]);
+
+  useEffect(() => {
     if (params.get("new") === "1") {
       setAdding(true);
       const p = new URLSearchParams(params);

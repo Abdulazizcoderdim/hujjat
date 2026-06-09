@@ -1,6 +1,7 @@
 import {
   EntBadge,
   EntButton,
+  EntConfirmDialog,
   EntFilterBar,
   EntFilterField,
   EntInput,
@@ -13,10 +14,17 @@ import {
 import { useDebounce } from "@/hooks/use-debounce";
 import { ICategory, ProductStatus } from "@/interface";
 import { fetchMyUploads } from "@/service/operator";
-import { useQuery } from "@tanstack/react-query";
-import { RefreshCw, Upload } from "lucide-react";
+import {
+  deleteProduct,
+  regeneratePoster,
+  updateProduct,
+} from "@/service/products";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ImagePlus, Pencil, RefreshCw, Trash2, Upload } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { toast } from "sonner";
+import { EditProductModal } from "../products/EditProductModal";
 
 const LIMIT = 25;
 
@@ -32,11 +40,17 @@ const fmtDate = (iso?: string) => {
 };
 
 export function MyUploadsPage() {
+  const qc = useQueryClient();
   const [params, setParams] = useSearchParams();
   const search = params.get("search") ?? "";
   const page = Number(params.get("page") ?? 1);
   const debounced = useDebounce(search, 350);
   const navigate = useNavigate();
+
+  const [editId, setEditId] = useState<number | null>(null);
+  const [confirmDel, setConfirmDel] = useState<{ id: number; name: string } | null>(
+    null,
+  );
 
   const setParam = (k: string, v: string) => {
     const next = new URLSearchParams(params);
@@ -54,6 +68,48 @@ export function MyUploadsPage() {
   const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["my-uploads", filters],
     queryFn: () => fetchMyUploads(page, LIMIT, debounced),
+  });
+
+  const updateMu = useMutation({
+    mutationFn: (args: { id: number; data: FormData }) =>
+      updateProduct(args.id, args.data),
+    onSuccess: () => {
+      toast.success("Yangilandi");
+      qc.invalidateQueries({ queryKey: ["my-uploads"] });
+      setEditId(null);
+    },
+    onError: (err: any) =>
+      toast.error(err?.response?.data?.message || "Yangilashda xato"),
+  });
+
+  const deleteMu = useMutation({
+    mutationFn: deleteProduct,
+    onSuccess: () => {
+      toast.success("O'chirildi");
+      qc.invalidateQueries({ queryKey: ["my-uploads"] });
+      setConfirmDel(null);
+    },
+    onError: (err: any) =>
+      toast.error(err?.response?.data?.message || "O'chirishda xato"),
+  });
+
+  const [regenIds, setRegenIds] = useState<Set<number>>(new Set());
+  const regenMu = useMutation({
+    mutationFn: regeneratePoster,
+    onMutate: (id: number) =>
+      setRegenIds((prev) => new Set(prev).add(id)),
+    onSettled: (_, __, id) =>
+      setRegenIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      }),
+    onSuccess: () => {
+      toast.success("Poster qayta yaratildi");
+      qc.invalidateQueries({ queryKey: ["my-uploads"] });
+    },
+    onError: (err: any) =>
+      toast.error(err?.response?.data?.message || "Yaratishda xato"),
   });
 
   const items = data?.items ?? [];
@@ -105,18 +161,19 @@ export function MyUploadsPage() {
               <th style={{ width: 90 }}>UDK</th>
               <th style={{ width: 110 }}>Holat</th>
               <th style={{ width: 110 }}>Sana</th>
+              <th style={{ width: 90 }}>Amallar</th>
             </tr>
           </thead>
           <tbody>
             {isLoading ? (
               <tr>
-                <td colSpan={9} className="ent-empty">
+                <td colSpan={10} className="ent-empty">
                   Yuklanmoqda...
                 </td>
               </tr>
             ) : items.length === 0 ? (
               <tr>
-                <td colSpan={9} className="ent-empty">
+                <td colSpan={10} className="ent-empty">
                   Siz hali hech qanday kitob yuklamagansiz
                 </td>
               </tr>
@@ -170,6 +227,39 @@ export function MyUploadsPage() {
                     <td className="ent-cell--code ent-muted">
                       {fmtDate(p.createdAt)}
                     </td>
+                    <td>
+                      <div style={{ display: "flex", gap: 4 }}>
+                        <EntButton
+                          size="icon"
+                          title={
+                            p.poster
+                              ? "Posterni qayta yaratish"
+                              : "PDF'dan poster yaratish"
+                          }
+                          disabled={regenIds.has(p.id)}
+                          onClick={() => regenMu.mutate(p.id)}
+                        >
+                          <ImagePlus size={14} />
+                        </EntButton>
+                        <EntButton
+                          size="icon"
+                          title="Tahrirlash"
+                          onClick={() => setEditId(p.id)}
+                        >
+                          <Pencil size={14} />
+                        </EntButton>
+                        <EntButton
+                          size="icon"
+                          variant="danger"
+                          title="O'chirish"
+                          onClick={() =>
+                            setConfirmDel({ id: p.id, name: p.name })
+                          }
+                        >
+                          <Trash2 size={14} />
+                        </EntButton>
+                      </div>
+                    </td>
                   </tr>
                 );
               })
@@ -187,6 +277,31 @@ export function MyUploadsPage() {
           onChange={(p) => setParam("page", String(p))}
         />
       )}
+
+      <EditProductModal
+        id={editId}
+        isOpen={editId !== null}
+        onClose={() => setEditId(null)}
+        onSave={(data) => {
+          if (editId !== null) updateMu.mutate({ id: editId, data });
+        }}
+      />
+
+      <EntConfirmDialog
+        open={!!confirmDel}
+        title="Kitobni o'chirish"
+        variant="danger"
+        confirmLabel="O'chirish"
+        busy={deleteMu.isPending}
+        onClose={() => setConfirmDel(null)}
+        onConfirm={() => confirmDel && deleteMu.mutate(confirmDel.id)}
+        message={
+          <>
+            <strong>{confirmDel?.name}</strong>ni o'chirishni xohlaysizmi? Bu
+            amalni qaytarib bo'lmaydi.
+          </>
+        }
+      />
     </EntPage>
   );
 }

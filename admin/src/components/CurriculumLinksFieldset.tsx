@@ -290,7 +290,9 @@ export function CurriculumLinksFieldset({ value, onChange, disabled }: Props) {
                   onChange={(v) =>
                     updateRow(idx, { subjectId: v ? Number(v) : "" })
                   }
-                  disabled={disabled || isLoading || hasError}
+                  disabled={
+                    disabled || isLoading || hasError || subjects.length === 0
+                  }
                   options={subjects.map((s) => ({
                     value: String(s.id),
                     label: s.name,

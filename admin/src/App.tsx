@@ -25,6 +25,9 @@ import { SyncPage } from "./pages/admin/users/SyncPage";
 import { CatalogPage } from "./pages/admin/library/CatalogPage";
 import { LoansPage } from "./pages/admin/library/LoansPage";
 import { QuickReturnPage } from "./pages/admin/library/QuickReturnPage";
+import { CurriculumBooksPage } from "./pages/admin/library/CurriculumBooksPage";
+import { RegeneratePostersPage } from "./pages/admin/library/RegeneratePostersPage";
+import { AllBooksPage } from "./pages/admin/library/AllBooksPage";
 import { AuditOverviewPage } from "./pages/admin/audit/AuditOverviewPage";
 import { LoginsPage as AuditLoginsPage } from "./pages/admin/audit/LoginsPage";
 import { SessionsPage as AuditSessionsPage } from "./pages/admin/audit/SessionsPage";
@@ -218,6 +221,32 @@ const App = () => {
                   element={
                     <RoleProtected roles={[UserRole.ADMIN]}>
                       <QuickReturnPage />
+                    </RoleProtected>
+                  }
+                />
+                <Route
+                  path="/library/all-books"
+                  element={
+                    <RoleProtected
+                      roles={[UserRole.ADMIN, UserRole.OPERATOR]}
+                    >
+                      <AllBooksPage />
+                    </RoleProtected>
+                  }
+                />
+                <Route
+                  path="/library/curriculum-books"
+                  element={
+                    <RoleProtected roles={[UserRole.ADMIN]}>
+                      <CurriculumBooksPage />
+                    </RoleProtected>
+                  }
+                />
+                <Route
+                  path="/library/regenerate-posters"
+                  element={
+                    <RoleProtected roles={[UserRole.ADMIN]}>
+                      <RegeneratePostersPage />
                     </RoleProtected>
                   }
                 />

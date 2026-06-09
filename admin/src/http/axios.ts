@@ -36,10 +36,10 @@ const flushQueue = (err: unknown, token?: string) => {
 };
 
 const isAuthPath = (url: string) =>
-  url.includes("/auth/login") ||
-  url.includes("/auth/refresh") ||
-  url.includes("/auth/logout") ||
-  url.includes("/auth/hemis/login");
+  url.startsWith("/auth/login") ||
+  url.startsWith("/auth/refresh") ||
+  url.startsWith("/auth/logout") ||
+  url.startsWith("/auth/hemis/login");
 
 $api.interceptors.response.use(
   (res) => res,

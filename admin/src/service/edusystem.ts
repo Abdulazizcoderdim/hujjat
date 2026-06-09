@@ -19,9 +19,7 @@ export const fetchCurriculums = async (): Promise<ICurriculum[]> => {
   return unwrap<ICurriculum>(data);
 };
 
-export const fetchSubjects = async (
-  onlyCurriculum = true,
-): Promise<ISubject[]> => {
+export const fetchSubjects = async (onlyCurriculum = false): Promise<ISubject[]> => {
   const { data } = await $edu.get(SUBJECTS_PATH, {
     params: { onlyCurriculum },
   });
@@ -40,8 +38,7 @@ export const fetchSemesters = async (): Promise<ISemester[]> => {
 
   const seen = new Map<number, ISemester>();
   for (const s of raw) {
-    const fromOrder =
-      typeof s.orderNumber === "number" ? s.orderNumber : NaN;
+    const fromOrder = typeof s.orderNumber === "number" ? s.orderNumber : NaN;
     const fromName = s.name?.match(/(\d+)/)?.[1];
     const parsed = !isNaN(fromOrder)
       ? fromOrder

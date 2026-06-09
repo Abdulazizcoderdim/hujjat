@@ -47,7 +47,7 @@ const UploadProductsPage = () => {
   const { data } = useQuery<ResCategory>({
     queryKey: ["categories"],
     queryFn: async () => {
-      const res = await $api.get("/categories", { params: { limit: 100 } });
+      const res = await $api.get("/categories/all");
       return res.data;
     },
     placeholderData: (prev) =>

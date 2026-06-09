@@ -38,7 +38,7 @@ export function EditProductModal({ id, isOpen, onClose, onSave }: Props) {
   const { data: categories } = useQuery({
     queryKey: ["categories-list"],
     queryFn: async () =>
-      (await $api.get("/categories", { params: { limit: 100 } })).data,
+      (await $api.get("/categories/all")).data,
   });
 
   const { data: product, isLoading } = useQuery({
@@ -283,6 +283,7 @@ export function EditProductModal({ id, isOpen, onClose, onSave }: Props) {
               <input
                 type="file"
                 className="ent-input"
+                accept=".pdf"
                 onChange={(e) => setFile(e.target.files?.[0] || null)}
                 style={{ padding: 2 }}
               />
