@@ -4,6 +4,7 @@ import $api from "@/http/axios";
 import { ICategory, ILoan, IProduct } from "@/interface";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
+import { useMemo } from "react";
 import {
   AlertCircle,
   BookOpen,
@@ -45,8 +46,8 @@ const PhysicalLoans = () => {
     },
   });
 
-  const active = loans.filter((l) => l.status === "active");
-  const returned = loans.filter((l) => l.status === "returned");
+  const active = useMemo(() => loans.filter((l) => l.status === "active"), [loans]);
+  const returned = useMemo(() => loans.filter((l) => l.status === "returned"), [loans]);
 
   return (
     <div className="h-svh w-full flex bg-background text-foreground antialiased overflow-hidden">
@@ -106,7 +107,7 @@ const PhysicalLoans = () => {
                       const overdue = days < 0;
                       const soon = days >= 0 && days <= 3;
                       return (
-                        <motion.div
+                        <motion.button
                           key={loan.id}
                           initial={{ opacity: 0, y: 12 }}
                           animate={{ opacity: 1, y: 0 }}
@@ -163,17 +164,17 @@ const PhysicalLoans = () => {
                                   <Clock className="w-3.5 h-3.5" />
                                 )}
                                 {overdue
-                                  ? `Muddati ${Math.abs(days)} kun oldin tugagan`
+                                  ? `Muddati ${Math.abs(days)} ${Math.abs(days) > 1 ? "kunlar" : "kun"} oldin tugagan`
                                   : days === 0
                                     ? "Bugun qaytarish kerak"
-                                    : `${days} kun qoldi`}
+                                    : `${days} ${days > 1 ? "kunlar" : "kun"} qoldi`}
                               </span>
                               <span className="text-xs text-muted-foreground">
                                 Qaytarish: {formatDate(loan.dueAt)}
                               </span>
                             </div>
                           </div>
-                        </motion.div>
+                        </motion.button>
                       );
                     })}
                   </div>

@@ -15,7 +15,9 @@ export const fetchStudentLibraryContext =
     const { data } = await $edu.get(CONTEXT_PATH, {
       headers: { "X-Hemis-Token": token },
     });
-    return data?.data ?? data;
+    if (data?.data && typeof data.data === "object") return data.data;
+    if (data && typeof data === "object") return data;
+    throw new Error("Invalid API response structure for student context");
   };
 
 const unwrap = <T>(data: any): T[] => {

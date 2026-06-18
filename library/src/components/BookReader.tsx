@@ -240,21 +240,23 @@ const BookReader: React.FC = () => {
 
     const start = async () => {
       try {
-        const res: any = await startSession({
+        const res = await startSession({
           productId: Number(id),
           startPage: userBook?.lastPage || getSavedPage() || 1,
         });
 
         sessionIdRef.current = res.data.id;
 
-        localStorage.setItem(SESSION_KEY, res.data.id);
+        localStorage.setItem(SESSION_KEY, String(res.data.id));
       } catch (e) {
-        console.error("Session start error", e);
+        const errorMessage = e instanceof Error ? e.message : "Unknown error";
+        const statusCode = (e as any)?.response?.status;
+        console.error("Session start error", statusCode ? `${statusCode}: ${errorMessage}` : errorMessage);
       }
     };
 
     start();
-  }, [id]);
+  }, [id, startSession]);
 
   useEffect(() => {
     const handleUnload = () => {
@@ -289,8 +291,6 @@ const BookReader: React.FC = () => {
     },
     enabled: !!id,
   });
-
-  console.log("book,.....");
 
   const { mutate: updateProgress } = useMutation({
     mutationFn: (dto: {
@@ -513,10 +513,12 @@ const BookReader: React.FC = () => {
 
     if (maxPage > 0) setMaxReadPage(maxPage);
 
-    if (startPage > 0 && flipBookRef.current) {
+    // Validate startPage is within valid range [0, totalPages-1]
+    const validStartPage = Math.min(Math.max(startPage, 0), totalPages - 1);
+    if (validStartPage > 0 && flipBookRef.current) {
       setTimeout(() => {
-        flipBookRef.current?.pageFlip()?.turnToPage(startPage);
-        setCurrentPage(startPage);
+        flipBookRef.current?.pageFlip()?.turnToPage(validStartPage);
+        setCurrentPage(validStartPage);
       }, 300);
     }
   }, [userBook?.id, isBookReady, totalPages]);

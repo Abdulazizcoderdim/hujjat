@@ -265,14 +265,14 @@ const Leaderboard = () => {
 
             {/* Top 3 Podium */}
             <div className="bg-card border border-border rounded-2xl p-5 sm:p-8 mb-4">
-              <div className="flex items-end justify-center gap-6 sm:gap-10">
+              <div className="flex flex-col sm:flex-row items-end justify-center gap-6 sm:gap-10">
                 {students.slice(0, 3).map((s, i) => (
                   <TopThreeCard key={s.id} student={s} rank={i + 1} />
                 ))}
               </div>
             </div>
             {/* Stats row */}
-            <div className="grid grid-cols-3 gap-3 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
               <div className="bg-card border border-border rounded-xl p-3 sm:p-4 text-center">
                 <BookOpen
                   className="w-4 h-4 text-primary mx-auto mb-1.5"

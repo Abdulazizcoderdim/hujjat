@@ -1,6 +1,7 @@
 import $api from "@/http/axios";
 import { ICategory } from "@/interface";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { authStore } from "@/store/auth.store";
 import {
   BookOpen,
   BookMarked,
@@ -14,7 +15,7 @@ import {
   Star,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 interface NavItemProps {
@@ -25,7 +26,7 @@ interface NavItemProps {
   onClick?: () => void;
 }
 
-const NavItem = ({ icon, label, active, to, onClick }: NavItemProps) => {
+const NavItem = React.memo(({ icon, label, active, to, onClick }: NavItemProps) => {
   const content = (
     <div
       className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm transition-colors duration-200 ${
@@ -48,7 +49,7 @@ const NavItem = ({ icon, label, active, to, onClick }: NavItemProps) => {
     );
   }
   return <button className="w-full">{content}</button>;
-};
+});
 
 interface SidebarNavProps {
   activePage?: string;
@@ -60,6 +61,8 @@ interface Category {
 
 const SidebarNav = ({ activePage = "home" }: SidebarNavProps) => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { setIsAuth } = authStore();
   const [open, setOpen] = useState(false);
 
   const { data: categories } = useQuery<Category>({
@@ -81,6 +84,8 @@ const SidebarNav = ({ activePage = "home" }: SidebarNavProps) => {
   const close = () => setOpen(false);
 
   const handleLogout = () => {
+    queryClient.clear();
+    setIsAuth(false);
     localStorage.removeItem("access_token");
     localStorage.removeItem("hemis_token");
     navigate("/login");
@@ -196,14 +201,14 @@ const SidebarNav = ({ activePage = "home" }: SidebarNavProps) => {
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex w-[280px] flex-shrink-0 border-r border-border flex-col bg-card h-full">
+      <aside className="hidden md:flex w-[280px] max-w-[85vw] flex-shrink-0 border-r border-border flex-col bg-card h-full">
         {sidebarContent}
       </aside>
 
       {/* Mobile hamburger button */}
       <button
         onClick={() => setOpen(true)}
-        className={`md:hidden fixed top-4 left-4 z-50 w-10 h-10 rounded-xl bg-card border border-border shadow-card flex items-center justify-center`}
+        className={`md:hidden fixed top-4 left-4 z-50 w-11 h-11 rounded-xl bg-card border border-border shadow-card flex items-center justify-center`}
         aria-label="Menyu"
       >
         <Menu className="w-5 h-5 text-foreground" strokeWidth={1.5} />
@@ -211,12 +216,25 @@ const SidebarNav = ({ activePage = "home" }: SidebarNavProps) => {
 
       {/* Mobile overlay */}
       {open && (
-        <div className="md:hidden fixed inset-0 z-50 flex">
+        <div
+          className="md:hidden fixed inset-0 z-50 flex"
+          role="dialog"
+          aria-modal="true"
+          onKeyDown={(e) => e.key === "Escape" && close()}
+        >
           <div
             className="absolute inset-0 bg-foreground/20 backdrop-blur-sm"
             onClick={close}
           />
-          <aside className="relative w-[280px] max-w-[85vw] flex flex-col bg-card h-full shadow-search animate-in slide-in-from-left duration-200">
+          <aside
+            className="relative w-[280px] max-w-[85vw] flex flex-col bg-card h-full shadow-search animate-in slide-in-from-left duration-200"
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                e.stopPropagation();
+                close();
+              }
+            }}
+          >
             <button
               onClick={close}
               className="absolute top-4 right-4 w-8 h-8 rounded-lg bg-secondary flex items-center justify-center"

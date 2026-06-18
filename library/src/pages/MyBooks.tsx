@@ -45,7 +45,7 @@ const MyBooks = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
             {myBooks?.map((item, i) => (
-              <motion.div
+              <motion.button
                 key={item.product.id}
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -75,7 +75,7 @@ const MyBooks = () => {
                     {item.progress}% o'qilgan
                   </p>
                 </div>
-              </motion.div>
+              </motion.button>
             ))}
           </div>
         </div>

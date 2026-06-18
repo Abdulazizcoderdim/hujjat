@@ -1,6 +1,16 @@
 import Header from "@/components/Header";
 import { RequestBookDialog } from "@/components/RequestBookDialog";
 import SidebarNav from "@/components/SidebarNav";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { BookRequestStatus, IBookRequest } from "@/interface";
 import { cancelRequest, fetchMyRequests } from "@/service/bookRequests";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -66,6 +76,8 @@ const MyRequests = () => {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [cancelRequestId, setCancelRequestId] = useState<number | null>(null);
 
   const { data: items = [], isLoading } = useQuery<IBookRequest[]>({
     queryKey: ["my-book-requests"],
@@ -224,8 +236,8 @@ const MyRequests = () => {
                         <button
                           disabled={cancelMu.isPending}
                           onClick={() => {
-                            if (window.confirm("So'rov bekor qilinsinmi?"))
-                              cancelMu.mutate(r.id);
+                            setCancelRequestId(r.id);
+                            setShowCancelDialog(true);
                           }}
                           className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
                         >
@@ -247,6 +259,31 @@ const MyRequests = () => {
       </main>
 
       <RequestBookDialog open={open} onClose={() => setOpen(false)} />
+
+      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>So'rovni bekor qilish</AlertDialogTitle>
+            <AlertDialogDescription>
+              Haqiqatan ham bu so'rovni bekor qilmoqchisiz? Bu amalni qaytarish mumkin emas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Bekor qilish</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (cancelRequestId) {
+                  cancelMu.mutate(cancelRequestId);
+                  setShowCancelDialog(false);
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              So'rovni bekor qilish
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

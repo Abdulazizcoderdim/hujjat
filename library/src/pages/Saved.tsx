@@ -9,10 +9,15 @@ import { useNavigate } from "react-router-dom";
 
 const Saved = () => {
   const navigate = useNavigate();
-  const savedBooks = JSON.parse(localStorage.getItem("savedBooks") || "[]");
+  let savedBooks: unknown[] = [];
+  try {
+    savedBooks = JSON.parse(localStorage.getItem("savedBooks") || "[]");
+  } catch {
+    savedBooks = [];
+  }
 
   const { data, isLoading } = useQuery<IProduct<ICategory>[]>({
-    queryKey: ["savedBooks"],
+    queryKey: ["savedBooks", ...savedBooks],
     queryFn: async () => {
       const { data } = await $api.get("/products/books", {
         params: {
@@ -52,13 +57,15 @@ const Saved = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
             {data?.map((book, i) => (
-              <motion.div
+              <motion.button
                 key={book.id}
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
                 onClick={() => navigate(`/book/${book.id}`)}
                 className="bg-card rounded-xl border border-border p-4 flex gap-4 items-start cursor-pointer hover:shadow-card transition-shadow"
+                type="button"
+                aria-label={`View details for ${book.name}`}
               >
                 <img
                   src={book.poster}
@@ -74,7 +81,7 @@ const Saved = () => {
                   </p>
                   <Star className="w-4 h-4 text-primary fill-primary" />
                 </div>
-              </motion.div>
+              </motion.button>
             ))}
           </div>
         </div>

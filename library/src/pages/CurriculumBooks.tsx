@@ -57,9 +57,15 @@ const CurriculumBooks = () => {
 
   return (
     <div className="h-svh w-full flex bg-background text-foreground antialiased overflow-hidden">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-md"
+      >
+        Asosiy kontentga o'tish
+      </a>
       <SidebarNav activePage="curriculum" />
 
-      <main className="flex-1 flex flex-col min-w-0">
+      <main id="main-content" className="flex-1 flex flex-col min-w-0">
         <Header title="Mening o'quv reja kitoblarim" />
 
         <div className="flex-1 overflow-y-auto p-4 sm:p-8">

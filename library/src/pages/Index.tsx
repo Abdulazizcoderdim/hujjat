@@ -75,6 +75,9 @@ const Index = () => {
             </h2>
 
             <div className="relative">
+              <label htmlFor="search-input" className="sr-only">
+                Search books, articles or authors
+              </label>
               {isSearchFetching ? (
                 <Loader2
                   className="absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 w-4 sm:w-5 h-4 sm:h-5 text-primary animate-spin"
@@ -87,6 +90,7 @@ const Index = () => {
                 />
               )}
               <input
+                id="search-input"
                 type="text"
                 value={searchValue}
                 onChange={(e) => setSearchValue(e.target.value)}
@@ -135,7 +139,7 @@ const Index = () => {
                   Hammasini ko'rish →
                 </button>
               </div>
-              <div className="flex gap-3 sm:gap-5 overflow-x-auto no-scrollbar pb-2 flex-1 min-h-0 items-start">
+              <div className="flex gap-3 sm:gap-5 overflow-x-auto pb-2 flex-1 min-h-0 items-start">
                 <AnimatePresence>
                   {isSearching &&
                     !isSearchFetching &&
@@ -189,7 +193,7 @@ const Index = () => {
               </div>
               <div className="flex gap-3 sm:gap-4 overflow-x-auto no-scrollbar pb-2">
                 {recentBooks.slice(0, 4).map(({ product: book }) => (
-                  <div
+                  <button
                     key={book.id}
                     onClick={() => navigate(`/book/${book.id}`)}
                     className="flex-shrink-0 flex items-center gap-3 bg-card rounded-xl p-3 pr-5 sm:pr-6 border border-border shadow-soft hover:shadow-card transition-shadow cursor-pointer"
@@ -208,7 +212,7 @@ const Index = () => {
                         {book.author}
                       </p>
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>

@@ -163,13 +163,6 @@ const Products = () => {
     ? searchResults
     : (products?.items ?? []);
 
-  if (isLoading || isLoadingCategories)
-    return (
-      <div className="h-svh w-full flex items-center justify-center">
-        <Loader className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-
   return (
     <div className="h-svh w-full flex bg-background text-foreground antialiased overflow-hidden">
       <SidebarNav />
@@ -210,6 +203,9 @@ const Products = () => {
 
             {/* Search */}
             <div className="relative mb-4">
+              <label htmlFor="product-search" className="sr-only">
+                Kitob qidirish
+              </label>
               {isSearchFetching ? (
                 <Loader2
                   className="absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 w-4 sm:w-5 h-4 sm:h-5 text-primary animate-spin"
@@ -222,10 +218,12 @@ const Products = () => {
                 />
               )}
               <input
+                id="product-search"
                 type="text"
                 value={search}
                 onChange={(e) => setParam("q", e.target.value)}
                 placeholder="Kitob nomi yoki muallif..."
+                aria-label="Kitob nomi yoki muallif bo'yicha qidirish"
                 className="w-full h-10 sm:h-11 bg-card border border-border rounded-xl text-sm pl-10 pr-4 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all outline-none placeholder:text-muted-foreground/60"
               />
 
@@ -279,7 +277,7 @@ const Products = () => {
                   </div>
                 </div>
 
-                <div className="grid gap-2 sm:grid-cols-3">
+                <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                   <Select
                     value={curriculumId || ALL}
                     onValueChange={(v) =>
@@ -341,8 +339,9 @@ const Products = () => {
                   </Select>
                 </div>
 
-                <label className="mt-3 flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
+                <label htmlFor="curriculum-checkbox" className="mt-3 flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
                   <input
+                    id="curriculum-checkbox"
                     type="checkbox"
                     checked={onlyCurriculum}
                     onChange={(e) =>

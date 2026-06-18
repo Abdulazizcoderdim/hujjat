@@ -6,6 +6,17 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
+interface LoginStats {
+  totalBooks?: number;
+  regionsCount?: number;
+  students?: {
+    total?: number;
+    bakalavr?: number;
+    ayollar: number;
+    erkaklar: number;
+  };
+}
+
 const StatCard = ({ icon: Icon, label, value, delay }: any) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
@@ -29,7 +40,7 @@ const Login = () => {
   const [studentId, setStudentId] = useState("");
   const [password, setPassword] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<LoginStats | null>(null);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -58,8 +69,12 @@ const Login = () => {
         localStorage.setItem("hemis_token", data.hemisToken);
       }
       navigate("/");
-    } catch (error) {
-      toast.error("Login yoki parol noto'g'ri.");
+    } catch (error: any) {
+      const errorMessage =
+        error?.response?.status === 401
+          ? "Login yoki parol noto'g'ri."
+          : error?.response?.data?.message || "Xato yuz berdi. Iltimos qayta urinib ko'ring.";
+      toast.error(errorMessage);
     } finally {
       setAuthLoading(false);
     }

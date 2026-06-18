@@ -1,7 +1,8 @@
 import SidebarNav from "@/components/SidebarNav";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import $api from "@/http/axios";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { authStore } from "@/store/auth.store";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -53,15 +54,26 @@ const InfoRow = ({ icon, label, value }: InfoRowProps) => (
 
 const Profile = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { setIsAuth } = authStore();
 
   const { data } = useQuery({
     queryKey: ["profile"],
     queryFn: () => $api.get("/auth/me").then((res) => res.data.user),
   });
 
-  const handleLogout = () => {
-    localStorage.removeItem("access_token");
-    navigate("/login");
+  const handleLogout = async () => {
+    try {
+      await $api.post("/auth/logout");
+    } catch (error) {
+      console.error("Logout API call failed:", error);
+    } finally {
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("hemis_token");
+      queryClient.clear();
+      setIsAuth(false);
+      navigate("/login");
+    }
   };
 
   return (
@@ -99,8 +111,8 @@ const Profile = () => {
                     className="object-cover"
                   />
                   <AvatarFallback className="rounded-2xl bg-primary/10 text-primary text-xl font-bold">
-                    {data?.first_name[0]}
-                    {data?.second_name[0]}
+                    {data?.first_name?.[0]}
+                    {data?.second_name?.[0]}
                   </AvatarFallback>
                 </Avatar>
                 <div className="text-center sm:text-left flex-1 min-w-0">

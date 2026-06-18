@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import $api from "@/http/axios";
 import { ICategory, IProduct } from "@/interface";
 import useDebounce from "@/hooks/useDebounce";
+import { getErrorMessage } from "@/utils/error";
 import {
   createBookRequest,
   CreateBookRequestPayload,
@@ -70,12 +71,12 @@ export function RequestBookDialog({ open, onClose, defaultTitle = "" }: Props) {
       onClose();
     },
     onError: (err: any) =>
-      toast.error(err?.response?.data?.message || "Xato yuz berdi"),
+      toast.error(getErrorMessage(err)),
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.title.trim()) return;
+    if (!form.title.trim() || submitMu.isPending) return;
     submitMu.mutate({
       title: form.title.trim(),
       author: form.author?.trim() || undefined,
