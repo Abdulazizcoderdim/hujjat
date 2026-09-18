@@ -6,12 +6,14 @@ import { authStore } from "@/store/auth.store";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
+  ArrowRight,
   BookOpen,
   Building,
   Calendar,
   GraduationCap,
   Hash,
   Layers,
+  MessageSquare,
   Users,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -225,6 +227,28 @@ const Profile = () => {
                 />
               </div>
             </div>
+            {/* Mening sharhlarim — link */}
+            <div className="mt-4 bg-card border border-border rounded-2xl p-5">
+              <button
+                type="button"
+                onClick={() => navigate("/my-reviews")}
+                className="w-full flex items-center justify-between gap-3 text-left group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                    <MessageSquare className="w-5 h-5" strokeWidth={1.5} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold">Mening sharhlarim</p>
+                    <p className="text-xs text-muted-foreground">
+                      Yozgan baholaringizni ko'rish va o'chirish
+                    </p>
+                  </div>
+                </div>
+                <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
+              </button>
+            </div>
+
             {/* Actions */}
             <div className="mt-4 bg-card border border-border rounded-2xl p-5">
               <h3 className="text-xs font-mono-label text-muted-foreground mb-4">

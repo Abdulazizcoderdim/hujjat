@@ -20,7 +20,19 @@ import {
   updateProduct,
 } from "@/service/products";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle, Edit, Eye, GraduationCap, Trash2, XCircle } from "lucide-react";
+import {
+  CheckCircle,
+  Edit,
+  Eye,
+  GraduationCap,
+  QrCode,
+  Trash2,
+  XCircle,
+} from "lucide-react";
+import {
+  QrPreviewDialog,
+  QrPreviewProduct,
+} from "@/components/admin/QrPreviewDialog";
 import { useState } from "react";
 import { toast } from "sonner";
 import { EditProductModal } from "./EditProductModal";
@@ -92,6 +104,8 @@ export function ProductsListPage({ status, title }: Props) {
         );
       })
     : items;
+
+  const [qrProduct, setQrProduct] = useState<QrPreviewProduct | null>(null);
 
   const updateMu = useMutation({
     mutationFn: (args: { id: number; data: FormData }) =>
@@ -231,6 +245,22 @@ export function ProductsListPage({ status, title }: Props) {
                     <div style={{ display: "flex", gap: 4 }}>
                       <EntButton
                         size="icon"
+                        title="QR-kod"
+                        onClick={() =>
+                          setQrProduct({
+                            id: p.id,
+                            name: p.name,
+                            author: p.author,
+                            shelfCode: p.shelfCode,
+                            udc: (p as any).udc,
+                            qrScanCount: (p as any).qrScanCount,
+                          })
+                        }
+                      >
+                        <QrCode size={14} />
+                      </EntButton>
+                      <EntButton
+                        size="icon"
                         title="Ko'rish"
                         onClick={() => {
                           setSelectedId(p.id);
@@ -309,6 +339,8 @@ export function ProductsListPage({ status, title }: Props) {
           onChange={setPage}
         />
       )}
+
+      <QrPreviewDialog product={qrProduct} onClose={() => setQrProduct(null)} />
 
       <EditProductModal
         id={selectedId}

@@ -14,7 +14,11 @@ import { ICategory } from "@/interface";
 import { fetchCatalog } from "@/service/library";
 import { updateProduct } from "@/service/products";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Pencil, RefreshCw } from "lucide-react";
+import { Pencil, QrCode, RefreshCw } from "lucide-react";
+import {
+  QrPreviewDialog,
+  QrPreviewProduct,
+} from "@/components/admin/QrPreviewDialog";
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -32,6 +36,7 @@ export function AllBooksPage() {
   const page = Number.isInteger(pageParam) && pageParam >= 1 ? pageParam : 1;
 
   const [editId, setEditId] = useState<number | null>(null);
+  const [qrProduct, setQrProduct] = useState<QrPreviewProduct | null>(null);
 
   const setParam = (k: string, v: string | number | null) => {
     const next = new URLSearchParams(params);
@@ -190,13 +195,31 @@ export function AllBooksPage() {
                       )}
                     </td>
                     <td>
-                      <EntButton
-                        size="icon"
-                        title="Tahrirlash (o'quv reja qo'shish)"
-                        onClick={() => setEditId(p.id)}
-                      >
-                        <Pencil size={14} />
-                      </EntButton>
+                      <div style={{ display: "flex", gap: 4 }}>
+                        <EntButton
+                          size="icon"
+                          title="QR-kod"
+                          onClick={() =>
+                            setQrProduct({
+                              id: p.id,
+                              name: p.name,
+                              author: p.author,
+                              shelfCode: p.shelfCode,
+                              udc: (p as any).udc,
+                              qrScanCount: (p as any).qrScanCount,
+                            })
+                          }
+                        >
+                          <QrCode size={14} />
+                        </EntButton>
+                        <EntButton
+                          size="icon"
+                          title="Tahrirlash (o'quv reja qo'shish)"
+                          onClick={() => setEditId(p.id)}
+                        >
+                          <Pencil size={14} />
+                        </EntButton>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -215,6 +238,8 @@ export function AllBooksPage() {
           onChange={(p) => setParam("page", p)}
         />
       )}
+
+      <QrPreviewDialog product={qrProduct} onClose={() => setQrProduct(null)} />
 
       <EditProductModal
         id={editId}

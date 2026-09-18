@@ -3,7 +3,7 @@ import { authStore } from "@/store/auth.store";
 import { motion } from "framer-motion";
 import { ArrowRight, Lock, User, BookOpen, Users } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
 interface LoginStats {
@@ -36,6 +36,14 @@ const StatCard = ({ icon: Icon, label, value, delay }: any) => (
 
 const Login = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  // ProtectedRoute bergan qaytish manzili — faqat ichki yo'l qabul qilinadi
+  // (open-redirect'ga yo'l qo'ymaslik uchun "http..." yoki "//..." rad etiladi).
+  const rawReturnTo = searchParams.get("returnTo") ?? "";
+  const returnTo =
+    rawReturnTo.startsWith("/") && !rawReturnTo.startsWith("//")
+      ? rawReturnTo
+      : "/";
   const { setIsAuth, setUser, setLoading } = authStore();
   const [studentId, setStudentId] = useState("");
   const [password, setPassword] = useState("");
@@ -68,7 +76,7 @@ const Login = () => {
       if (data.hemisToken) {
         localStorage.setItem("hemis_token", data.hemisToken);
       }
-      navigate("/");
+      navigate(returnTo, { replace: true });
     } catch (error: any) {
       const errorMessage =
         error?.response?.status === 401

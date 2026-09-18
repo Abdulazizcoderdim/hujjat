@@ -1,9 +1,10 @@
 import { authStore } from "@/store/auth.store";
 import { Loader } from "lucide-react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuth, isLoading } = authStore();
+  const location = useLocation();
 
   if (isLoading) {
     return (
@@ -16,7 +17,14 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!isAuth) {
-    return <Navigate to="/login" replace />;
+    // Login'dan keyin foydalanuvchi kirmoqchi bo'lgan sahifaga qaytarish uchun
+    // (masalan, QR skanerlab kelgan talaba to'g'ri kitobga tushsin).
+    const returnTo = location.pathname + location.search;
+    const target =
+      returnTo && returnTo !== "/"
+        ? `/login?returnTo=${encodeURIComponent(returnTo)}`
+        : "/login";
+    return <Navigate to={target} replace />;
   }
 
   return <>{children}</>;

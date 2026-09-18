@@ -23,6 +23,9 @@ import Profile from "./pages/Profile.tsx";
 import Saved from "./pages/Saved.tsx";
 import { authStore } from "./store/auth.store.ts";
 import Leaderboard from "./pages/RatingPage.tsx";
+import TopRatedPage from "./pages/TopRatedPage.tsx";
+import MyReviewsPage from "./pages/MyReviewsPage.tsx";
+import QrGate from "./pages/QrGate.tsx";
 
 const queryClient = new QueryClient();
 
@@ -85,6 +88,24 @@ const App = () => {
             <Route path="/login" element={<Login />} />
 
             <Route path="/rating" element={<Leaderboard />} />
+            <Route
+              path="/top-rated"
+              element={
+                <ProtectedRoute>
+                  <TopRatedPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/my-reviews"
+              element={
+                <ProtectedRoute>
+                  <MyReviewsPage />
+                </ProtectedRoute>
+              }
+            />
+            {/* QR darvozasi — auth talab qilmaydi, o'zi /book/:id ga yo'naltiradi */}
+            <Route path="/qr/:id" element={<QrGate />} />
 
             <Route
               path="/my-books"

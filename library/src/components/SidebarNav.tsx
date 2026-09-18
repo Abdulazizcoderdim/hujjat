@@ -13,6 +13,7 @@ import {
   MessageSquarePlus,
   Satellite,
   Star,
+  Trophy,
   X,
 } from "lucide-react";
 import React, { useState } from "react";
@@ -160,6 +161,14 @@ const SidebarNav = ({ activePage = "home" }: SidebarNavProps) => {
           to="/rating"
           onClick={close}
         /> */}
+
+        <NavItem
+          icon={<Trophy className="w-5 h-5" strokeWidth={1.5} />}
+          label="Eng yuqori reyting"
+          active={activePage === "top-rated"}
+          to="/top-rated"
+          onClick={close}
+        />
 
         <div className="pt-6 pb-2 px-4">
           <span className="text-[10px] font-mono-label text-muted-foreground">

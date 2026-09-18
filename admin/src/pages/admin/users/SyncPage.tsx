@@ -10,14 +10,15 @@ import {
   EntTableWrap,
   EntToolbar,
 } from "@/components/enterprise";
-import { HemisSyncStatus, IHemisSyncJob } from "@/interface";
+import { HemisSyncStatus, HemisSyncType, IHemisSyncJob } from "@/interface";
 import {
   fetchHemisSyncCurrent,
   fetchHemisSyncHistory,
+  startHemisEmployeeSync,
   startHemisSync,
 } from "@/service/hemisSync";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertCircle, Play, RefreshCw } from "lucide-react";
+import { AlertCircle, Play, RefreshCw, Users } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -96,7 +97,21 @@ export function SyncPage() {
       if (job.status === "running") {
         toast.info("Sinxronizatsiya allaqachon bajarilmoqda");
       } else {
-        toast.success("Sinxronizatsiya boshlandi");
+        toast.success("Talabalar sinxronizatsiyasi boshlandi");
+      }
+      qc.invalidateQueries({ queryKey: ["hemis-sync"] });
+    },
+    onError: (err: any) =>
+      toast.error(err?.response?.data?.message || "Xato yuz berdi"),
+  });
+
+  const startEmployeeMu = useMutation({
+    mutationFn: startHemisEmployeeSync,
+    onSuccess: (job) => {
+      if (job.status === "running") {
+        toast.info("Sinxronizatsiya allaqachon bajarilmoqda");
+      } else {
+        toast.success("Hodimlar sinxronizatsiyasi boshlandi");
       }
       qc.invalidateQueries({ queryKey: ["hemis-sync"] });
     },
@@ -139,7 +154,19 @@ export function SyncPage() {
               }
             >
               <Play size={14} />
-              {isRunning ? "Bajarilmoqda..." : "Sinxronlashni boshlash"}
+              {isRunning ? "Bajarilmoqda..." : "Talabalarni sinxronlash"}
+            </EntButton>
+            <EntButton
+              onClick={() => startEmployeeMu.mutate()}
+              disabled={isRunning || startEmployeeMu.isPending}
+              title={
+                isRunning
+                  ? "Hozir sinxronizatsiya bajarilmoqda"
+                  : "HEMIS'dan hodimlarni sinxronlash"
+              }
+            >
+              <Users size={14} />
+              {isRunning ? "Bajarilmoqda..." : "Hodimlarni sinxronlash"}
             </EntButton>
           </>
         }
@@ -297,6 +324,7 @@ export function SyncPage() {
                 <tr>
                   <th style={{ width: 40 }}>#</th>
                   <th style={{ width: 70 }}>ID</th>
+                  <th style={{ width: 90 }}>Turi</th>
                   <th style={{ width: 110 }}>Status</th>
                   <th style={{ width: 130 }}>Boshlangan</th>
                   <th style={{ width: 130 }}>Yakunlangan</th>
@@ -311,13 +339,13 @@ export function SyncPage() {
               <tbody>
                 {historyQ.isLoading ? (
                   <tr>
-                    <td colSpan={11} className="ent-empty">
+                    <td colSpan={12} className="ent-empty">
                       Yuklanmoqda...
                     </td>
                   </tr>
                 ) : (historyQ.data?.items ?? []).length === 0 ? (
                   <tr>
-                    <td colSpan={11} className="ent-empty">
+                    <td colSpan={12} className="ent-empty">
                       Tarix yo'q
                     </td>
                   </tr>
@@ -328,6 +356,19 @@ export function SyncPage() {
                         {(historyPage - 1) * HISTORY_LIMIT + idx + 1}
                       </td>
                       <td className="ent-cell--code">#{j.id}</td>
+                      <td>
+                        <EntBadge
+                          variant={
+                            j.type === HemisSyncType.EMPLOYEE
+                              ? "warn"
+                              : "muted"
+                          }
+                        >
+                          {j.type === HemisSyncType.EMPLOYEE
+                            ? "Hodimlar"
+                            : "Talabalar"}
+                        </EntBadge>
+                      </td>
                       <td>{statusBadge(j.status)}</td>
                       <td className="ent-cell--code">
                         {fmtDateTime(j.startedAt)}

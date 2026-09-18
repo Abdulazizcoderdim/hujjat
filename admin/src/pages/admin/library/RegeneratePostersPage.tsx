@@ -53,6 +53,12 @@ export function RegeneratePostersPage() {
     pauseRef.current = false;
     setStatus("running");
 
+    // Progress tracking — agar muvaffaqiyatsiz urinishlar takrorlansa
+    // (failed records keyingi safar yana qaytaradi), bir xil remaining
+    // bo'yicha aniqlab to'xtatamiz.
+    let prevRemaining: number | null = null;
+    let stuckRounds = 0;
+
     while (!stopRef.current) {
       while (pauseRef.current && !stopRef.current) {
         await new Promise((r) => setTimeout(r, 300));
@@ -77,10 +83,24 @@ export function RegeneratePostersPage() {
         errors: [...prev.errors, ...chunk.errors],
       }));
 
-      // Backend hech narsa qayta ishlamadi → tugadi (yoki faqat fail bo'lganlar qoldi)
+      // Backend hech narsa qayta ishlamadi → tugadi
       if (chunk.processed === 0) break;
-      // Hech qancha qolmadi
       if (chunk.remaining === 0) break;
+
+      // Progress yo'q (succeeded=0 va remaining o'zgarmadi) → fail loop
+      if (chunk.succeeded === 0 && prevRemaining === chunk.remaining) {
+        stuckRounds++;
+        if (stuckRounds >= 1) {
+          toast.error(
+            "Qolgan kitoblar muvaffaqiyatsiz tugayapti — to'xtatildi. Xatolar ro'yxatini ko'rib chiqing.",
+            { duration: 6000 },
+          );
+          break;
+        }
+      } else {
+        stuckRounds = 0;
+      }
+      prevRemaining = chunk.remaining;
     }
 
     setStatus("done");

@@ -1,7 +1,9 @@
 import BookCard from "@/components/BookCard";
+import { BookReviewsSection } from "@/components/BookReviewsSection";
 import PDFReader from "@/components/PDFReader";
 import ProfileAvatar from "@/components/ProfileAvatar";
 import SidebarNav from "@/components/SidebarNav";
+import { StarRating } from "@/components/StarRating";
 import $api from "@/http/axios";
 import { ICategory, IProduct } from "@/interface";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -170,9 +172,22 @@ const BookDetail = () => {
                 <h1 className="text-2xl sm:text-3xl font-bold font-display tracking-tight mb-2">
                   {book.name}
                 </h1>
-                <p className="text-base text-muted-foreground mb-6">
+                <p className="text-base text-muted-foreground mb-3">
                   {book.author}
                 </p>
+                {/* Reyting badge */}
+                {(book.reviewsCount ?? 0) > 0 && book.averageRating != null && (
+                  <div className="flex items-center justify-center sm:justify-start gap-2 mb-5">
+                    <StarRating
+                      value={Number(book.averageRating)}
+                      size="sm"
+                      showValue
+                    />
+                    <span className="text-xs text-muted-foreground">
+                      ({book.reviewsCount} ta sharh)
+                    </span>
+                  </div>
+                )}
               </div>
 
               <p className="text-sm text-foreground/80 leading-relaxed mb-6">
@@ -225,6 +240,14 @@ const BookDetail = () => {
               </div>
             </div>
           </motion.div>
+
+          {/* Sharhlar bo'limi */}
+          <BookReviewsSection
+            productId={book.id}
+            productName={book.name}
+            averageRating={book.averageRating}
+            reviewsCount={book.reviewsCount}
+          />
 
           {related.length > 0 && (
             <div>

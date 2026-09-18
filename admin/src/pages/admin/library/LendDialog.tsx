@@ -7,10 +7,10 @@ import {
   EntTableWrap,
 } from "@/components/enterprise";
 import { useDebounce } from "@/hooks/use-debounce";
-import { ILoanUser } from "@/interface";
-import { createLoan, fetchStudents } from "@/service/library";
+import { ILoanUser, UserRole } from "@/interface";
+import { createLoan, fetchEmployees, fetchStudents } from "@/service/library";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 interface Props {
@@ -52,16 +52,38 @@ export function LendDialog({ product, onClose }: Props) {
     }
   }, [open, product?.id]);
 
+  const enabled = open && debounced.trim().length >= 1;
+
+  // Talaba ham, hodim ham kitob oladi — ikkalasini birga qidiramiz
   const studentsQ = useQuery({
     queryKey: ["lend-students", debounced],
     queryFn: () => fetchStudents(debounced, 15),
-    enabled: open && debounced.trim().length >= 1,
+    enabled,
   });
+  const employeesQ = useQuery({
+    queryKey: ["lend-employees", debounced],
+    queryFn: () => fetchEmployees(debounced, 15),
+    enabled,
+  });
+
+  const borrowers: ILoanUser[] = useMemo(() => {
+    const st = (studentsQ.data?.items ?? []).map((u) => ({
+      ...u,
+      role: UserRole.STUDENT,
+    }));
+    const em = (employeesQ.data?.items ?? []).map((u) => ({
+      ...u,
+      role: UserRole.EMPLOYEE,
+    }));
+    return [...st, ...em];
+  }, [studentsQ.data, employeesQ.data]);
+
+  const isLoadingBorrowers = studentsQ.isLoading || employeesQ.isLoading;
 
   const lendMu = useMutation({
     mutationFn: createLoan,
     onSuccess: () => {
-      toast.success("Kitob talabaga berildi ✓");
+      toast.success("Kitob berildi ✓");
       onClose(true);
     },
     onError: (err: any) => {
@@ -86,7 +108,7 @@ export function LendDialog({ product, onClose }: Props) {
     <EntDialog
       open={open}
       onClose={() => !lendMu.isPending && onClose(false)}
-      title="Talabaga berish"
+      title="Kitob berish"
       width={780}
       footer={
         <>
@@ -141,13 +163,13 @@ export function LendDialog({ product, onClose }: Props) {
                   marginBottom: 2,
                 }}
               >
-                1. Talabani tanlang
+                1. Talaba yoki hodimni tanlang
               </label>
               <EntInput
                 autoFocus
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="FIO yoki talabalik raqami"
+                placeholder="FIO, talabalik raqami yoki xodim raqami"
                 style={{ width: "100%" }}
               />
             </div>
@@ -164,7 +186,9 @@ export function LendDialog({ product, onClose }: Props) {
                   {selected.full_name}
                 </div>
                 <div className="ent-muted" style={{ fontSize: 11 }}>
-                  {selected.student_id_number} · {selected.group || "—"}
+                  {selected.role === UserRole.EMPLOYEE
+                    ? `${selected.employee_id_number || "—"} · ${selected.position || "—"}`
+                    : `${selected.student_id_number || "—"} · ${selected.group || "—"}`}
                 </div>
               </div>
             )}
@@ -175,37 +199,38 @@ export function LendDialog({ product, onClose }: Props) {
               <thead>
                 <tr>
                   <th style={{ width: 30 }}></th>
+                  <th style={{ width: 90 }}>Kim</th>
                   <th>FIO</th>
-                  <th style={{ width: 130 }}>Talaba ID</th>
-                  <th style={{ width: 120 }}>Guruh</th>
-                  <th style={{ width: 80 }}>Kurs</th>
+                  <th style={{ width: 130 }}>ID raqam</th>
+                  <th style={{ width: 200 }}>Guruh / Lavozim</th>
                 </tr>
               </thead>
               <tbody>
                 {!debounced.trim() ? (
                   <tr>
                     <td colSpan={5} className="ent-empty">
-                      Qidirish uchun FIO yoki talabalik raqamini yozing
+                      Qidirish uchun FIO, talabalik yoki xodim raqamini yozing
                     </td>
                   </tr>
-                ) : studentsQ.isLoading ? (
+                ) : isLoadingBorrowers ? (
                   <tr>
                     <td colSpan={5} className="ent-empty">
                       Yuklanmoqda...
                     </td>
                   </tr>
-                ) : (studentsQ.data?.items ?? []).length === 0 ? (
+                ) : borrowers.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="ent-empty">
-                      Talaba topilmadi
+                      Talaba ham, hodim ham topilmadi
                     </td>
                   </tr>
                 ) : (
-                  studentsQ.data!.items.map((s) => {
+                  borrowers.map((s) => {
                     const isSel = selected?.id === s.id;
+                    const isEmp = s.role === UserRole.EMPLOYEE;
                     return (
                       <tr
-                        key={s.id}
+                        key={`${s.role}-${s.id}`}
                         onClick={() => setSelected(s)}
                         className={isSel ? "ent-row-selected" : ""}
                         style={{ cursor: "pointer" }}
@@ -217,12 +242,21 @@ export function LendDialog({ product, onClose }: Props) {
                             onChange={() => setSelected(s)}
                           />
                         </td>
+                        <td>
+                          <EntBadge variant={isEmp ? "warn" : "muted"}>
+                            {isEmp ? "Hodim" : "Talaba"}
+                          </EntBadge>
+                        </td>
                         <td>{s.full_name || "—"}</td>
                         <td className="ent-cell--code">
-                          {s.student_id_number || "—"}
+                          {(isEmp ? s.employee_id_number : s.student_id_number) ||
+                            "—"}
                         </td>
-                        <td className="ent-muted">{s.group || "—"}</td>
-                        <td className="ent-muted">{s.level || "—"}</td>
+                        <td className="ent-muted">
+                          {isEmp
+                            ? s.position || s.department || "—"
+                            : s.group || "—"}
+                        </td>
                       </tr>
                     );
                   })

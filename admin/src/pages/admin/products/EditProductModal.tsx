@@ -231,12 +231,43 @@ export function EditProductModal({ id, isOpen, onClose, onSave }: Props) {
             </EntField>
 
             <EntField label="Til">
-              <EntInput
-                value={formData.language || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, language: e.target.value })
+              <EntSelect
+                value={
+                  ["O'zbekcha", "Ruscha", "Inglizcha"].includes(
+                    formData.language || "",
+                  )
+                    ? formData.language
+                    : formData.language
+                      ? "other"
+                      : ""
                 }
-              />
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setFormData({
+                    ...formData,
+                    language: v === "other" ? formData.language || " " : v,
+                  });
+                }}
+              >
+                <option value="">— tanlang —</option>
+                <option value="O'zbekcha">O'zbekcha</option>
+                <option value="Ruscha">Ruscha</option>
+                <option value="Inglizcha">Inglizcha</option>
+                <option value="other">Boshqa...</option>
+              </EntSelect>
+              {!["O'zbekcha", "Ruscha", "Inglizcha"].includes(
+                formData.language || "",
+              ) &&
+                formData.language && (
+                  <EntInput
+                    value={(formData.language || "").trim()}
+                    onChange={(e) =>
+                      setFormData({ ...formData, language: e.target.value })
+                    }
+                    placeholder="masalan: Tojikcha"
+                    style={{ marginTop: 4 }}
+                  />
+                )}
             </EntField>
 
             <EntField label="Sahifalar soni">

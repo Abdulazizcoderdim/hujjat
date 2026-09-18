@@ -11,6 +11,12 @@ export const startHemisSync = async (): Promise<IHemisSyncJob> => {
   return data;
 };
 
+/** Hodimlar sync'i — HEMIS employee-list. */
+export const startHemisEmployeeSync = async (): Promise<IHemisSyncJob> => {
+  const { data } = await $api.post("/hemis-sync/employees");
+  return data;
+};
+
 export const fetchHemisSyncCurrent = async (): Promise<IHemisSyncJob | null> => {
   const { data } = await $api.get("/hemis-sync/current");
   return data || null;

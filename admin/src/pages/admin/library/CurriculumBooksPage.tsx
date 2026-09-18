@@ -11,6 +11,7 @@ import {
   ICurriculumTreeSubject,
 } from "@/interface";
 import {
+  downloadCurriculumSemesterZip,
   fetchProductsByCurriculumLink,
   fetchCurriculumTree,
 } from "@/service/products";
@@ -18,17 +19,24 @@ import {
   fetchCurriculums,
   fetchSubjects,
 } from "@/service/edusystem";
+import { safeFileName } from "@/utils/download";
 import { useQuery } from "@tanstack/react-query";
 import {
   BookOpen,
   ChevronDown,
   ChevronRight,
   Download,
+  FileArchive,
   GraduationCap,
+  Loader2,
   RefreshCw,
   Search,
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
+
+/** Yuklab olingan baytni "12.4 MB" ko'rinishida */
+const fmtMb = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 
 const fmtSemester = (s: number) => `${s}-semestr`;
 
@@ -57,6 +65,8 @@ interface SubjectRowProps {
   semester: number;
   subject: ICurriculumTreeSubject;
   subjectName: string;
+  /** Nom edusystem'dan kelmagan bo'lsa, true — fan o'chirilgan bo'lishi mumkin */
+  isUnknown?: boolean;
 }
 
 function SubjectRow({
@@ -64,6 +74,7 @@ function SubjectRow({
   semester,
   subject,
   subjectName,
+  isUnknown,
 }: SubjectRowProps) {
   const [open, setOpen] = useState(false);
 
@@ -110,9 +121,30 @@ function SubjectRow({
         }}
       >
         {open ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
-        <BookOpen size={13} className="ent-muted" />
-        <span style={{ flex: 1, fontWeight: 500 }}>{subjectName}</span>
-        <EntBadge variant="muted">{subject.bookCount} ta kitob</EntBadge>
+        <BookOpen
+          size={13}
+          className={isUnknown ? "" : "ent-muted"}
+          style={isUnknown ? { color: "#b45309" } : undefined}
+        />
+        <span
+          style={{
+            flex: 1,
+            fontWeight: 500,
+            color: isUnknown ? "#92400e" : undefined,
+            fontStyle: isUnknown ? "italic" : undefined,
+          }}
+          title={
+            isUnknown
+              ? `Bu fan (#${subject.subjectId}) edusystem'da topilmadi — o'chirilgan bo'lishi mumkin. Kitobni tahrirlab boshqa fanga bog'lang.`
+              : undefined
+          }
+        >
+          {isUnknown && "⚠ "}
+          {subjectName}
+        </span>
+        <EntBadge variant={isUnknown ? "warn" : "muted"}>
+          {subject.bookCount} ta kitob
+        </EntBadge>
       </button>
 
       {open && (
@@ -209,16 +241,53 @@ function SubjectRow({
 
 interface SemesterBlockProps {
   curriculumId: number;
+  curriculumName: string;
   semester: ICurriculumTreeSemester;
-  subjectName: (id: number) => string;
+  subjectName: (id: number) => { name: string; isUnknown: boolean };
 }
 
 function SemesterBlock({
   curriculumId,
+  curriculumName,
   semester,
   subjectName,
 }: SemesterBlockProps) {
   const c = semesterColor(semester.semester);
+  const [zipBusy, setZipBusy] = useState(false);
+  const [zipLoaded, setZipLoaded] = useState(0);
+
+  const downloadZip = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (zipBusy) return;
+    setZipBusy(true);
+    setZipLoaded(0);
+    try {
+      const filename = safeFileName(
+        `${curriculumName} — ${semester.semester}-semestr (${semester.totalBooks} ta kitob)`,
+        150,
+      );
+      await downloadCurriculumSemesterZip({
+        curriculumId,
+        semester: semester.semester,
+        subjects: semester.subjects.map((s) => ({
+          id: s.subjectId,
+          name: subjectName(s.subjectId).name,
+        })),
+        filename: `${filename}.zip`,
+        onProgress: setZipLoaded,
+      });
+      toast.success(`ZIP yuklab olindi — ${semester.totalBooks} ta kitob`);
+    } catch (err: any) {
+      toast.error(
+        err?.response?.status === 400
+          ? "Bu semestrda yuklab olinadigan kitob topilmadi"
+          : "ZIP yaratishda xato",
+      );
+    } finally {
+      setZipBusy(false);
+    }
+  };
+
   return (
     <div
       className="ent-stack-y"
@@ -247,6 +316,41 @@ function SemesterBlock({
         <GraduationCap size={12} />
         {fmtSemester(semester.semester)}
         <span style={{ flex: 1 }} />
+        {semester.totalBooks > 0 && (
+          <button
+            type="button"
+            onClick={downloadZip}
+            disabled={zipBusy}
+            title={`Shu semestrdagi ${semester.totalBooks} ta kitobni ZIP qilib yuklab olish`}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+              background: "#fff",
+              color: c.fg,
+              border: `1px solid ${c.border}`,
+              padding: "1px 7px",
+              fontSize: 10,
+              fontWeight: 700,
+              borderRadius: 2,
+              cursor: zipBusy ? "progress" : "pointer",
+              opacity: zipBusy ? 0.7 : 1,
+              textTransform: "none",
+              letterSpacing: 0,
+            }}
+          >
+            {zipBusy ? (
+              <>
+                <Loader2 size={11} className="animate-spin" />
+                {zipLoaded > 0 ? fmtMb(zipLoaded) : "Tayyorlanmoqda..."}
+              </>
+            ) : (
+              <>
+                <FileArchive size={11} /> ZIP
+              </>
+            )}
+          </button>
+        )}
         <span
           style={{
             background: c.fg,
@@ -261,15 +365,19 @@ function SemesterBlock({
         </span>
       </div>
       <div className="ent-stack-y" style={{ gap: 2 }}>
-        {semester.subjects.map((sub) => (
-          <SubjectRow
-            key={sub.subjectId}
-            curriculumId={curriculumId}
-            semester={semester.semester}
-            subject={sub}
-            subjectName={subjectName(sub.subjectId)}
-          />
-        ))}
+        {semester.subjects.map((sub) => {
+          const info = subjectName(sub.subjectId);
+          return (
+            <SubjectRow
+              key={sub.subjectId}
+              curriculumId={curriculumId}
+              semester={semester.semester}
+              subject={sub}
+              subjectName={info.name}
+              isUnknown={info.isUnknown}
+            />
+          );
+        })}
       </div>
     </div>
   );
@@ -278,7 +386,7 @@ function SemesterBlock({
 interface CurriculumCardProps {
   node: ICurriculumTreeNode;
   curriculumName: string;
-  subjectName: (id: number) => string;
+  subjectName: (id: number) => { name: string; isUnknown: boolean };
 }
 
 function CurriculumCard({
@@ -348,6 +456,7 @@ function CurriculumCard({
         >
           {node.semesters.map((sem) => (
             <SemesterBlock
+              curriculumName={curriculumName}
               key={sem.semester}
               curriculumId={node.curriculumId}
               semester={sem}
@@ -375,8 +484,13 @@ export function CurriculumBooksPage() {
   });
 
   const subjectsQ = useQuery({
-    queryKey: ["edu-subjects"],
-    queryFn: () => fetchSubjects(true),
+    // onlyCurriculum=true bilan ba'zi fanlar tushib qoladi (edusystem
+    // tomonida endi "curriculum subject" deb belgilanmagan bo'lsa, lekin
+    // bizning product_subjects'da hali link bor — "Fan #255" ko'rinishida
+    // chiqib qolardi). Hamma fanlarni olamiz — keyin Map orqali nom
+    // qidiramiz.
+    queryKey: ["edu-subjects-all"],
+    queryFn: () => fetchSubjects(false),
     staleTime: 5 * 60_000,
   });
 
@@ -394,7 +508,12 @@ export function CurriculumBooksPage() {
 
   const curName = (id: number) =>
     curriculumNameById.get(id) ?? `O'quv reja #${id}`;
-  const subName = (id: number) => subjectNameById.get(id) ?? `Fan #${id}`;
+  const subName = (id: number) => {
+    const found = subjectNameById.get(id);
+    return found
+      ? { name: found, isUnknown: false }
+      : { name: `Noma'lum fan (#${id})`, isUnknown: true };
+  };
 
   const filtered = useMemo(() => {
     const nodes = treeQ.data?.curricula ?? [];

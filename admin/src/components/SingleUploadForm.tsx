@@ -23,6 +23,34 @@ import {
 import { useMemo, useRef, useState } from "react";
 
 const ALLOWED_DOC_EXT = [".pdf"];
+
+const PRESET_LANGUAGES = ["O'zbekcha", "Ruscha", "Inglizcha"];
+
+const TAG_PRESETS = [
+  "darslik",
+  "qo'llanma",
+  "ma'ruzalar to'plami",
+  "lug'at",
+  "ensiklopediya",
+  "ilm-fan",
+  "ilmiy-ommabop",
+  "klassika",
+  "badiiy adabiyot",
+  "she'riyat",
+  "tarix",
+  "falsafa",
+  "psixologiya",
+  "iqtisod",
+  "huquq",
+  "matematika",
+  "fizika",
+  "kimyo",
+  "biologiya",
+  "informatika",
+  "dasturlash",
+  "tibbiyot",
+  "tarjima",
+];
 const MAX_DOC_SIZE_MB = 200;
 const MAX_POSTER_SIZE_MB = 10;
 
@@ -199,6 +227,18 @@ export function SingleUploadForm({ categories, onSubmit }: Props) {
         .map((t) => t.trim())
         .filter(Boolean),
     [formData.tags],
+  );
+
+  const toggleTag = (tag: string) => {
+    const set = new Set(tagsList);
+    if (set.has(tag)) set.delete(tag);
+    else set.add(tag);
+    setFormData((prev) => ({ ...prev, tags: Array.from(set).join(", ") }));
+  };
+
+  const availablePresets = useMemo(
+    () => TAG_PRESETS.filter((p) => !tagsList.includes(p)),
+    [tagsList],
   );
 
   const onFileDrop = (e: React.DragEvent) => {
@@ -485,15 +525,42 @@ export function SingleUploadForm({ categories, onSubmit }: Props) {
                 />
               </EntField>
               <EntField label="Til">
-                <EntInput
-                  value={formData.language}
-                  onChange={(e) =>
-                    setFormData({ ...formData, language: e.target.value })
+                <EntSelect
+                  value={
+                    PRESET_LANGUAGES.includes(formData.language)
+                      ? formData.language
+                      : formData.language
+                        ? "other"
+                        : ""
                   }
-                  placeholder="O'zbekcha"
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setFormData({
+                      ...formData,
+                      language: v === "other" ? formData.language || " " : v,
+                    });
+                  }}
                   disabled={isUploading}
-                  autoComplete="off"
-                />
+                >
+                  <option value="">— tanlang —</option>
+                  <option value="O'zbekcha">O'zbekcha</option>
+                  <option value="Ruscha">Ruscha</option>
+                  <option value="Inglizcha">Inglizcha</option>
+                  <option value="other">Boshqa...</option>
+                </EntSelect>
+                {!PRESET_LANGUAGES.includes(formData.language) &&
+                  formData.language && (
+                    <EntInput
+                      value={formData.language.trim()}
+                      onChange={(e) =>
+                        setFormData({ ...formData, language: e.target.value })
+                      }
+                      placeholder="masalan: Tojikcha"
+                      disabled={isUploading}
+                      autoComplete="off"
+                      style={{ marginTop: 4 }}
+                    />
+                  )}
               </EntField>
               <EntField label="Nashr yili" error={errors.year}>
                 <EntInput
@@ -509,7 +576,11 @@ export function SingleUploadForm({ categories, onSubmit }: Props) {
                   disabled={isUploading}
                 />
               </EntField>
-              <EntField label="Kalit so'zlar" className="ent-grid--2" hint="vergul bilan ajrating">
+              <EntField
+                label="Kalit so'zlar"
+                className="ent-grid--2"
+                hint="quyidagi tezkor variantlardan tanlang yoki vergul bilan o'zingiz yozing"
+              >
                 <EntInput
                   value={formData.tags}
                   onChange={(e) =>
@@ -531,10 +602,59 @@ export function SingleUploadForm({ categories, onSubmit }: Props) {
                 }}
               >
                 {tagsList.map((t, i) => (
-                  <EntBadge key={`${t}-${i}`} variant="muted">
-                    {t}
-                  </EntBadge>
+                  <button
+                    key={`${t}-${i}`}
+                    type="button"
+                    onClick={() => toggleTag(t)}
+                    disabled={isUploading}
+                    title="Olib tashlash"
+                    style={{
+                      border: "1px solid var(--ent-border)",
+                      background: "var(--ent-accent-soft, #dbeafe)",
+                      color: "var(--ent-accent, #1d4ed8)",
+                      padding: "2px 7px",
+                      fontSize: 11,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      borderRadius: 2,
+                    }}
+                  >
+                    {t} ×
+                  </button>
                 ))}
+              </div>
+            )}
+            {availablePresets.length > 0 && (
+              <div style={{ marginTop: 6 }}>
+                <div
+                  className="ent-muted"
+                  style={{ fontSize: 10, fontWeight: 600, marginBottom: 3 }}
+                >
+                  TEZ QO'SHISH:
+                </div>
+                <div
+                  style={{ display: "flex", flexWrap: "wrap", gap: 3 }}
+                >
+                  {availablePresets.map((p) => (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => toggleTag(p)}
+                      disabled={isUploading}
+                      style={{
+                        border: "1px dashed var(--ent-border)",
+                        background: "var(--ent-bg)",
+                        color: "var(--ent-text-muted)",
+                        padding: "2px 7px",
+                        fontSize: 11,
+                        cursor: "pointer",
+                        borderRadius: 2,
+                      }}
+                    >
+                      + {p}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
           </EntCard>

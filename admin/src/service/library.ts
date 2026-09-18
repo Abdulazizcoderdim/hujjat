@@ -92,3 +92,14 @@ export const fetchStudents = async (
   });
   return data;
 };
+
+/** Hodimlar — HEMIS'dan sync qilinadi, ular ham kitob oladi. */
+export const fetchEmployees = async (
+  search: string,
+  limit = 10,
+): Promise<StudentsResponse> => {
+  const { data } = await $api.get("/users/role/employee", {
+    params: { search, page: 1, limit },
+  });
+  return data;
+};

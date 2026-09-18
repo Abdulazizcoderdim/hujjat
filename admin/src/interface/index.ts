@@ -2,6 +2,8 @@ export enum UserRole {
   ADMIN = "admin",
   STUDENT = "student",
   OPERATOR = "operator",
+  /** Universitet hodimi — HEMIS'dan sync qilinadi, saytga kirmaydi */
+  EMPLOYEE = "employee",
 }
 
 export enum OrderRefundStatus {
@@ -27,6 +29,12 @@ export interface IUser {
   specialty?: string;
   semester?: string;
   level?: string;
+  // Hodim maydonlari (role = employee)
+  employee_hemis_id?: string;
+  employee_id_number?: string;
+  position?: string;
+  department?: string;
+  employee_type?: string;
   role: UserRole;
   phone?: string;
   image?: string;
@@ -104,6 +112,8 @@ export interface IProduct<C> {
   isCurriculumBook?: boolean;
   shelfCode?: string;
   udc?: string;
+  /** Kitobdagi QR necha marta skanerlangani */
+  qrScanCount?: number;
   uploadedBy?: {
     id: number;
     full_name?: string;
@@ -198,6 +208,44 @@ export interface ICurriculumTreeResponse {
   curricula: ICurriculumTreeNode[];
 }
 
+export enum ReviewStatus {
+  PENDING = "pending",
+  APPROVED = "approved",
+  REJECTED = "rejected",
+}
+
+export interface IAdminBookReview {
+  id: number;
+  rating: number;
+  comment: string;
+  status: ReviewStatus;
+  modNote: string | null;
+  helpfulCount: number;
+  createdAt: string;
+  updatedAt: string;
+  moderatedAt: string | null;
+  reviewer: {
+    id: number;
+    full_name?: string;
+    email?: string;
+    image?: string | null;
+  } | null;
+  product: {
+    id: number;
+    name: string;
+    poster?: string;
+    author?: string;
+  };
+  moderatedBy: { id: number; full_name?: string } | null;
+}
+
+export interface IReviewStats {
+  total: number;
+  pending: number;
+  approved: number;
+  rejected: number;
+}
+
 export type LoanStatus = "active" | "returned" | "lost";
 
 export interface ILoanUser {
@@ -211,6 +259,11 @@ export interface ILoanUser {
   faculty?: string;
   level?: string;
   image?: string;
+  role?: UserRole;
+  // Hodim uchun
+  employee_id_number?: string;
+  position?: string;
+  department?: string;
 }
 
 export interface IActiveLoanShort {
@@ -377,9 +430,16 @@ export type HemisSyncStatus =
   | "failed"
   | "cancelled";
 
+export enum HemisSyncType {
+  STUDENT = "student",
+  EMPLOYEE = "employee",
+}
+
 export interface IHemisSyncJob {
   id: number;
   status: HemisSyncStatus;
+  /** Qaysi ro'yxat bo'yicha ketgan sync (eski yozuvlarda bo'lmasligi mumkin) */
+  type?: HemisSyncType;
   startedAt: string | null;
   finishedAt: string | null;
   currentPage: number;

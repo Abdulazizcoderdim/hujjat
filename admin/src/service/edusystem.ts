@@ -19,10 +19,23 @@ export const fetchCurriculums = async (): Promise<ICurriculum[]> => {
   return unwrap<ICurriculum>(data);
 };
 
-export const fetchSubjects = async (onlyCurriculum = false): Promise<ISubject[]> => {
-  const { data } = await $edu.get(SUBJECTS_PATH, {
-    params: { onlyCurriculum },
-  });
+export interface FetchSubjectsParams {
+  onlyCurriculum?: boolean;
+  curriculumId?: number;
+}
+
+export const fetchSubjects = async (
+  paramsOrLegacy: FetchSubjectsParams | boolean = false,
+): Promise<ISubject[]> => {
+  const opts: FetchSubjectsParams =
+    typeof paramsOrLegacy === "boolean"
+      ? { onlyCurriculum: paramsOrLegacy }
+      : paramsOrLegacy;
+  const params: Record<string, string | number | boolean> = {};
+  if (opts.onlyCurriculum !== undefined)
+    params.onlyCurriculum = opts.onlyCurriculum;
+  if (opts.curriculumId !== undefined) params.curriculumId = opts.curriculumId;
+  const { data } = await $edu.get(SUBJECTS_PATH, { params });
   return unwrap<ISubject>(data);
 };
 

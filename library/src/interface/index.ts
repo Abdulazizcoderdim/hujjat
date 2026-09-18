@@ -104,8 +104,59 @@ export interface IProduct<C> {
 
   isCurriculumBook?: boolean;
 
+  /** Denormalized — barcha approved sharhlarning o'rtacha balli (1.00–5.00). */
+  averageRating?: number | null;
+  /** Tasdiqlangan sharhlar soni. */
+  reviewsCount?: number;
+
   createdAt: string;
   updatedAt: string;
+}
+
+export enum ReviewStatus {
+  PENDING = "pending",
+  APPROVED = "approved",
+  REJECTED = "rejected",
+}
+
+export interface IReviewer {
+  id: number;
+  full_name?: string;
+  image?: string | null;
+}
+
+/** Public sharh ko'rinishi (talaba sahifasida) */
+export interface IPublicReview {
+  id: number;
+  rating: number;
+  comment: string;
+  helpfulCount: number;
+  createdAt: string;
+  viewerMarkedHelpful: boolean;
+  reviewer: IReviewer | null;
+}
+
+/** Talaba o'z sharhini ko'radi (pending/rejected modNote bilan) */
+export interface IMyReview {
+  id: number;
+  rating: number;
+  comment: string;
+  status: ReviewStatus;
+  modNote: string | null;
+  helpfulCount: number;
+  createdAt: string;
+  updatedAt: string;
+  product?: { id: number; name: string; poster?: string };
+}
+
+export interface IReviewListResponse<T> {
+  items: T[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
 }
 
 export interface ICurriculum {

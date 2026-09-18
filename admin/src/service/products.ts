@@ -1,5 +1,6 @@
 import $api from "@/http/axios";
 import { ICurriculumTreeResponse } from "@/interface";
+import { downloadBlob } from "@/utils/download";
 
 export const fetchCurriculumTree =
   async (): Promise<ICurriculumTreeResponse> => {
@@ -23,6 +24,36 @@ export const fetchProductsByCurriculumLink = async (params: {
     },
   });
   return res.data;
+};
+
+export interface CurriculumZipParams {
+  curriculumId: number;
+  semester: number;
+  /** Fan nomlari — ZIP ichidagi papka nomlari uchun */
+  subjects: { id: number; name: string }[];
+  /** Yuklab olinadigan fayl nomi */
+  filename: string;
+  onProgress?: (loadedBytes: number) => void;
+}
+
+/** O'quv reja + semestrdagi barcha kitoblarni bitta ZIP qilib yuklab oladi. */
+export const downloadCurriculumSemesterZip = async (
+  p: CurriculumZipParams,
+): Promise<void> => {
+  const { data } = await $api.post(
+    "/products/curriculum-books.zip",
+    {
+      curriculumId: p.curriculumId,
+      semester: p.semester,
+      subjects: p.subjects,
+    },
+    {
+      responseType: "blob",
+      // ZIP oqim bilan keladi — umumiy hajm oldindan ma'lum emas
+      onDownloadProgress: (e) => p.onProgress?.(e.loaded),
+    },
+  );
+  downloadBlob(data as Blob, p.filename);
 };
 
 export interface BulkRegenerateResult {

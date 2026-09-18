@@ -21,18 +21,21 @@ import $api from "./http/axios";
 import { UserRole } from "./interface";
 import { AdminsPage } from "./pages/admin/users/AdminsPage";
 import { StudentsTable } from "./pages/admin/users/StudentsTable";
+import { EmployeesPage } from "./pages/admin/users/EmployeesPage";
 import { SyncPage } from "./pages/admin/users/SyncPage";
 import { CatalogPage } from "./pages/admin/library/CatalogPage";
 import { LoansPage } from "./pages/admin/library/LoansPage";
 import { QuickReturnPage } from "./pages/admin/library/QuickReturnPage";
 import { CurriculumBooksPage } from "./pages/admin/library/CurriculumBooksPage";
 import { RegeneratePostersPage } from "./pages/admin/library/RegeneratePostersPage";
+import { QrLabelsPage } from "./pages/admin/library/QrLabelsPage";
 import { AllBooksPage } from "./pages/admin/library/AllBooksPage";
 import { AuditOverviewPage } from "./pages/admin/audit/AuditOverviewPage";
 import { LoginsPage as AuditLoginsPage } from "./pages/admin/audit/LoginsPage";
 import { SessionsPage as AuditSessionsPage } from "./pages/admin/audit/SessionsPage";
 import { ActionsPage as AuditActionsPage } from "./pages/admin/audit/ActionsPage";
 import { RequestsPage } from "./pages/admin/requests/RequestsPage";
+import { ReviewsPage } from "./pages/admin/reviews/ReviewsPage";
 import { MyUploadsPage } from "./pages/admin/operator/MyUploadsPage";
 import { MonitoringPage } from "./pages/admin/monitoring/MonitoringPage";
 import { OperatorDetailPage } from "./pages/admin/monitoring/OperatorDetailPage";
@@ -128,6 +131,14 @@ const App = () => {
                   }
                 />
                 <Route
+                  path="/users/employees"
+                  element={
+                    <RoleProtected roles={[UserRole.ADMIN]}>
+                      <EmployeesPage />
+                    </RoleProtected>
+                  }
+                />
+                <Route
                   path="/users/sync"
                   element={
                     <RoleProtected roles={[UserRole.ADMIN]}>
@@ -156,6 +167,14 @@ const App = () => {
                   element={
                     <RoleProtected roles={[UserRole.ADMIN]}>
                       <RequestsPage />
+                    </RoleProtected>
+                  }
+                />
+                <Route
+                  path="/reviews"
+                  element={
+                    <RoleProtected roles={[UserRole.ADMIN]}>
+                      <ReviewsPage />
                     </RoleProtected>
                   }
                 />
@@ -247,6 +266,16 @@ const App = () => {
                   element={
                     <RoleProtected roles={[UserRole.ADMIN]}>
                       <RegeneratePostersPage />
+                    </RoleProtected>
+                  }
+                />
+                <Route
+                  path="/library/qr-labels"
+                  element={
+                    <RoleProtected
+                      roles={[UserRole.ADMIN, UserRole.OPERATOR]}
+                    >
+                      <QrLabelsPage />
                     </RoleProtected>
                   }
                 />
